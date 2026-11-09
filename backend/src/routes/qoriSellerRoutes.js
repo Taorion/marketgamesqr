@@ -18,5 +18,6 @@ router.get('/dashboard',handle(req=>s.dashboard(req.user)));
 router.get('/accounts',handle(req=>s.accounts(req.user)));
 router.get('/admin/queue',handle(req=>s.adminQueue(req.user)));
 router.post('/admin/applications/:id/review',handle(req=>s.review(req.user,req.params.id,req.body)));
+router.post('/admin/applications/:id/authorize-access',handle(req=>s.authorizeAccess(req.user,req.params.id,req.body)));
 router.post('/admin/payouts',handle(req=>s.pay(req.user,req.body)));
 module.exports=router;

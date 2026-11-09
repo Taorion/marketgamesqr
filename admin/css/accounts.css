@@ -18,3 +18,5 @@
 .accounts-balance-grid dl{margin:14px 0}.accounts-balance-grid dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--border)}
 .accounts-balance-grid dt{flex:1 1 130px}.accounts-balance-grid dd{margin:0;font-weight:700}.accounts-balance-grid p{font-size:.85rem;line-height:1.5}
 @media(max-width:640px){.accounts-summary{grid-template-columns:1fr}.accounts-summary button{grid-template-columns:1fr auto}.accounts-summary small{grid-column:1/-1}.accounts-dialog .grid-form{grid-template-columns:1fr}.accounts-dialog{padding:16px}.accounts-dialog-head h2{font-size:1.2rem}#accountsWorkspace .commercial-heading{align-items:stretch;flex-direction:column}}
+
+.seller-document-attention{background:#fff1f2;color:#9f1239;border:1px solid #be123c;border-left:5px solid #be123c;border-radius:12px;padding:12px 16px;margin:12px 0;overflow-wrap:anywhere;white-space:normal}.seller-document-attention strong{color:#9f1239}.seller-document-attention p{margin:6px 0 0;font-size:.9rem;line-height:1.5}

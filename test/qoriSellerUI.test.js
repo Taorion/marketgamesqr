@@ -1,11 +1,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('jsdom');
 const until=async fn=>{for(let i=0;i<120;i++){if(fn())return;await new Promise(r=>setImmediate(r));}throw Error('UI did not settle');};
-function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false}={}){
+function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=false}={}){
  const w=new JSDOM(fs.readFileSync('seller/index.html','utf8'),{url:'https://example.test/seller/'+hash,runScripts:'outside-only'}).window,calls=[];
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.onclose?.();};
  w.sessionStorage.setItem('qori-seller-token','qa-only');w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});let d={ok:true};
  if(path.endsWith('/terms'))d={clauses:[{title:'Condiciones',text:'10% sobre compras confirmadas'}]};
- if(path.endsWith('/application'))d={user:{id:'seller-1',full_name:'Embajador <img src=x>',email:'qa@example.test',role},legacy:status===null,application:status===null?null:{status},documents:[]};
+ if(path.endsWith('/application'))d={user:{id:'seller-1',full_name:'Embajador <img src=x>',email:'qa@example.test',role},legacy:status===null,application:status===null?null:{status,approval_mode:override?'ADMIN_OVERRIDE':'DOCUMENTS'},documents:[],documentation:override?{attention:true,override:true,missing:['IDENTITY','RUT','BANK','CONTRACT']}:undefined};
  if(path.endsWith('/dashboard')&&status==='SUSPENDED')return {ok:false,json:async()=>({error:{message:'Acceso bloqueado',details:{code:'SELLER_APPROVAL_REQUIRED'}}})};
  if(path.endsWith('/dashboard'))d={totals:{pending_cop:15000,paid_cop:0,paying_businesses:1},accounts:[{id:'b',name:'Café',plan_code:'PENSE_EN_TI',subscription_status:'ACTIVE'}],commissions:[],payouts:[],next_payment_date:'2026-11-12',referral_url:'https://example.test/pense-en-ti/?seller=seller-1',plan_referral_url:'https://example.test/paquetes/?advisor=seller-1'};
  if(path.endsWith('/prospects'))d={rows:linked?[{id:'prospect',business_id:'b',business_name:'Cliente Freemium',stage:'WON'}]:[],has_more:false,next_offset:0};
@@ -45,3 +45,5 @@ test('CRM linked subscriber shows Freemium deadline alongside the commercial sta
 test('superadmin review sends explicit documentary verification instead of automatic approval',async()=>{
  const {w,calls}=setup({status:'APPROVED',role:'QORI_SUPERADMIN',hash:'#admin'});try{await until(()=>w.document.querySelector('[data-review]'));const f=w.document.querySelector('[data-review]');f.elements.status.value='APPROVED';f.elements.note.value='Documentos comprobados por administración.';for(const k of ['identity_checked','ciiu_checked','bank_ownership_checked','notarized_contract_checked','legal_terms_checked'])f.elements[k].checked=true;await f.onsubmit({currentTarget:f,preventDefault(){}});await until(()=>calls.some(x=>x.path.endsWith('/review')));assert.equal(calls.find(x=>x.path.endsWith('/review')).body.notarized_contract_checked,true);await new Promise(r=>setImmediate(r));}finally{w.close();}
 });
+
+test('authorized Seller keeps commercial access and red attention while completing documents',async()=>{const {w,calls}=setup({status:'APPROVED',override:true});try{await until(()=>w.document.querySelector('#referralLink'));assert.match(w.document.querySelector('.seller-document-attention').textContent,/Atención: documentación pendiente/);assert.match(w.document.querySelector('.seller-document-attention').textContent,/Alta autorizada por superadmin/);w.document.querySelector('[data-view=application]').click();await until(()=>w.document.querySelector('[data-kind]'));assert.equal(w.document.querySelectorAll('[data-kind]').length,4);assert.ok(w.document.querySelector('[data-view=crm]'));}finally{w.close();}});

@@ -1,0 +1,40 @@
+const {test,after}=require('node:test'),assert=require('node:assert/strict'),crypto=require('crypto');
+process.env.DATABASE_URL='postgresql://postgres@127.0.0.1:55441/qori_customer_qa';process.env.DB_SSL='false';process.env.NODE_ENV='test';process.env.JWT_SECRET='seller-authorization-test-secret-32chars';process.env.AGENDA_PUSH_WORKER_ENABLED='false';
+const {query,pool}=require('../backend/src/config/db'),{app}=require('../backend/src/app'),jwt=require('jsonwebtoken'),{env}=require('../backend/src/config/env');
+let server,base;
+const sign=u=>jwt.sign({sub:u.id,password_version:0},env.jwtSecret);
+async function api(path,user,body,method=body?'POST':'GET'){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(user?{Authorization:'Bearer '+sign(user)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};}
+async function user(role){return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Alta QA',$2) returning *",[crypto.randomUUID()+'@example.test',role])).rows[0];}
+test('superadmin grants access without documents; warning persists through uploads until verified; suspension revokes access',async()=>{
+ assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
+ server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
+ const admin=await user('QORI_SUPERADMIN'),seller=await user('QORI_SELLER'),other=await user('QORI_SELLER'),owner=await user('BUSINESS_OWNER');
+ await query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version) values($1,$2,'3105550000','Bogotá','4610','2026-11-07-ciiu4610')",[seller.id,crypto.randomUUID()]);
+ const path='/api/seller/admin/applications/'+seller.id+'/authorize-access',body={note:'Autorizo el inicio comercial con documentos pendientes.',acknowledge_pending_documents:true};
+ assert.equal((await api('/api/seller/dashboard',seller)).status,403);
+ for(const [actor,expected] of [[null,401],[seller,403],[other,403],[owner,403]])assert.equal((await api(path,actor,body)).status,expected);
+ assert.equal((await api(path,admin,{...body,acknowledge_pending_documents:false})).status,400);
+ assert.equal((await api(path,admin,{...body,note:'corto'})).status,400);
+ await query('update app_users set is_active=false where id=$1',[seller.id]);
+ const outcomes=await Promise.all([api(path,admin,body),api(path,admin,body)]);assert.deepEqual(outcomes.map(r=>r.status).sort(),[200,400]);
+ let profile=(await api('/api/seller/application',seller)).data;
+ assert.equal(profile.access.approved,true);assert.equal(profile.application.approval_mode,'ADMIN_OVERRIDE');assert.equal(profile.documentation.missing.length,4);assert.equal(profile.documentation.attention,true);
+ for(const p of ['/api/seller/dashboard','/api/seller/accounts','/api/admin/commercial/bootstrap','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(p,seller)).status,200,p);
+ const audit=(await query("select actor_id,detail from qori_commercial_audit where entity_id=$1 and action='SELLER_ACCESS_AUTHORIZED'",[seller.id])).rows;assert.equal(audit.length,1);assert.equal(audit[0].actor_id,admin.id);assert.equal(audit[0].detail.missing_documents.length,4);
+ const detail=(await api('/api/admin/accounts/sellers/'+seller.id,admin)).data.record;assert.equal(detail.documentation.attention,true);
+ const list=(await api('/api/admin/accounts/sellers?search='+encodeURIComponent(seller.email),admin)).data.rows;assert.equal(list[0].documentation.missing.length,4);
+ const payout=await api('/api/seller/admin/payouts',admin,{seller_id:seller.id,request_id:crypto.randomUUID(),transfer_reference:'QA-ONLY-'+crypto.randomUUID(),paid_on:'2026-11-05',expected_gross_cop:100,withholding_cop:0,transfer_verified:true,bank_ownership_checked:true});assert.equal(payout.status,400);assert.match(payout.data.error.message,/documentalmente/);
+ const {PDFDocument}=require('pdf-lib'),pdf=await PDFDocument.create();pdf.addPage();const content_base64=Buffer.from(await pdf.save()).toString('base64');
+ for(const kind of ['IDENTITY','RUT','BANK','CONTRACT'])assert.equal((await api('/api/seller/documents/'+kind,seller,{filename:kind+'.pdf',content_base64},'PUT')).status,200);
+ profile=(await api('/api/seller/application',seller)).data;assert.equal(profile.documentation.missing.length,0);assert.equal(profile.documentation.attention,true);
+ assert.equal((await api('/api/seller/application/submit',seller,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,200);
+ assert.equal((await api('/api/seller/dashboard',seller)).status,200);
+ const review='/api/seller/admin/applications/'+seller.id+'/review';
+ assert.equal((await api(review,admin,{status:'APPROVED',note:'Sin verificaciones no puede cerrar el expediente.'})).status,400);
+ assert.equal((await api(review,admin,{status:'APPROVED',note:'Documentación verificada por administración.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true})).status,200);
+ profile=(await api('/api/seller/application',seller)).data;assert.equal(profile.documentation.attention,false);assert.equal(profile.application.approval_mode,'DOCUMENTS');
+ assert.equal((await api(review,admin,{status:'SUSPENDED',note:'Suspensión administrativa para prueba.'})).status,200);
+ for(const p of ['/api/seller/dashboard','/api/seller/accounts','/api/admin/commercial/bootstrap','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(p,seller)).status,403,p);
+ assert.equal((await api(path,admin,body)).status,200);assert.equal((await api('/api/seller/dashboard',seller)).status,200);
+});
+after(async()=>{if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}await pool.end();});
