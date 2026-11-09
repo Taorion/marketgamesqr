@@ -422,7 +422,7 @@ async function createCreditCheckout(user, body) {
     throw badRequest("Paquete QR no disponible.");
   }
   const access=await assertActiveSubscriptionForTicketPurchase(user);
-  if(offer.code==='GF5'&&access.plan.code!=='PENSE_EN_TI')throw badRequest('Este paquete de emisiones corresponde a Pensé en ti.');
+  if(offer.kind==='GIFTCARDS'&&access.plan.code!=='PENSE_EN_TI')throw badRequest('Este paquete de emisiones corresponde a Pensé en ti.');
   if (!offer.subscriber_allowed) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
   }
@@ -1281,12 +1281,14 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     return finalizeApprovedPortalSubscription(client, order, payment, signup);
   }
 
-  if(order.package_code==='GF5') {
+  if(order.package_code==='GF5'||/^GF(50|200|600|2000|6000)$/.test(order.package_code)) {
     validateApprovedPayment(order,payment);
     if(order.credited_at)return {order:mapPurchaseOrder(order),credited:false,duplicate:true};
-    await client.query('insert into qori_giftcard_credit_accounts(business_id,balance,purchased) values($1,5,5) on conflict(business_id) do update set balance=qori_giftcard_credit_accounts.balance+5,purchased=qori_giftcard_credit_accounts.purchased+5',[order.business_id]);
+    const units=order.package_code==='GF5'?5:Number(order.package_code.slice(2));
+    if(Number(order.package_size)!==units)throw badRequest('Cantidad de giftcards inconsistente.');
+    await client.query('insert into qori_giftcard_credit_accounts(business_id,balance,purchased,welcome_granted) values($1,$2,$2,0) on conflict(business_id) do update set balance=qori_giftcard_credit_accounts.balance+$2,purchased=qori_giftcard_credit_accounts.purchased+$2',[order.business_id,units]);
     const r=await client.query("update qr_credit_purchase_orders set status='APPROVED',mercado_pago_payment_id=$2,payment_payload=$3,credited_at=now(),updated_at=now() where id=$1 returning *",[order.id,String(payment.id),payment]);
-    return {order:mapPurchaseOrder(r.rows[0]),credited:true,giftcards_added:5};
+    return {order:mapPurchaseOrder(r.rows[0]),credited:true,giftcards_added:units};
   }
   const account = await addQrCredits(client, {
     business_id: order.business_id,

@@ -950,14 +950,14 @@ PLAN_CATALOG[PLAN_CODES.DESCUBRE] = {
 PLAN_CATALOG[PLAN_CODES.PENSE_EN_TI] = {
  ...PLAN_CATALOG[PLAN_CODES.DESPEGA], code:'PENSE_EN_TI', name:'Pensé en ti',
  monthly_price_cop:0, price_label:'Gratis, sin mensualidad', billing_period:'free', public_signup_available:false,
- access_summary:'Regala un café, una comida o un postre. 20 tickets iniciales, 5 productos y 5 Gift Cards.',
+ access_summary:'Regala un café, una comida o un postre. 20 tickets iniciales, 5 productos, 1 programa de sellos y 20 Gift Cards.',
  pricing_note:'Entrega inicial única, sin recarga automática. Compra paquetes al agotar tus saldos.',
- included:['20 tickets iniciales','Hasta 5 productos','5 emisiones iniciales de Gift Card','Validador','Entrega a Qori Customer'],
+ included:['20 tickets iniciales','Hasta 5 productos','20 emisiones iniciales de Gift Card','1 programa de sellos','Cortesías propias o compradas','Validador','Entrega a Qori Customer'],
  not_included:['Módulos de planes pagos','Recarga automática de saldos'],
  features:{...PLAN_CATALOG[PLAN_CODES.DESPEGA].features,qr_simple_generator:false,qr_batch_generator:false,
  interactive_activations:false,template_games:false,products:true,gift_inventory:true,gift_cards:true,product_gifts:true},
  limits:{...PLAN_CATALOG[PLAN_CODES.DESPEGA].limits,welcome_courtesy_tickets:20,gift_inventory_products:5,
- gift_cards_month:null,gift_cards_total:null,stamp_programs:0,stamp_members:0,storage_bytes:50*1024*1024,active_interactive_activations:0,activation_types_month:0}
+ gift_cards_month:null,gift_cards_total:null,stamp_programs:1,stamp_members:null,storage_bytes:50*1024*1024,active_interactive_activations:0,activation_types_month:0}
 };
 for(const plan of Object.values(PLAN_CATALOG)) {
  if(plan.features.qr_batch_generator) plan.features.product_gifts=true;

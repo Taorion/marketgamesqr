@@ -87,9 +87,9 @@ const QR_PACKAGE_OFFERS = rawPackageOffers.map((offer) => ({
   payment_url: `/paquetes/?package=${offer.code}`,
 }));
 
-const GIFTCARD_PACK={code:'GF5',public_code:'GF5',package_size:5,unit_price_cop:BASE_TICKET_PRICE_COP,price_cop:5*BASE_TICKET_PRICE_COP,title:'5 emisiones de Gift Card',subscriber_allowed:true,kind:'GIFTCARDS'};
+const GIFTCARD_PACKAGE_OFFERS=QR_PACKAGE_OFFERS.map(p=>({code:'GF'+p.package_size,public_code:'GF'+p.package_size,package_size:p.package_size,unit_price_cop:2500,price_cop:p.package_size*2500,title:p.package_size+' emisiones de Gift Card',subscriber_allowed:true,kind:'GIFTCARDS'}));
 function findPackageOffer(code) {
-  if(String(code).toUpperCase()==='GF5')return GIFTCARD_PACK;
+  const gift=GIFTCARD_PACKAGE_OFFERS.find(p=>p.code===String(code||'').trim().toUpperCase());if(gift)return gift;
   return QR_PACKAGE_OFFERS.find((offer) => offer.code === String(code || "").trim().toUpperCase());
 }
 
@@ -102,6 +102,7 @@ function subscriberPackageOffers() {
 }
 
 module.exports = {
+  GIFTCARD_PACKAGE_OFFERS,
   BASE_TICKET_PRICE_COP,
   QR_PACKAGE_OFFERS,
   baseAccessPackageOffers,

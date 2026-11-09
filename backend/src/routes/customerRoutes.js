@@ -100,6 +100,7 @@ router.use('/groceries',require('./customerGroceryRoutes'));
 router.use('/debts',require('./customerDebtRoutes'));
 router.use('/purchases',require('./customerPurchaseRoutes'));
 router.use('/payment-agenda',require('./customerPaymentAgendaRoutes'));
+router.use('/courtesies',require('./customerCourtesyRoutes')());
 router.get('/product-gifts',handle(req=>productGifts.list(req.customer)));
 router.get('/product-gifts/:id',handle(req=>productGifts.order(req.customer,parse(uuid,req.params.id))));
 router.post('/product-gifts',handle(req=>{
@@ -309,6 +310,7 @@ businessRouter.get('/benefit-deliveries/:publicId',handle(req=>require('../servi
 businessRouter.post('/benefit-deliveries',handle(req=>require('../services/customerBenefitDeliveryService').businessSend(req.user,parse(z.object({public_id:uuid,kind:z.enum(['STAMP','AFFILIATION','GIFT','TICKET']),resource_id:uuid,document_id:text(80).min(3),identity_checked:z.literal(true)}),req.body))));
 businessRouter.get('/sale-deliveries',handle(req=>financeDelivery.businessSales(req.user,parse(z.object({search:text(160).default(''),offset:z.coerce.number().int().min(0).max(100000).default(0)}),req.query))));
 businessRouter.post('/sale-deliveries',handle(req=>financeDelivery.send(req.user,parse(z.object({sale_id:uuid,public_id:uuid,request_id:uuid,identity_checked:z.literal(true)}),req.body))));
+businessRouter.use('/courtesies',require('./customerCourtesyRoutes')(true));
 businessRouter.get('/product-gifts',handle(req=>productGifts.businessOrders(req.user)));
 businessRouter.get('/product-gifts/catalog',handle(req=>productGifts.businessCatalog(req.user)));
 businessRouter.post('/product-gifts',handle(req=>productGifts.createFromBusiness(req.user,parse(z.object({

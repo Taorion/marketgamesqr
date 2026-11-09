@@ -90,5 +90,5 @@ test("las restricciones se aplican en API, portal y altas con cupo", () => {
   assert.match(catalogs, /assertLimitForBusiness\(businessId, "showcases"/);
   assert.match(communications, /assertMonthlyUsageLimit[\s\S]*communication_emails_month/);
   assert.match(communications, /assertDailyUsageLimit[\s\S]*communication_emails_day/);
-  assert.match(payments, /welcomeTickets[\s\S]*quantity: welcomeTickets/);
+  assert.match(payments, /resetIncludedTickets\(client,[\s\S]*quantity:Number\(plan\.limits\?\.welcome_courtesy_tickets/);
 });

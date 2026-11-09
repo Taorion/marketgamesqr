@@ -11,7 +11,7 @@ function cleanNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? Math.max(0, parsed) : fallback;
 }
 
-function normalizeSaleProducts(products) {
+function normalizeSaleProducts(products, {allowZero=false} = {}) {
   if (!Array.isArray(products)) return [];
   return products
     .map((item) => {
@@ -33,7 +33,7 @@ function normalizeSaleProducts(products) {
         currency: cleanText(item?.currency, 12),
       };
     })
-    .filter((item) => item.name && item.line_total > 0);
+    .filter((item) => item.name && (item.line_total > 0 || (allowZero && item.line_total === 0)));
 }
 
 async function findCatalogProduct(client, businessId, item) {
@@ -177,7 +177,7 @@ function openProductPayload(item) {
 }
 
 async function syncSaleProductsWithCatalog(client, businessId, userId, products, options = {}) {
-  const normalizedProducts = normalizeSaleProducts(products);
+  const normalizedProducts = normalizeSaleProducts(products,{allowZero:options.allowZero===true});
   const syncedProducts = [];
   const autoCreatedProducts = [];
   const matchedProducts = [];

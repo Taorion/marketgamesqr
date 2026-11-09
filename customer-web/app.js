@@ -22,7 +22,7 @@
     navigator.serviceWorker?.getRegistration('/customer/').then(r=>r?.getNotifications()).then(items=>items?.forEach(n=>n.close())).catch(()=>{});
   }
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
-  const route=()=>{const value=location.hash.slice(1);return ['home','savings','cash-boxes','cash-wallet','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:'home';};
+  const route=()=>{const value=location.hash.slice(1);return ['courtesies','home','savings','cash-boxes','cash-wallet','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:'home';};
   const catalogRoute=()=>['explore','scan','gift-shop'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>catalogRoute()||['saved','requests','earned','following'].includes(route());
   function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId),session=sessionGuard.snapshot();return {request:(path,body,method)=>request(path,body,method,book?.id,session),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
@@ -66,7 +66,7 @@
   }
   function authContext(){return {state,request,brand,open:()=>renderAuth(),adopt:account=>{sessionGuard.adopt(account.id);state.account=account;},enter:async account=>{
     sessionGuard.adopt(account.id);broadcastSession();state.account=account;state.bookId=null;state.challenge=null;state.authMode='login';
-    const destination=['recover-benefits','gift-shop','product-gifts','invitations'].includes(route())||route().startsWith('publication/')?'#'+route():'#home';history.replaceState(null,'',destination);await refresh();announce('Bienvenido a tu cuenta Qori.');
+    const destination=['courtesies','recover-benefits','gift-shop','product-gifts','invitations'].includes(route())||route().startsWith('publication/')?'#'+route():'#home';history.replaceState(null,'',destination);await refresh();announce('Bienvenido a tu cuenta Qori.');
   }};}
   async function loadAccount(){const data=await request('/me');sessionGuard.adopt(data.account.id);state.account=data.account;state.bookId=null;try{state.bookId=new URLSearchParams(location.search).get('book')||(window.QoriCookies?.preferencesAllowed()?localStorage.getItem('qori-book:'+state.account.id):null);}catch{}}
   async function refresh({render=true}={}){
@@ -110,7 +110,7 @@
       <main id="main" class="content"><p id="pageError" class="error" role="alert" tabindex="-1"></p><div id="page"></div></main></div></div>`;
     const page=document.getElementById('page');
     const nav=app.querySelector('.sidebar nav');
-    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Antojos')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
+    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Antojos')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas')+navLink('courtesies','✦','Cortesías');
     window.QoriAccounting.selector(app,exploreContext());
     window.QoriNotifications?.watch(exploreContext());
     if(route()==='calculator')window.QoriCalculator.render(page,exploreContext());
@@ -136,6 +136,7 @@
     else if(['debts','debt-simulator'].includes(route()))window.QoriDebts.render(page,exploreContext(),route());
     else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(page,exploreContext(),route());
     else if(route()==='invitations')window.QoriInvitations.render(page,exploreContext());
+    else if(route()==='courtesies')window.QoriCourtesies.render(page,{request:(p,b)=>request('/courtesies'+p,b),business:false});
     else if(route()==='product-gifts')window.QoriProductGifts.render(page,exploreContext());
     else if(route()==='businesses')renderBusinesses(page);
     else if(route()==='me')renderIdentity(page);
@@ -236,7 +237,7 @@
     }else if(form.id==='verifyForm'){
       const result=await request('/auth/web/verify',{challenge_id:state.challenge,code:String(f.get('code')).trim(),consent:state.consent});
       sessionGuard.adopt(result.account.id);broadcastSession();
-      const destination=['recover-benefits','gift-shop','product-gifts','invitations'].includes(route())||route().startsWith('publication/')?'#'+route():'#home';state.account=result.account;state.bookId=null;state.challenge=null;history.replaceState(null,'',destination);await refresh();announce('Bienvenido a tu cuenta Qori.');
+      const destination=['courtesies','recover-benefits','gift-shop','product-gifts','invitations'].includes(route())||route().startsWith('publication/')?'#'+route():'#home';state.account=result.account;state.bookId=null;state.challenge=null;history.replaceState(null,'',destination);await refresh();announce('Bienvenido a tu cuenta Qori.');
     }else if(form.id==='profileForm'){
       const completing=!registrationComplete(),recoveryDoc=String(f.get('document_id')||'').trim();
       if(!state.account.declared_document_key&&!recoveryDoc)throw Error('La cédula es obligatoria para completar tu registro.');

@@ -28,8 +28,8 @@ async function signup(payload){
    await db.query('insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$2)',[b.id,advisor.id]);
    await db.query("insert into qori_sales_prospects(seller_id,business_id,business_name,contact_name,email,phone,stage) values($1,$2,$3,$4,$5,$6,'WON')",[advisor.id,b.id,name,d.contact_name,d.email,d.phone]);
   }
-  await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'PENSE_EN_TI_ENROLLED','business',$2,$3::jsonb)",[u.id,b.id,JSON.stringify({seller_id:advisor?.id||null,initial_tickets:20,initial_giftcards:5})]);
-  return {ok:true,business_id:b.id,email:d.email,portal_url:'/empresa/?view=customer-network',message:'Tu cuenta está lista: 20 tickets, hasta 5 productos y 5 emisiones de Gift Card.'};
+  await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'PENSE_EN_TI_ENROLLED','business',$2,$3::jsonb)",[u.id,b.id,JSON.stringify({seller_id:advisor?.id||null,initial_tickets:20,initial_giftcards:20})]);
+  return {ok:true,business_id:b.id,email:d.email,portal_url:'/empresa/?view=customer-network',message:'Tu cuenta está lista: 20 tickets, hasta 5 productos y 20 emisiones de Gift Card y un programa de sellos.'};
  });
 }
 async function balances(user){

@@ -8,5 +8,6 @@ router.get('/advisor/:id',handle(req=>require('../services/commercialAdvisorServ
 router.get('/receipts/:token',rateLimit({keyPrefix:'gift-receipt',max:60,windowMs:60000}),handle(req=>require('../services/giftDeliveryService').receipt(req.params.token)));
 router.use(authRequired,requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER'));
 router.get('/balances',handle(req=>s.balances(req.user)));
-router.post('/giftcards/checkout',handle(req=>require('../services/mercadoPagoService').createCreditCheckout(req.user,{package_code:'GF5',idempotency_key:require('../utils/validators').validate(require('zod').z.string().uuid(),req.body.idempotency_key)})));
+router.get('/giftcards/packages',handle(()=>({packages:require('../services/packageCatalog').GIFTCARD_PACKAGE_OFFERS})));
+router.post('/giftcards/checkout',handle(req=>{const d=require('../utils/validators').validate(require('zod').z.object({package_code:require('zod').z.enum(['GF50','GF200','GF600','GF2000','GF6000']),idempotency_key:require('zod').z.string().uuid()}).strict(),req.body);return require('../services/mercadoPagoService').createCreditCheckout(req.user,d);}));
 module.exports=router;

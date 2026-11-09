@@ -1700,6 +1700,7 @@ const sidebarSectionByView = Object.freeze({
   leads: "operate",
   sales: "operate",
   quotes: "operate",
+  "courtesies": "offer",
   "customer-network": "operate",
   validator: "operate",
   redemptions: "optimize",
@@ -5905,6 +5906,7 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 
 const viewFeatureMap = {
   quotes: "products",
+  "courtesies": "product_gifts",
   "customer-network": "portal_access",
   "stamp-cards": "portal_access",
   dashboard: "revenue_center",
@@ -7637,6 +7639,7 @@ function setView(view) {
   state.currentView = view;
   if (view === "stamp-cards") window.StampCards?.open();
   if (view === "quotes") window.Quotes?.open();
+  if (view === "courtesies") window.QoriBusinessCourtesies?.open();
   if (view === "customer-network") window.QoriCustomerWorkspace?.open();
   const staleAccountHash = String(window.location.hash || "").replace(/^#/, "");
   if (view !== "account" && ACCOUNT_SECTION_SCREEN[staleAccountHash]) {

@@ -120,6 +120,15 @@ async function confirm(user,id,data){
 async function validateGiftTicket(db,account,invitation){
  const row=(await db.query("select o.*,q.status ticket_status,q.expires_at,s.sale_status from customer_product_gift_orders o join qr_codes q on q.id=o.qr_code_id join business_sales s on s.id=o.sale_id where o.id=$1 and o.business_id=$2 and o.recipient_id=$3 and o.invitation_id=$4 and o.qr_code_id=$5 and o.state='ISSUED'",[invitation.payload.product_gift_order_id,invitation.business_id,account.id,invitation.id,invitation.resource_id])).rows[0];
  if(!row||row.ticket_status!=='ACTIVE'||row.sale_status!=='PAID'||new Date(row.expires_at)<=new Date())throw badRequest('Este regalo ya no está disponible. Consulta con el negocio.');
+ if(row.courtesy_lot_id){
+  // Resolve the recipient only after their own verified session accepts. Sender-entered
+  // names are labels, and repeated courtesies must not create duplicate CRM identities.
+  const identity=await require('./validatorBeneficiaryService').resolveBeneficiary(db,{
+   businessId:row.business_id,sellerUserId:row.confirmed_by,operationKey:'courtesy-accept:'+row.id,qrCodeId:row.qr_code_id,
+   input:{name:account.full_name,email:account.email,document_id:account.declared_document_key,data_use_confirmed:true}
+  });
+  await db.query('update qr_codes set player_id=$2,claimed_by_player_id=$2,claimed_at=coalesce(claimed_at,now()) where id=$1',[row.qr_code_id,identity.player.id]);
+ }
  return row;
 }
 module.exports={offer,available,create,order,list,cancel,businessOrders,confirm,validateGiftTicket,businessCatalog,createFromBusiness};

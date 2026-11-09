@@ -302,9 +302,13 @@ function safeFilenamePart(value, fallback = "ticket") {
   return normalized || fallback;
 }
 
-async function createPostSaleQr(businessId, user, body, {client:transactionClient,recipient}={}) {
+async function createPostSaleQr(businessId, user, body, {client:transactionClient,recipient,courtesyLotId}={}) {
   const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
   return transaction(async (client) => {
+    if(courtesyLotId){
+      const lot=(await client.query("select l.id from customer_courtesy_lots l where l.id=$1 and l.merchant_id=$2 and l.sale_id=$3 and l.state='READY' and (select count(*) from customer_product_gift_orders o where o.courtesy_lot_id=l.id)<=l.quantity for update",[courtesyLotId,businessId,body.existing_sale_id])).rows[0];
+      if(!transactionClient||!lot)throw badRequest('La reserva de cortesías no está disponible.');
+    }
     const isReferralClaim = body.metadata?.ticket_use_case === "referral" && Boolean(body.metadata?.referral_claim_required);
     const [reward, campaign, , affiliate] = await Promise.all([
       assertReward(client, businessId, body.benefit.reward_id),
@@ -419,11 +423,11 @@ async function createPostSaleQr(businessId, user, body, {client:transactionClien
 
     // A sale has one legacy qr_code_id slot. Post-sale RMS tickets are related through
     // their own sale_id and action record; they must not overwrite the canonical sale QR.
-    if (!isRmsActivation2) {
+    if (!isRmsActivation2 && !courtesyLotId) {
       await client.query("update business_sales set qr_code_id = $2 where id = $1", [sale.id, qr.id]);
     }
     await ensureCreditAccount(client, businessId);
-    const creditAccount = await consumeQrCredit(client, businessId, qr.id, user.id);
+    const creditAccount = courtesyLotId ? await ensureCreditAccount(client,businessId) : await consumeQrCredit(client, businessId, qr.id, user.id);
 
     await logQrEvent(client, {
       business_id: businessId,
