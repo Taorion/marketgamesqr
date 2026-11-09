@@ -4,9 +4,16 @@
  const state=s=>({PENDING_PAYMENT:'Pendiente de pago',READY:'Disponible',CANCELLED:'Cancelada'}[s]||s);
  function render(host,ctx){
   const scope=crypto.randomUUID();host.dataset.courtesyScope=scope;
+  // Empresa has portal-wide legacy rules for sections, headings and controls.
+  // Keep this workspace in its own style tree instead of competing with them.
+  const root=ctx.business?(host.shadowRoot||host.attachShadow({mode:'open'})):host;
   const current=()=>host.isConnected&&host.dataset.courtesyScope===scope&&(!ctx.current||ctx.current());
-  host.innerHTML='<section class="qco"><header><p class="eyebrow">'+(ctx.business?'Ofrece · Cortesías':'Mis cortesías')+'</p><h1>Compra hoy. Regala cuando quieras.</h1><p>Reserva productos sin destinatario y entrega cada ticket cuando decidas. Quien lo recibe entra a su Customer gratis y acepta el beneficio.</p></header><nav aria-label="Cortesías"><button data-tab="mine">Mis cortesías</button><button data-tab="buy">Comprar a un negocio</button>'+(ctx.business?'<button data-tab="own">Productos de mi negocio</button><button data-tab="incoming">Pedidos recibidos</button>':'')+'</nav><p data-status role="status" aria-live="polite"></p><div data-body></div></section>';
-  const body=host.querySelector('[data-body]'),status=host.querySelector('[data-status]');
+  root.innerHTML=(ctx.business?'<link rel="stylesheet" href="/customer/courtesies.css?v=courtesy-dispatch-20261109">':'')+'<section class="qco"><header class="qco-heading"><p class="qco-eyebrow">'+(ctx.business?'Ofrece · Cortesías':'Mis cortesías')+'</p><h1>'+(ctx.business?'Vende, entrega y regala tus productos.':'Compra hoy. Regala cuando quieras.')+'</h1><p>'+(ctx.business?'Gestiona los tickets que te compran y prepara los detalles que tu negocio quiere regalar.':'Reserva productos sin destinatario y entrega cada ticket cuando decidas. Quien lo recibe entra a su Customer gratis y acepta el beneficio.')+'</p></header><nav class="qco-tabs" aria-label="Cortesías">'+(ctx.business?'<button type="button" data-tab="incoming">Ventas y despacho</button>':'')+'<button type="button" data-tab="mine">Mis tickets para regalar</button><button type="button" data-tab="buy">Comprar a otro negocio</button>'+(ctx.business?'<button type="button" data-tab="own">Regalar mis productos</button>':'')+'</nav><p data-status role="status" aria-live="polite"></p><div data-body></div></section>';
+  const body=root.querySelector('[data-body]'),status=root.querySelector('[data-status]');
+  if(ctx.business){
+   root.querySelector('.qco-heading').insertAdjacentHTML('afterend','<div class="qco-actions" aria-label="Acciones de venta"><button type="button" class="qco-primary" data-action="createSale">Crear y enviar ticket vendido</button><button type="button" data-action="orders">Ver pedidos de tickets individuales</button><button type="button" data-action="publish">Publicar mis productos</button><button type="button" data-action="validate">Validar ticket y entregar producto</button></div>');
+   root.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>{if(!current())return;try{if(!ctx.actions?.[button.dataset.action])throw Error('Actualiza el portal para abrir esta herramienta.');ctx.actions[button.dataset.action]();}catch(e){message(e.message,true);}});
+  }
   let version=0;
   const message=(s,error=false)=>{if(current()){status.textContent=s;status.className=error?'qco-error':'';}};
   const call=async(p,b)=>{if(!current())throw Error('La sesión cambió. Abre de nuevo Cortesías.');const r=await ctx.request(p,b);if(!current())throw Error('La sesión cambió. Abre de nuevo Cortesías.');return r;};
@@ -17,7 +24,7 @@
    };
   }
   async function load(tab='mine'){
-   const v=++version;message('Cargando…');body.innerHTML='';host.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));
+   const v=++version;message('Cargando…');body.innerHTML='';root.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));
    try{
     if(tab==='mine'){
      const {lots}=await call('');if(v!==version)return;
@@ -28,12 +35,13 @@
      const {offers,own_products}=await call('/catalog');if(v!==version)return;showCatalog(tab,offers,own_products);
     }else{
      const {orders,branches}=await call('/incoming');if(v!==version)return;
-     body.innerHTML='<h2>Pedidos de cortesías de tus compradores</h2><p>Antes de confirmar, verifica el pago completo. La confirmación reserva productos y consume un ticket operativo por unidad.</p>'+orders.map(l=>'<article><h3>'+esc(l.snapshot.buyer_name)+' · '+esc(l.snapshot.product_name)+'</h3><p>'+l.quantity+' unidades · '+money(l.total)+' · '+esc(state(l.state))+'</p><small>Referencia de solicitud: '+esc(l.id)+'</small>'+(l.state==='PENDING_PAYMENT'?'<form data-confirm="'+l.id+'"><label>Sede<select name="branch_id" required>'+branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')+'</select></label><label>Medio de pago<input name="payment_method" required minlength="2" maxlength="80" placeholder="Efectivo, transferencia…"></label><label>Referencia del pago<input name="payment_reference" required minlength="3" maxlength="120"></label><label class="qco-check"><input type="checkbox" name="received" required> Verifiqué que recibimos '+money(l.total)+' completos.</label><button>Confirmar pago y reservar '+l.quantity+' cortesías</button></form>':'')+'</article>').join('');
-     if(!orders.length)body.insertAdjacentHTML('beforeend','<p>No hay pedidos recibidos.</p>');
+     body.innerHTML='<div class="qco-guide"><h2>¿Cómo despacho lo que me compraron?</h2><ol><li><strong>Venta con destinatario:</strong> usa «Crear y enviar ticket vendido». Si el pedido ya existe, abre «Ver pedidos de tickets individuales» y confirma allí el pago.</li><li><strong>Compra de varios tickets sin destinatario:</strong> revisa el pedido de abajo y confirma el dinero recibido. Los tickets quedan habilitados en la cuenta del comprador para que los regale cuando quiera.</li><li><strong>Entrega del producto:</strong> cuando el beneficiario presente su ticket aceptado en Customer, abre el validador y registra el canje.</li></ol><p>Para recibir nuevas compras desde Customer, publica tu negocio y sus productos en «Publicar mis productos».</p></div><div class="qco-list-heading"><h2>Paquetes comprados sin destinatario</h2><button type="button" data-refresh>Actualizar pedidos</button></div><p>Confirma solo pagos que ya recibiste. Se reserva una unidad de inventario y un ticket operativo por producto.</p>'+orders.map(l=>'<article><span class="qco-badge">'+esc(l.state==='READY'?'Habilitado para el comprador':state(l.state))+'</span><h3>'+esc(l.snapshot.product_name)+'</h3><p><strong>Comprador:</strong> '+esc(l.snapshot.buyer_name)+'</p><p>'+l.quantity+' tickets · Total '+money(l.total)+'</p><small>Referencia: '+esc(l.id)+'</small>'+(l.state==='PENDING_PAYMENT'?'<form data-confirm="'+l.id+'"><label>Sede<select name="branch_id" required>'+branches.map(b=>'<option value="'+b.id+'">'+esc(b.name)+'</option>').join('')+'</select></label>'+(!branches.length?'<p class="qco-error">Configura una sede activa antes de confirmar el pago.</p>':'')+'<label>Medio de pago<input name="payment_method" required minlength="2" maxlength="80" placeholder="Efectivo, transferencia…"></label><label>Referencia del pago<input name="payment_reference" required minlength="3" maxlength="120"></label><label class="qco-check"><input type="checkbox" name="received" required><span>Verifiqué que recibimos '+money(l.total)+' completos.</span></label><button '+(!branches.length?'disabled':'')+'>Confirmar pago y habilitar '+l.quantity+' tickets al comprador</button></form>':l.state==='READY'?'<p><strong>'+l.assigned+' enviados por el comprador · '+l.available+' por asignar</strong></p><p>El comprador los encuentra en Cortesías → Mis tickets para regalar, en Customer o Empresa. Allí elige a sus beneficiarios. No crees otro ticket para este mismo pago.</p>':'')+'</article>').join('');
+     body.querySelector('[data-refresh]').onclick=()=>load('incoming');
+     if(!orders.length)body.insertAdjacentHTML('beforeend','<div class="qco-empty"><strong>No tienes pedidos de paquetes todavía.</strong><p>Si te compraron un ticket con destinatario, búscalo en «Ver pedidos de tickets individuales». Para registrar una venta nueva, usa «Crear y enviar ticket vendido».</p></div>');
      body.querySelectorAll('[data-confirm]').forEach(f=>bindForm(f,async d=>{const l=orders.find(o=>o.id===f.dataset.confirm);await call('/'+l.id+'/confirm',{amount:l.total,payment_received:true,payment_reference:d.get('payment_reference'),payment_method:d.get('payment_method'),branch_id:d.get('branch_id')});await load('incoming');message('Pago confirmado. El comprador ya puede repartir sus cortesías.');}));
     }
     message('');
-   }catch(e){message(e.message,true);body.innerHTML='<button data-retry>Reintentar</button>';body.querySelector('[data-retry]').onclick=()=>load(tab);}
+   }catch(e){if(!current()||v!==version)return;message(e.message,true);body.innerHTML='<button data-retry>Reintentar</button>';body.querySelector('[data-retry]').onclick=()=>load(tab);}
   }
   function showCatalog(tab,offers,products){
    if(tab==='buy'){
@@ -60,9 +68,9 @@
     body.querySelector('[data-back]').onclick=()=>load('mine');const cancel=body.querySelector('[data-cancel]');if(cancel)cancel.onclick=async()=>{cancel.disabled=true;try{await call('/'+id+'/cancel',{});await detail(id);}catch(e){message(e.message,true);cancel.disabled=false;}};
     const f=body.querySelector('[data-send]');if(f){const requestId=crypto.randomUUID();bindForm(f,async d=>{await call('/'+id+'/send',{request_id:requestId,recipient_name:d.get('recipient_name'),recipient_email:d.get('recipient_email'),message:d.get('message'),confirmed:true});await detail(id);message('Cortesía entregada. Puedes compartir el enlace de la entrega con tu contacto.');});}
     message('');
-   }catch(e){message(e.message,true);}
+   }catch(e){if(current()&&v===version)message(e.message,true);}
   }
-  host.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>load(b.dataset.tab));load();
+  root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>load(b.dataset.tab));load(ctx.initialTab||(ctx.business?'incoming':'mine'));
  }
  window.QoriCourtesies={render};
 })();

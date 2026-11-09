@@ -1,0 +1,2 @@
+html body .portal-shell #workspace #courtesiesView.active{display:block!important;width:100%!important;max-width:1200px!important;grid-template-columns:minmax(0,1fr)!important;min-width:0!important;padding:24px clamp(12px,2vw,32px) 72px!important}
+html body .portal-shell #workspace #courtesiesView #courtesiesContent{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;grid-column:1/-1!important;padding:0!important}

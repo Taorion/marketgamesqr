@@ -4,6 +4,10 @@ Customer y Empresa pueden comprar cantidades de un producto publicado por un neg
 
 En Empresa, **Ofrece → Cortesías** permite comprar a otros negocios, preparar productos propios, consultar reservas, entregar unidades y confirmar pedidos recibidos. Las cortesías propias reservan inventario y tickets; se registran con ingreso cero y el costo del producto. No generan un cobro al beneficiario.
 
+La entrada de Empresa es **Ventas y despacho**. «Crear y enviar ticket vendido» abre el flujo existente de venta con destinatario y confirmación del pago. «Ver pedidos de tickets individuales» permite despachar pedidos ya creados sin duplicarlos. Los paquetes sin destinatario aparecen en la misma pantalla: al confirmar su pago se habilitan en la cuenta del comprador, quien posteriormente asigna cada unidad. El negocio entrega el producto físico mediante el validador. «Regalar mis productos» corresponde a cortesías financiadas por el propio comercio.
+
+El contenido de Empresa se renderiza en un Shadow DOM con hoja de estilos propia, para evitar que las reglas generales del portal estrechen encabezados y controles. Su contenedor ocupa todas las columnas del área de trabajo. La navegación y los formularios usan una sola columna en móvil. Las pruebas de integración de la interfaz cubren los accesos a venta, pedidos, publicación y validador, además de respuestas de solicitudes antiguas que llegan al cambiar de pestaña.
+
 La entrega exige confirmación explícita del destinatario. El beneficiario entra o crea su Customer gratis y acepta el beneficio antes del canje. La vigencia comienza al entregar cada unidad. Una unidad asignada no vuelve al saldo por rechazo o vencimiento. El comprador conserva el comprobante y el enlace para compartir; la entrega se encola por el mecanismo de correo existente.
 
 ## Pensé en ti
