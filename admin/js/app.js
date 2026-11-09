@@ -206,6 +206,7 @@ async function api(path, options = {}) {
 function renderShell() {
   const logged = Boolean(session?.token);
   const cachedRole=session?.user?.platform_role || session?.user?.role;
+  document.getElementById('accountsNav').classList.toggle('hidden',!logged||cachedRole!=='QORI_SUPERADMIN');
   if(logged){
     document.body.classList.toggle("commercial-mode",["QORI_SUPERADMIN","QORI_SELLER"].includes(cachedRole));
     if(cachedRole!=="QORI_SUPERADMIN")document.body.classList.remove("legacy-visible");
@@ -457,6 +458,7 @@ async function loadWorkspace() {
   const identity = await api("/api/auth/me");
   if(!session||session!==currentSession)return;
   session.user = identity.user;
+  document.getElementById('accountsNav').classList.toggle('hidden',(identity.user?.platform_role||identity.user?.role)!=='QORI_SUPERADMIN');
   const commercial = ["QORI_SUPERADMIN", "QORI_SELLER"].includes(identity.user?.platform_role || identity.user?.role);
   document.body.classList.toggle("commercial-mode", commercial);
   document.getElementById("commercialWorkspace").classList.toggle("hidden", !commercial);
@@ -471,6 +473,7 @@ async function loadWorkspace() {
       showSellerAdmin:()=>{sessionStorage.setItem('qori-seller-token',session.token);location.assign('/seller/#admin');},
       download:async(path,filename)=>{const activeSession=session;const response=await fetch(path,{headers:{Authorization:`Bearer ${session.token}`}});if(!response.ok)throw new Error('No se pudo descargar el documento.');const blob=await response.blob();if(session!==activeSession)return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
     });
+    if(location.hash==='#accountsWorkspace'&&!document.getElementById('accountsWorkspace').hidden)document.getElementById('accountsWorkspace').scrollIntoView();
     return;
   }
   window.QoriAccounts?.clear();

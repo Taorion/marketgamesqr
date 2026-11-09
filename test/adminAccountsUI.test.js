@@ -18,6 +18,10 @@ test('Customer management is reachable, escapes names and sends explicit revisio
 test('Seller role never loads admin accounts and logout clears sensitive detail',async()=>{
  const {w,calls,ctx}=setup('QORI_SELLER');try{await w.QoriAccounts.load(ctx);assert.equal(calls.length,0);assert.equal(w.document.querySelector('section').hidden,true);ctx.user.role='QORI_SUPERADMIN';await w.QoriAccounts.load(ctx);w.QoriAccounts.clear();assert.equal(w.document.querySelector('section').innerHTML,'');}finally{w.close();}
 });
+
+test('account loading errors stay visible and can be retried',async()=>{
+ const {w,ctx}=setup();try{const original=ctx.api;ctx.api=async()=>{throw Error('Error temporal de cuentas');};await w.QoriAccounts.load(ctx);const root=w.document.querySelector('#accountsWorkspace');assert.equal(root.hidden,false);assert.match(root.textContent,/Error temporal de cuentas/);ctx.api=original;root.querySelector('#accountsRetry').click();await until(()=>root.querySelector('[data-detail]'));assert.equal(root.hidden,false);}finally{w.close();}
+});
 test('business balances are visible in list and detail; Customer has no business balance column',async()=>{
  const {w,calls,ctx}=setup();try{
   await w.QoriAccounts.load(ctx);const list=w.document.querySelector('#accountsRows');assert.match(list.textContent,/63 tickets/);assert.match(list.textContent,/65 giftcards para emitir/);assert.match(list.textContent,/26.000/);

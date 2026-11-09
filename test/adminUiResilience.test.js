@@ -63,7 +63,7 @@ test('advanced forms ignore repeat submits while the original save is pending',a
 
 test('late business summaries cannot populate the newly selected customer form',async()=>{
   const first=deferred(),second=deferred(),input={disabled:false};
-  const context={state:{selectedBusinessId:'a'},businessGeneration:0,subscriptionForm:{querySelectorAll:()=>[input]},renderBusinessSummary(){},renderCredits(){},api:path=>path.includes('/a/')?first.promise:second.promise};
+  const context={state:{selectedBusinessId:'a'},businessGeneration:0,subscriptionForm:{querySelectorAll:()=>[input]},renderBusinessSummary(){},renderCredits(){},loadUsers:async()=>{},api:path=>path.includes('/a/')?first.promise:second.promise};
   legacyFunction('async function loadBusinessSummary','function renderBusinessSummary',context);
   const a=context.loadBusinessSummary('a');assert.equal(input.disabled,true);
   context.state.selectedBusinessId='b';const b=context.loadBusinessSummary('b');

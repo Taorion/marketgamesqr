@@ -1,4 +1,4 @@
-.commercial-mode:not(.legacy-visible) .workspace > :not(.topbar):not(#commercialWorkspace):not(.workspace-footer) { display: none; }
+.commercial-mode:not(.legacy-visible) .workspace > :not(.topbar):not(#commercialWorkspace):not(#accountsWorkspace):not(.workspace-footer) { display: none; }
 .commercial-mode.legacy-visible #commercialWorkspace { border-bottom: 2px solid var(--border); padding-bottom: 24px; }
 #commercialWorkspace { min-width: 0; }
 .descubre-guide { background:linear-gradient(130deg,#fff,#eaf5ff); }

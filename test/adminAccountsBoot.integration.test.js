@@ -9,6 +9,11 @@ test('real admin HTML and scripts boot the account hub and show Customer detail'
  const wait=async fn=>{for(let i=0;i<200;i++){if(fn())return;await new Promise(r=>setTimeout(r,25));}throw Error('Admin did not settle: '+errors.join('; '));};
  dom=await JSDOM.fromURL(base+'/admin/',{resources:'usable',runScripts:'dangerously',virtualConsole:vc,beforeParse(w){w.fetch=(url,opts)=>fetch(new URL(url,base),opts);w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};w.localStorage.setItem('market_games_admin_app_version','admin-descubre-20261016');w.localStorage.setItem('market_games_admin_session_v1',JSON.stringify({user:u,token:jwt.sign({sub:u.id,password_version:0},process.env.JWT_SECRET)}));}});
  const w=dom.window;await wait(()=>w.document.querySelector('#accountsRows [data-detail]'));assert.equal(w.document.querySelector('#accountsWorkspace').hidden,false);assert.ok(w.document.body.classList.contains('commercial-mode'));
+ const accounts=w.document.querySelector('#accountsWorkspace');
+ const hidingRules=[...w.document.styleSheets].flatMap(sheet=>[...sheet.cssRules]).filter(rule=>rule.selectorText&&rule.style?.display==='none'&&accounts.matches(rule.selectorText));
+ assert.deepEqual(hidingRules.map(rule=>rule.selectorText),[],'The commercial layout must not hide the account hub');
+ assert.equal(w.document.querySelector('#accountsNav').classList.contains('hidden'),false);
+ assert.equal(w.document.querySelector('#accountsNav').getAttribute('href'),'#accountsWorkspace');
  w.document.querySelector('[data-kind=customers]').click();await wait(()=>w.document.querySelector(`[data-detail="${c.id}"]`));w.document.querySelector(`[data-detail="${c.id}"]`).click();await wait(()=>w.document.querySelector('.accounts-dialog'));assert.match(w.document.querySelector('.accounts-dialog').textContent,/Qori Customer · Gratis/);assert.equal(w.document.querySelector('.accounts-dialog img'),null);
  w.QoriAccounts.clear();assert.equal(w.document.querySelector('.accounts-dialog'),null);assert.equal(w.document.querySelector('#accountsWorkspace').innerHTML,'');assert.deepEqual(errors,[]);
 });
