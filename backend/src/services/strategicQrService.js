@@ -1849,6 +1849,7 @@ async function getClaimDetails(tokenInput) {
        q.benefit_type,
        q.benefit_value,
        qc.metadata as claim_metadata,
+       q.metadata as ticket_metadata,
        fq.id as final_qr_code_id,
        fq.token as final_qr_token,
        fq.status as final_qr_status,
@@ -1891,6 +1892,11 @@ async function getClaimDetails(tokenInput) {
   if (qr.expires_at && new Date(qr.expires_at) <= new Date() && !["REDEEMED", "CANCELLED"].includes(qr.status)) {
     await query("update qr_codes set status = 'EXPIRED' where id = $1 and status not in ('REDEEMED', 'EXPIRED', 'CANCELLED')", [qr.id]);
     qr.status = "EXPIRED";
+  }
+
+  if(qr.ticket_metadata?.source==='CUSTOMER_PRODUCT_GIFT'){
+    const paid=await query("select 1 from customer_product_gift_orders o join business_sales s on s.id=o.sale_id where o.qr_code_id=$1 and o.business_id=$2 and o.state='ISSUED' and s.sale_status='PAID'",[qr.id,qr.business_id]);
+    if(!paid.rowCount)return {status:'INVALID',allowed:false,message:'Este regalo no está disponible. Consulta con el negocio.'};
   }
 
   const brand = getBrandStyle(qr.business_settings || {});

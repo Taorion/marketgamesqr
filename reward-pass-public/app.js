@@ -86,7 +86,7 @@ async function render() {
         <section class="rp-hero ${isClaim ? "is-claim" : ""}">
           <div>
             <div class="rp-eyebrow">Gift Card Digital Propia</div>
-            <h1 class="rp-title">${isClaim ? "DESCUBRE TU GIFT CARD" : "REWARD PASS"}</h1>
+            <h1 class="rp-title">${isClaim ? "DESCUBRE TU GIFT CARD" : "TU GIFTCARD"}</h1>
             <p class="rp-subtitle">${isClaim ? "Buenas noticias: tienes una Gift Card esperandote." : "Esta es tu Gift Card Digital oficial."} Emitida por ${escapeHtml(pass.company?.name || "Empresa emisora")} y administrada por Qori.</p>
             <div class="rp-value">
               <span>${isClaim ? "Solo falta este paso" : "Saldo disponible"}</span>

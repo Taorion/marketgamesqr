@@ -47,7 +47,7 @@ test('courtesy inventory supports Customer, cross-business and own-product gifts
   assert.equal(await balance(),28);assert.equal(await stock(),28);assert.equal(ok(await api(buyer,'/courtesies/'+lot.id)).lot.available,1);
   const ticket=(await query('select * from qr_codes where id=$1',[issued.qr_code_id])).rows[0];assert.ok(new Date(ticket.expires_at)>Date.now()+29*86400000);
   const payload={mode:'STANDALONE',idempotency_key:uuid(),beneficiary:{name:recipient.full_name,email:recipient.email,data_use_confirmed:true}};
-  await assert.rejects(qr.redeemQr(ticket.token,shop,payload),/aceptado/);
+  await assert.rejects(qr.redeemQr(ticket.token,shop,{...payload,beneficiary:{...payload.beneficiary,email:'wrong@example.test'}}),/correo/);
   assert.equal((await api(stranger,'/invitations/'+issued.invitation_id+'/decision',{action:'ACCEPT',terms_accepted:true})).http,404);
   ok(await api(recipient,'/invitations/'+issued.invitation_id+'/decision',{action:'ACCEPT',terms_accepted:true}));
   assert.equal((await qr.redeemQr(ticket.token,shop,payload)).status,'REDEEMED');assert.equal((await qr.redeemQr(ticket.token,shop,payload)).idempotent_replay,true);assert.equal(await stock(),28);

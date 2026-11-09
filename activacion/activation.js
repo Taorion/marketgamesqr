@@ -122,7 +122,7 @@ function slugFromPath() {
 
 async function api(path, options = {}) {
   const customerParams=new URLSearchParams(location.search),invitation=customerParams.get('customer_invitation'),publication=customerParams.get('customer_publication'),customerContext=invitation||publication;
-  if(customerContext&&/^[a-f0-9-]{36}$/i.test(customerContext)&&options.method==='POST'&&/\/api\/public\/activations\/[^/]+\/(participants|complete)$/.test(path)){
+  if((await window.QoriCustomerContextReady)&&customerContext&&/^[a-f0-9-]{36}$/i.test(customerContext)&&options.method==='POST'&&/\/api\/public\/activations\/[^/]+\/(participants|complete)$/.test(path)){
     path='/api/customer/'+(invitation?'invitations/':'explore/publications/')+customerContext+'/'+path.split('/').pop();
     options={...options,credentials:'same-origin',headers:{...(options.headers||{}),'X-Qori-Web':'1'}};
   }

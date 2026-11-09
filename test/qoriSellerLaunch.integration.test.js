@@ -92,20 +92,20 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   const recipient=await customer(email),inbox=await api('/api/customer/invitations',recipient.token);assert.equal(inbox.status,200,JSON.stringify(inbox));
   createdGift=(await query('select * from customer_product_gift_orders where id=$1',[gift.id])).rows[0];assert.equal(createdGift.recipient_id,recipient.id);assert.ok(createdGift.invitation_id);
   const ticket=(await query('select token from qr_codes where id=$1',[createdGift.qr_code_id])).rows[0];const qr=require('../backend/src/services/qrService');
-  await assert.rejects(qr.redeemQr(ticket.token,merchant,{mode:'STANDALONE',idempotency_key:unique(),beneficiary:{name:recipient.full_name,email:recipient.email,data_use_confirmed:true}}));
+  await assert.rejects(qr.redeemQr(ticket.token,merchant,{mode:'STANDALONE',idempotency_key:unique(),beneficiary:{name:recipient.full_name,email:'wrong@example.test',data_use_confirmed:true}}),/correo/);
   assert.equal((await api('/api/customer/invitations/'+createdGift.invitation_id+'/decision',recipient.token,{action:'ACCEPT',terms_accepted:true})).status,200);
   assert.equal((await api('/api/customer/wallet/tickets/'+createdGift.qr_code_id,recipient.token)).status,200);
   const receipt=await api('/api/pense-en-ti/receipts/'+createdGift.receipt_token);assert.equal(receipt.status,200);assert.equal(receipt.receipt.amount,'8000.00');assert.ok(!receipt.receipt.qr_code_id);
-  assert.equal((await api('/api/public/claim/'+ticket.token)).status,401);assert.equal((await api('/api/public/claim/'+ticket.token,outsider.token)).status,403);
+  assert.equal((await fetch(base+'/api/public/claim/'+ticket.token)).status,200);assert.equal((await fetch(base+'/api/public/claim/'+ticket.token,{headers:{Authorization:'Bearer '+outsider.token}})).status,200);
   assert.equal((await api('/api/customer/product-gifts/'+gift.id,recipient.token)).order.receipt_url,undefined);
   let sent=[];for(let n=0;n<25&&!sent.some(x=>x.order_id===gift.id);n++)await require('../backend/src/services/giftDeliveryService').processBatch(async job=>{sent.push(job);});assert.ok(sent.some(x=>x.order_id===gift.id&&x.body.includes('gratis')));
  });
- await t.test('public benefit pages require complete Customer, cookie writes resist CSRF and activations retain ownership',async()=>{
+ await t.test('public benefits work without Customer; authenticated activations retain ownership and CSRF checks',async()=>{
   const account=await customer(),other=await customer(),slug=unique();
   const a=(await query("insert into interactive_activations(company_id,user_id,title,category,activation_type,status,public_slug,terms,capture_config,reward_config) values($1,$2,'Actividad Customer QA','survey','FLEX_SURVEY','active',$3,'Condiciones de prueba.',$4::jsonb,$5::jsonb) returning *",[merchant.business_id,merchant.id,slug,JSON.stringify({collect_participant_data:true}),JSON.stringify({mode:'fixed',reward_type:'FREE_GIFT',reward_value:{label:'Café QA'},reward_label:'Café QA',expiration_days:30})])).rows[0];
   const url='/api/public/activations/'+slug;
-  const page=await fetch(base+'/activacion/'+slug,{redirect:'manual'});assert.equal(page.status,303);assert.match(page.headers.get('location'),/customer\/\?continue=/);
-  for(const path of ['/api/public/reward-passes/unknown','/api/public/stamp-cards/programs/'+unique(),url])assert.equal((await api(path)).status,401);
+  const page=await fetch(base+'/activacion/'+slug,{redirect:'manual'});assert.equal(page.status,200);
+  for(const path of ['/api/public/reward-passes/unknown','/api/public/stamp-cards/programs/'+unique(),url])assert.notEqual((await api(path)).status,401);
   const headers={'Content-Type':'application/json',Cookie:'qori_customer_session='+account.token,Origin:base};
   assert.equal((await fetch(base+url+'/participants',{method:'POST',headers,body:'{}'})).status,403);
   require('../backend/src/config/env').env.corsOrigins.push(base);

@@ -3,7 +3,13 @@ const {env}=require('../config/env');
 const {notFound}=require('../utils/http');
 const crypto=require('crypto');
 const base=()=>env.publicAppUrl.replace(/\/$/,'');
-function links(order){return {share_url:base()+'/customer/?gift='+order.id+'#invitations',receipt_url:order.receipt_token?base()+'/pense-en-ti/comprobante.html#'+order.receipt_token:null};}
+async function publicGiftLink(id){
+ if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id||''))throw notFound('Regalo no disponible.');
+ const row=(await query("select q.token from customer_product_gift_orders o join qr_codes q on q.id=o.qr_code_id and q.business_id=o.business_id join business_sales s on s.id=o.sale_id and s.business_id=o.business_id where o.id=$1 and o.state='ISSUED' and s.sale_status='PAID'",[id])).rows[0];
+ if(!row)throw notFound('El regalo aún no está emitido o ya no está disponible.');
+ return '/claim/'+encodeURIComponent(row.token);
+}
+function links(order){return {share_url:base()+'/regalo/'+order.id,receipt_url:order.receipt_token?base()+'/pense-en-ti/comprobante.html#'+order.receipt_token:null};}
 async function invitation(db,o,recipient){
  if(o.invitation_id)return o.invitation_id;
  if((await db.query('select 1 from customer_business_blocks where customer_id=$1 and business_id=$2',[recipient.id,o.business_id])).rowCount)return null;
@@ -23,8 +29,8 @@ async function sync(account){
 }
 async function queue(db,o,buyerEmail,recipientEmail){
  const l=links(o),name=(await db.query('select name from businesses where id=$1',[o.business_id])).rows[0].name;
- const invite=`${o.buyer_name} te regaló ${o.snapshot.product_name} en ${name}. ${o.message||''}\n\nPara disfrutarlo, inicia sesión o crea tu cuenta Qori Customer con el correo al que llegó esta invitación. Es gratis y también te ayuda a organizar tus ingresos, gastos y finanzas personales. Acepta la invitación y presenta tu ticket en el negocio.\n${l.share_url}\n\nCondiciones: ${o.snapshot.terms}\nSi no reconoces este regalo, puedes ignorar el mensaje.`;
- const receipt=`${o.snapshot.courtesy?"Tu cortesía fue entregada al destinatario.":"Tu regalo fue pagado y enviado."}\nNegocio: ${name}\nProducto: ${o.snapshot.product_name}\nDestinatario: ${o.recipient_name}\nValor recibido: COP ${o.amount}\nComprobante: ${l.receipt_url}\n\nComparte este enlace con tu contacto: ${l.share_url}\nDebe entrar o crear su Customer gratis con su correo y aceptar el regalo. Customer también le ayuda a cuidar sus finanzas.\nEste es un comprobante de operación; no sustituye la factura del comercio.`;
+ const invite=`${o.buyer_name} te regaló ${o.snapshot.product_name} en ${name}. ${o.message||''}\n\nAbre tu regalo y presenta el QR en el negocio. No necesitas una cuenta Customer para usarlo. Si quieres guardarlo y encontrarlo fácilmente, crea tu Qori Customer gratis con el mismo correo: también te ayuda a cuidar tus finanzas.\n${l.share_url}\n\nCondiciones: ${o.snapshot.terms}\nSi no reconoces este regalo, puedes ignorar el mensaje.`;
+ const receipt=`${o.snapshot.courtesy?"Tu cortesía fue entregada al destinatario.":"Tu regalo fue pagado y enviado."}\nNegocio: ${name}\nProducto: ${o.snapshot.product_name}\nDestinatario: ${o.recipient_name}\nValor recibido: COP ${o.amount}\nComprobante: ${l.receipt_url}\n\nComparte este enlace con tu contacto: ${l.share_url}\nPuede usarlo desde el enlace o QR sin crear una cuenta. Customer es opcional y gratis: le permite guardar sus beneficios y cuidar sus finanzas.\nEste es un comprobante de operación; no sustituye la factura del comercio.`;
  for(const [kind,email,subject,text] of [['RECIPIENT',recipientEmail,'Alguien pensó en ti · Tienes un regalo en Qori',invite],['BUYER',buyerEmail,'Tu comprobante y enlace para compartir el regalo · Qori',receipt]]){
   if(email)await db.query('insert into qori_gift_mail_outbox(order_id,kind,recipient,subject,body) values($1,$2,$3,$4,$5) on conflict(order_id,kind) do nothing',[o.id,kind,email,subject,text]);
  }
@@ -46,4 +52,4 @@ async function sendMail(job){
  if(!r.ok)throw Error('Proveedor de correo: '+r.status);
 }
 function start(){if(!env.isProduction||!env.resendApiKey)return async()=>{};let running=null;const tick=()=>{if(!running)running=processBatch().catch(e=>console.error('Gift delivery worker:',e.message)).finally(()=>running=null);};const timer=setInterval(tick,15000);timer.unref();return async()=>{clearInterval(timer);if(running)await running;};}
-module.exports={links,invitation,sync,queue,receipt,processBatch,start};
+module.exports={links,invitation,sync,queue,receipt,processBatch,start,publicGiftLink};

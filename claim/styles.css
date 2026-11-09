@@ -248,3 +248,4 @@ body {
   border-color: rgba(0, 191, 229, 0.2);
   color: #052a6b;
 }
+.claim-card.is-issued{border:1px solid #b9cfee;background:linear-gradient(160deg,#edf4ff 0%,#fff 36%);box-shadow:0 18px 50px #173f7717}.claim-card.is-issued h1{color:#123b85;letter-spacing:-.04em}.claim-card.is-issued .status-panel{border:1px solid #d5e2f4;border-radius:16px;background:#fff}.claim-card.is-issued #finalTicketBlock{border-top:2px dashed #bdd1eb;padding-top:24px}.claim-card.is-issued #finalTicketQrImage{max-width:100%;height:auto}

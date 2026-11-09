@@ -1300,7 +1300,7 @@ async function getPublicInteractiveActivation(slug, trackingToken = null, tracki
   return publicActivation(activation, questions.rows, scoreRules.rows, touchZones.rows);
 }
 
-async function startInteractiveParticipant(slug, body, {client:transactionClient}={}) {
+async function startInteractiveParticipant(slug, body, {client:transactionClient,allowIdentityRecovery=true}={}) {
   const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
   return transaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
@@ -1309,7 +1309,7 @@ async function startInteractiveParticipant(slug, body, {client:transactionClient
     normalizeParticipantName(body);
     assertRequiredCaptureFields(activation, body);
     await assertActivationIdentityConsistency(client, activation, body);
-    const existingReward = await existingRewardResponseForIdentity(client, activation, body);
+    const existingReward = await existingRewardResponseForIdentity(client, activation, body, allowIdentityRecovery);
     if (existingReward) return existingReward;
     await assertDuplicateParticipant(client, activation, body);
     const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
@@ -1355,7 +1355,7 @@ async function startInteractiveParticipant(slug, body, {client:transactionClient
   });
 }
 
-async function completeInteractiveParticipant(slug, body, {client:transactionClient}={}) {
+async function completeInteractiveParticipant(slug, body, {client:transactionClient,allowIdentityRecovery=true}={}) {
   const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
   return transaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
@@ -1367,7 +1367,7 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
     if (!body.participant_id) {
       await assertActivationIdentityConsistency(client, activation, body);
-      const existingReward = await existingRewardResponseForIdentity(client, activation, body);
+      const existingReward = await existingRewardResponseForIdentity(client, activation, body, allowIdentityRecovery);
       if (existingReward) return existingReward;
     }
     const participant = body.participant_id
@@ -1514,7 +1514,7 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
   });
 }
 
-async function existingRewardResponseForIdentity(client, activation, body) {
+async function existingRewardResponseForIdentity(client, activation, body, allowIdentityRecovery = true) {
   const document = body.document || body.document_id || null;
   const email = body.email || null;
   const phone = body.phone || null;
@@ -1543,6 +1543,8 @@ async function existingRewardResponseForIdentity(client, activation, body) {
   );
   const reward = result.rows[0];
   if (!reward) return null;
+  // Knowing a recipient's email, phone or document is not proof of owning a benefit.
+  if (!allowIdentityRecovery) throw badRequest('Ya existe una participación con estos datos. Usa el enlace de tu beneficio o consulta con el negocio.');
   const digitalAsset = await interactiveActivationAssetDownloadForReward(client, reward.id);
   const fulfillment = normalizeBenefitFulfillment(reward.reward_value || {});
   if (fulfillment.mode === "DIGITAL_ASSET") {

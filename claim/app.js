@@ -212,11 +212,15 @@ function renderStatus(data) {
     if (data.allowed) claimMessage.textContent = "Deja tus datos y activa tu ticket. Tu recomendador recibirá sus puntos configurados.";
   }
   businessName.textContent = data.business?.name || "-";
-  qrType.textContent = data.qr_code?.origin_type || "-";
+  qrType.textContent = ({POST_SALE:'Ticket de consumo',INTERACTIVE_ACTIVATION:'Beneficio de actividad',AFFILIATE_REFERRAL:'Beneficio por invitación'})[data.qr_code?.origin_type] || 'Ticket Qori';
   benefitSummary.textContent = data.benefit?.value?.label || data.benefit?.type || "Beneficio";
   expiresAt.textContent = formatDate(data.qr_code?.expires_at);
   claimForm.classList.toggle("hidden", !data.allowed);
-  const hasFinalTicket = Boolean(data.final_ticket?.qr_image_data_url && data.final_ticket?.validator_url);
+  const finalStatus=data.final_ticket?.status||data.status;
+  const finalExpired=data.final_ticket?.expires_at&&new Date(data.final_ticket.expires_at)<=new Date();
+  const hasFinalTicket = Boolean(data.final_ticket?.qr_image_data_url && data.final_ticket?.validator_url && ['ACTIVE','CLAIMED'].includes(finalStatus)&&!finalExpired);
+  document.querySelector('.claim-card').classList.toggle('is-issued',hasFinalTicket);
+  if(hasFinalTicket){claimTitle.textContent='Tu ticket de beneficio';claimMessage.textContent='Listo para usar. Presenta este QR en el negocio; no necesitas una cuenta Customer.';}
   resultBlock.classList.toggle("hidden", data.allowed || hasFinalTicket);
   ecommerceTicketBlock?.classList.toggle("hidden", !(hasFinalTicket && isEcommerce));
   finalTicketBlock.classList.toggle("hidden", !hasFinalTicket || isEcommerce);
@@ -241,7 +245,7 @@ function renderStatus(data) {
     ecommerceTicketBlock?.classList.add("hidden");
   }
   if (!data.allowed && !hasFinalTicket) {
-    resultBlock.textContent = data.message || "Este QR no puede activarse.";
+    resultBlock.textContent = finalExpired?'Este ticket venció.':({REDEEMED:'Este beneficio ya fue canjeado.',CANCELLED:'Este beneficio fue cancelado.',EXPIRED:'Este ticket venció.'})[finalStatus]||data.message||"Este QR no puede activarse.";
   }
 }
 

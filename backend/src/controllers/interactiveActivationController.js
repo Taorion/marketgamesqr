@@ -195,6 +195,7 @@ async function publicGet(req, res, next) {
 async function publicStart(req, res, next) {
   try {
     const body = validate(publicInteractiveParticipantSchema, req.body);
+    if(!req.customer){const result=await startInteractiveParticipant(req.params.slug,body,{allowIdentityRecovery:false});delete result.credit_account;return res.status(201).json(result);}
     const result=await require('../config/db').withTransaction(async client=>{
       const a=(await client.query('select id from interactive_activations where public_slug=$1',[req.params.slug])).rows[0];
       if(!a)throw require('../utils/http').notFound();
@@ -218,6 +219,15 @@ async function publicStart(req, res, next) {
 async function publicComplete(req, res, next) {
   try {
     const body = validate(publicInteractiveCompleteSchema, req.body);
+    if(!req.customer){
+      const result=await require('../config/db').withTransaction(async client=>{
+        if(body.participant_id){
+          const p=(await client.query('select p.game_session_token from interactive_activation_participants p join interactive_activations a on a.id=p.activation_id where p.id=$1 and a.public_slug=$2 for update of p',[body.participant_id,req.params.slug])).rows[0];
+          if(!p?.game_session_token||p.game_session_token!==body.game_session_token)throw forbidden('Esta sesión de participación no es válida. Abre la actividad y comienza de nuevo.');
+        }
+        const r=await completeInteractiveParticipant(req.params.slug,body,{client,allowIdentityRecovery:false});delete r.credit_account;return r;
+      });return res.status(201).json(result);
+    }
     const result=await require('../config/db').withTransaction(async client=>{
       const own=(await client.query('select cp.* from customer_activation_participations cp join interactive_activations a on a.id=cp.activation_id where cp.customer_id=$1 and a.public_slug=$2 for update of cp',[req.customer.id,req.params.slug])).rows[0];
       if(!own||body.participant_id&&body.participant_id!==own.participant_id)throw require('../utils/http').forbidden('Inicia esta actividad desde tu propia cuenta Customer.');

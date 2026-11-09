@@ -229,6 +229,15 @@ app.use((req, res, next) => {
 
 app.use("/api/auth", authRoutes);
 app.use(require('./middleware/customerBenefitGate').gate);
+async function openPublicGift(req,res,next){try{const target=await require('./services/giftDeliveryService').publicGiftLink(req.params.id||req.query.gift);res.set({'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'}).redirect(303,target);}catch(e){next(e);}}
+app.get('/regalo/:id',openPublicGift);
+// Preserve previously delivered links without putting Customer login in the way.
+app.get(['/customer','/customer/','/customer/index.html'],(req,res,next)=>{
+ if(req.query.gift)return openPublicGift(req,res,next);
+ const target=!req.query.benefit&&require('./middleware/customerBenefitGate').publicBenefitPath(req.query.continue);
+ if(target)return res.set({'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'}).redirect(303,target);
+ next();
+});
 app.use("/api/customer", require("./routes/customerRoutes").router);
 app.use("/api/seller", require("./routes/qoriSellerRoutes"));
 app.use("/api/pense-en-ti", require("./routes/penseEnTiRoutes"));
@@ -308,19 +317,19 @@ app.use("/captura", express.static(path.join(__dirname, "../..", "captura")));
 app.use("/smart-catalog", express.static(path.join(__dirname, "../..", "smart-catalog")));
 app.use("/vendor/jsqr", express.static(path.dirname(require.resolve("jsqr"))));
 app.get("/claim/:token", (_req, res) => {
-  res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
+  res.sendFile('index.html', { root: path.join(projectRoot, 'claim') });
 });
 app.get("/carnet-afiliado/:token", (_req, res) => {
-  res.sendFile(path.join(__dirname, "../..", "carnet-afiliado", "index.html"));
+  res.sendFile('index.html', { root: path.join(projectRoot, 'carnet-afiliado') });
 });
 app.get("/rp/:publicCode", (_req, res) => {
-  res.sendFile(path.join(__dirname, "../..", "reward-pass-public", "index.html"));
+  res.sendFile('index.html', { root: path.join(projectRoot, 'reward-pass-public') });
 });
 app.get("/trivia/:slug", (_req, res) => {
-  res.sendFile(path.join(__dirname, "../..", "trivia", "index.html"));
+  res.sendFile('index.html', { root: path.join(projectRoot, 'trivia') });
 });
 app.get("/activacion/:slug", (_req, res) => {
-  res.sendFile(path.join(__dirname, "../..", "activacion", "index.html"));
+  res.sendFile('index.html', { root: path.join(projectRoot, 'activacion') });
 });
 app.get("/captura/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "captura", "index.html"));
