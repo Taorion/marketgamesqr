@@ -128,10 +128,22 @@ async function dashboard(user){
    count(distinct business_id)::int paying_businesses from qori_seller_commissions where seller_id=$1`,[user.id]),
   query(`select c.*,b.name business_name,o.package_title from qori_seller_commissions c join businesses b on b.id=c.business_id join qr_credit_purchase_orders o on o.id=c.order_id where seller_id=$1 order by c.created_at desc,c.id limit 200`,[user.id]),
   query('select * from qori_seller_payouts where seller_id=$1 order by created_at desc limit 100',[user.id]),
-  query(`select b.id,b.name,b.plan_code,b.subscription_status,a.created_at from qori_sales_accounts a join businesses b on b.id=a.business_id where a.seller_id=$1 order by a.created_at desc limit 200`,[user.id])
+  accountRows(user)
  ]);
- return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts:accounts.rows,next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,rate:0.10};
+ return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts,next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,rate:0.10};
 }
+async function accountRows(user){
+ const rows=(await query(`select b.*,a.created_at assigned_at,p.last_subscription_paid_at
+  from qori_sales_accounts a join businesses b on b.id=a.business_id
+  left join lateral (select max(o.credited_at) last_subscription_paid_at from qr_credit_purchase_orders o
+   where o.business_id=b.id and o.status='APPROVED' and o.credited_at is not null and o.price_cop>0
+   and o.metadata->'signup'->>'type' in ('portal_monthly_subscription','portal_annual_subscription','portal_monthly_subscription_auto_renewal')) p on true
+  where a.seller_id=$1 order by a.created_at desc,b.id limit 200`,[user.id])).rows;
+ const now=new Date(),{accountLifecycle}=require('./sellerAccountLifecycle');
+ return rows.map(b=>({id:b.id,name:b.name,plan_code:b.plan_code,subscription_status:b.subscription_status,
+  created_at:b.assigned_at,lifecycle:accountLifecycle(b,now)}));
+}
+async function accounts(user){await requireApproved(user);return {accounts:await accountRows(user)};}
 async function adminQueue(user){
  superadmin(user);
  const [applications,balances,payouts]=await Promise.all([
@@ -162,4 +174,4 @@ async function pay(user,payload){
   return {payout:p};
  });
 }
-module.exports={VERSION,register,openApplication,application,upload,document,submit,review,requireApproved,dashboard,adminQueue,pay,nextThursday};
+module.exports={VERSION,register,openApplication,application,upload,document,submit,review,requireApproved,dashboard,accounts,adminQueue,pay,nextThursday};
