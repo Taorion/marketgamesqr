@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('jsdom');
 const until=async fn=>{for(let i=0;i<120;i++){if(fn())return;await new Promise(r=>setImmediate(r));}throw Error('UI did not settle');};
-function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=false}={}){
+function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=false,closed=false}={}){
  const w=new JSDOM(fs.readFileSync('seller/index.html','utf8'),{url:'https://example.test/seller/'+hash,runScripts:'outside-only'}).window,calls=[];
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.onclose?.();};
  w.sessionStorage.setItem('qori-seller-token','qa-only');w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});let d={ok:true};
@@ -8,7 +8,7 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  if(path.endsWith('/application'))d={user:{id:'seller-1',full_name:'Embajador <img src=x>',email:'qa@example.test',role},legacy:status===null,application:status===null?null:{status,approval_mode:override?'ADMIN_OVERRIDE':'DOCUMENTS'},documents:[],documentation:override?{attention:true,override:true,missing:['IDENTITY','RUT','BANK','CONTRACT']}:undefined};
  if(path.endsWith('/dashboard')&&status==='SUSPENDED')return {ok:false,json:async()=>({error:{message:'Acceso bloqueado',details:{code:'SELLER_APPROVAL_REQUIRED'}}})};
  if(path.endsWith('/dashboard'))d={totals:{pending_cop:15000,paid_cop:0,paying_businesses:1},accounts:[{id:'b',name:'Café',plan_code:'PENSE_EN_TI',subscription_status:'ACTIVE'}],commissions:[],payouts:[],next_payment_date:'2026-11-12',referral_url:'https://example.test/pense-en-ti/?seller=seller-1',plan_referral_url:'https://example.test/paquetes/?advisor=seller-1'};
- if(path.endsWith('/prospects'))d={rows:linked?[{id:'prospect',business_id:'b',business_name:'Cliente Freemium',stage:'WON'}]:[],has_more:false,next_offset:0};
+ if(path.endsWith('/prospects'))d={rows:linked?[{id:'prospect',business_id:'b',business_name:'Cliente Freemium',stage:'WON',closed_at:closed?'2026-11-09T12:00:00Z':null}]:[],has_more:false,next_offset:0};
  if(path.endsWith('/accounts'))d={accounts:[{id:'b',lifecycle:{label:'Freemium · vence pronto',tone:'warning',trial:{status:'ACTIVE',ends_at:'2026-11-15T15:00:00Z',days_remaining:2}}}]};
  if(path.endsWith('/admin/queue'))d={applications:[{user_id:'applicant',full_name:'Ana',email:'ana@example.test',status:'SUBMITTED',documents:[]}],balances:[],payouts:[]};
  return {ok:true,json:async()=>d};
@@ -19,7 +19,7 @@ test('pending application keeps commercial UI hidden and document workflow avail
  const f=w.document.querySelector('#submitApplication');f.elements.signed.checked=true;f.elements.truthful.checked=true;f.elements.ciiu_terms.checked=true;await f.onsubmit({currentTarget:f,preventDefault(){}});await until(()=>calls.some(x=>x.path.endsWith('/submit')));assert.deepEqual(calls.find(x=>x.path.endsWith('/submit')).body,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true});await new Promise(r=>setImmediate(r));}finally{w.close();}
 });
 test('approved Seller sees balances and can record a scoped CRM follow-up',async()=>{
- const {w,calls}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('#referralLink'));assert.match(w.document.querySelector('#panel').textContent,/Por pagar/);w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('#newProspect'));w.document.querySelector('#newProspect').click();const f=[...w.document.querySelectorAll('dialog form')].find(f=>f.elements.business_name);assert.ok(f);
+ const {w,calls}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('#referralLink'));assert.match(w.document.querySelector('#panel').textContent,/Por pagar/);w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('#newProspect'));w.document.querySelector('#newProspect').click();const f=[...w.document.querySelectorAll('dialog form')].find(f=>f.elements.business_name);assert.ok(f);assert.deepEqual([...f.elements.stage.options].map(o=>o.value),['NEW','CONTACTED','NEGOTIATING']);
  for(const [k,v] of Object.entries({business_name:'Café de prueba',contact_name:'Ana',email:'ana@example.test',phone:'3105550000',notes:'Conversación autorizada',stage:'CONTACTED'}))f.elements[k].value=v;await f.onsubmit({currentTarget:f,preventDefault(){}});await until(()=>calls.some(x=>x.body?.business_name));const body=calls.find(x=>x.body?.business_name).body;assert.equal(body.seller_id,undefined);assert.equal(body.stage,'CONTACTED');await new Promise(r=>setImmediate(r));}finally{w.close();}
 });
 test('submitted application only shows review notice, then unlocks after approved status refresh',async()=>{
@@ -47,3 +47,5 @@ test('superadmin review sends explicit documentary verification instead of autom
 });
 
 test('authorized Seller keeps commercial access and red attention while completing documents',async()=>{const {w,calls}=setup({status:'APPROVED',override:true});try{await until(()=>w.document.querySelector('#referralLink'));assert.match(w.document.querySelector('.seller-document-attention').textContent,/Atención: documentación pendiente/);assert.match(w.document.querySelector('.seller-document-attention').textContent,/Alta autorizada por superadmin/);w.document.querySelector('[data-view=application]').click();await until(()=>w.document.querySelector('[data-kind]'));assert.equal(w.document.querySelectorAll('[data-kind]').length,4);assert.ok(w.document.querySelector('[data-view=crm]'));}finally{w.close();}});
+
+test('Seller only sees a validated close after the administrator records it',async()=>{const {w}=setup({status:'APPROVED',linked:true,closed:true});try{await until(()=>w.document.querySelector('#referralLink'));w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('#prospectRows .card'));assert.match(w.document.querySelector('#prospectRows').textContent,/Cierre validado por Admin/);assert.equal(w.document.querySelector('[data-edit]'),null);}finally{w.close();}});

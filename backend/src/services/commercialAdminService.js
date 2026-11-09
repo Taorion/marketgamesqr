@@ -279,8 +279,10 @@ async function list(user, kind, params = {}) {
 async function saveProspect(user,payload,id=null) {
   requirePermission(user,'prospects.manage');
   const body=validate(prospectSchema,payload);
+  if(body.stage==='LOST'&&user.role!==SUPERADMIN)throw forbidden('Solo el administrador puede cerrar un seguimiento. El embajador puede registrar avances y observaciones.');
   return withTransaction(async client=>{
     const current=id ? await locked(client,"qori_sales_prospects",id) : null;
+    if(current?.stage==='LOST'&&user.role!==SUPERADMIN)throw forbidden('Solo el administrador puede reabrir un seguimiento que ya cerró.');
     if (current) { requireOwner(user,current.seller_id); if(current.stage === "WON") throw badRequest("El prospecto ya es cliente; gestiona su suscripción en Clientes."); }
     const sellerId=body.seller_id || current?.seller_id || user.id;
     requireOwner(user,sellerId);
