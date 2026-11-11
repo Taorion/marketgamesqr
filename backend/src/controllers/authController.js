@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
-const { badRequest, unauthorized } = require("../utils/http");
+const { badRequest, unauthorized, forbidden } = require("../utils/http");
 const { validate, loginSchema } = require("../utils/validators");
 const { getBusinessSubscription } = require("../services/subscriptionService");
 const { sendPasswordResetEmail } = require("../services/passwordResetMailService");
@@ -82,7 +82,7 @@ async function login(req, res, next, demoMode = false) {
   try {
     const body = validate(loginSchema, req.body);
     const result = await query(
-      `select id, business_id, email, full_name, password_hash, password_version, role, platform_role, is_active, can_redeem_cross_business, branch_id
+      `select id, business_id, email, full_name, password_hash, password_version, role, platform_role, is_active, can_redeem_cross_business, branch_id, password_setup_required
        from app_users
        where lower(email) = lower($1)`,
       [body.email]
@@ -97,6 +97,7 @@ async function login(req, res, next, demoMode = false) {
     if (!ok) {
       throw unauthorized("Invalid credentials.");
     }
+    if(user.password_setup_required)throw forbidden('Activa tu cuenta desde el enlace enviado por el administrador de Qori y crea tu contraseña.');
 
     if(demoMode)return res.json(await require('../services/sellerDemoService').createSession(user));
     if(user.business_id && (await query('select 1 from businesses where id=$1 and is_seller_demo',[user.business_id])).rowCount){

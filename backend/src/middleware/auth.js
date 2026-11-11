@@ -21,7 +21,7 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
   }
 
   const result = await query(
-      `select u.id, u.business_id, u.email, u.full_name, u.role, u.platform_role, u.admin_permissions, u.is_active, u.password_version,
+      `select u.id, u.business_id, u.email, u.full_name, u.role, u.platform_role, u.admin_permissions, u.is_active, u.password_version, u.password_setup_required,
               u.can_redeem_cross_business, u.branch_id,
               b.is_active as business_is_active
        from app_users u
@@ -34,6 +34,7 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
   if (!user || !user.is_active) {
     throw unauthorized("User is inactive or does not exist.");
   }
+  if(user.password_setup_required)throw forbidden('Activa tu cuenta desde el enlace enviado por el administrador de Qori y crea tu contraseña.');
   if (Number(payload.password_version || 0) !== Number(user.password_version || 0)) {
     throw unauthorized("Tu contraseña cambió. Inicia sesión de nuevo en este dispositivo.");
   }

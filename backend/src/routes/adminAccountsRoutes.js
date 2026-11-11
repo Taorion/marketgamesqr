@@ -1,8 +1,10 @@
 const router=require('express').Router(),service=require('../services/adminAccountsService');
 const {requireSuperadmin}=require('../services/commercialAuthorization');
 router.use((req,res,next)=>{try{requireSuperadmin(req.user);res.set('Cache-Control','private, no-store');next();}catch(e){next(e);}});
-const handle=fn=>async(req,res,next)=>{try{res.json(await fn(req));}catch(e){next(e);}};
+const handle=fn=>async(req,res,next)=>{try{res.json(await fn(req));}catch(e){if(e.code==='23505'){e.status=409;e.message='Ya existe una cuenta con esos datos. Actualiza la lista antes de continuar.';}next(e);}};
 router.get('/bootstrap',handle(r=>service.bootstrap(r.user)));
+router.post('/sellers',handle(r=>require('../services/sellerActivationService').create(r.user,r.body)));
+router.post('/sellers/:id/activation',handle(r=>require('../services/sellerActivationService').renew(r.user,r.params.id)));
 router.get('/:kind',handle(r=>service.list(r.user,r.params.kind,r.query)));
 router.get('/:kind/:id',handle(r=>service.detail(r.user,r.params.kind,r.params.id)));
 router.patch('/customers/:id',handle(r=>service.updateCustomer(r.user,r.params.id,r.body)));

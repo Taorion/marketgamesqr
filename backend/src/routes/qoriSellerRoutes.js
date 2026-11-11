@@ -7,6 +7,8 @@ const router=express.Router();
 const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store');res.json(await fn(req));}catch(e){if(e.code==='23505'){e.status=409;e.message='Ya existe un registro con estos datos. Actualiza antes de continuar.';}next(e);}};
 router.post('/register',rateLimit({keyPrefix:'seller-register',max:6,windowMs:3600000}),handle(req=>s.register(req.body,req.ip)));
 router.get('/terms',(_req,res)=>res.json(require('../services/qoriSellerContract').terms()));
+router.post('/activation/preview',rateLimit({keyPrefix:'seller-activation-preview',max:30,windowMs:60000}),handle(req=>require('../services/sellerActivationService').inspect(req.body)));
+router.post('/activation/complete',rateLimit({keyPrefix:'seller-activation-complete',max:10,windowMs:60000}),handle(req=>require('../services/sellerActivationService').complete(req.body,req.ip)));
 router.use(authRequired,requireRoles('QORI_SELLER','QORI_SUPERADMIN'));
 router.get('/application',handle(req=>s.application(req.user)));
 router.post('/application',handle(req=>s.openApplication(req.user,req.body,req.ip)));
