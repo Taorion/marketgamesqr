@@ -1387,11 +1387,12 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
      set status = 'APPROVED',
          mercado_pago_payment_id = $2,
          payment_payload = $3,
+         metadata = jsonb_set(coalesce(metadata, '{}'::jsonb), '{commission_period}', $4::jsonb),
          credited_at = now(),
          updated_at = now()
      where id = $1
      returning *`,
-    [order.id, String(payment.id), payment]
+    [order.id, String(payment.id), payment, JSON.stringify({starts_at:periodEnd.toISOString(),ends_at:nextPeriodEnd.toISOString()})]
   );
 
   await client.query(
@@ -1415,6 +1416,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
      where id = $1`,
     [order.business_id, planCode, nextPeriodEnd.toISOString(), billingCycle]
   );
+
+  await require('./sellerCommissionWorker').releaseDueCommissions(client, order.business_id);
 
   if (order.created_by_user_id) {
     await client.query(

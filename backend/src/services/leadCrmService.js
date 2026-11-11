@@ -894,6 +894,11 @@ async function listLeadCrmRows(businessId, filters = {}) {
      ),
      rms_rows as (
        select ar.*,
+              exists (
+                select 1 from stamp_members sm
+                where sm.business_id = $1
+                  and sm.document_key = nullif(regexp_replace(lower(coalesce(ar.document_id, '')), '[^a-z0-9]', '', 'g'), '')
+              ) as has_stamp_card,
               rms.rms_phase,
               rms.updated_at as rms_phase_updated_at,
               rms.last_operation as rms_last_operation
@@ -912,6 +917,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
        select *,
          (
            is_affiliate
+           or has_stamp_card
            or purchase_count > 0
            or upper(coalesce(stored_status, '')) in ('BUYER', 'RECURRENT', 'VIP')
            or coalesce(metadata->>'customer_import_declared', 'false') = 'true'
@@ -1251,6 +1257,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     events,
     rmsState,
     rmsEvents,
+    stampMembership,
   ] = await Promise.all([
     query(
       `select bs.*, c.name as campaign_name, br.name as branch_name, u.full_name as seller_name,
@@ -1530,6 +1537,9 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
        limit 80`,
       sourceParams
     ),
+    query(`select exists(select 1 from stamp_members where business_id=$1
+      and document_key=nullif(regexp_replace(lower(coalesce($2::text,'')), '[^a-z0-9]', '', 'g'),'')) as has_stamp_card`,
+      [lead.business_id,lead.document_id]),
   ]);
 
   const purchaseRows = purchases.rows;
@@ -1611,6 +1621,9 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     commercial_status_label: statusLabel(lead.stored_status || summary.commercial_status),
     level: leadLevel(summary),
     is_affiliate: lead.source_type === "AFFILIATE" || affiliates.rows.length > 0,
+    has_stamp_card: stampMembership.rows[0].has_stamp_card,
+    is_customer: stampMembership.rows[0].has_stamp_card || purchaseCount > 0 || lead.source_type === "AFFILIATE" || affiliates.rows.length > 0
+      || ["BUYER","RECURRENT","VIP"].includes(String(lead.stored_status||'').toUpperCase()) || String(lead.metadata?.customer_import_declared)==='true',
     has_active_benefits: activeTickets > 0 || rewardPasses.rows.some((item) => item.status === "ACTIVE"),
     insight: insightFor(summary, interestRows),
   };

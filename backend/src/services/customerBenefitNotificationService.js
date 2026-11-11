@@ -41,7 +41,7 @@ async function processNext(){
    // Paid gifts/tickets have explicit recipients and must never be auto-claimed by document.
    if(!s&&kind==='GIFT')s=(await db.query("select id,company_id business_id,'GIFT' kind,'Giftcard' title from reward_passes where id=$1",[id])).rows[0];
    if(!s&&kind==='TICKET')s=(await db.query("select id,business_id,'TICKET' kind,coalesce(metadata->>'reward_label','Ticket de beneficio') title from qr_codes where id=$1",[id])).rows[0];
-   if(s){
+   if(s && !(await db.query('select 1 from businesses where id=$1 and is_seller_demo',[s.business_id])).rowCount){
     const accounts=(await db.query(`select distinct a.* from customer_accounts a where
       (a.declared_document_key=$1 and a.email=$2 and not a.document_review_required)
       or exists(select 1 from customer_recovered_benefits r where r.customer_id=a.id and r.kind=$3 and r.resource_id=$4)

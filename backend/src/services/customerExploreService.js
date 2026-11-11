@@ -23,7 +23,7 @@ const baseSql=`select p.*,b.name business_name,b.slug business_slug,to_jsonb(b) 
 const media=value=>typeof value==='string'&&(/^(https:\/\/|\/(?!\/))/.test(value))?value:'';
 function eligibility(row){
  const plan=planFromBusiness(row.business),now=Date.now();
- if(!row.business.is_active||!plan.portal_access_allowed||plan.raw_status!=='ACTIVE')return false;
+ if(row.business.is_seller_demo||!row.business.is_active||!plan.portal_access_allowed||plan.raw_status!=='ACTIVE')return false;
  if(row.kind==='ACTIVITY')return !!plan.features.qr_batch_generator&&row.activation_status==='active'&&(!row.starts_at||new Date(row.starts_at)<=now)&&(!row.ends_at||new Date(row.ends_at)>now);
  if(row.kind==='STAMP')return row.stamp_status==='ACTIVE'&&!row.stamp_deleted;
  if(row.kind==='AFFILIATION')return !!plan.features.affiliates&&String(row.points_terms||'').trim().length>=10;
@@ -57,7 +57,7 @@ async function feed({search='',city='',kind='',category='',offset=0,limit=24,bus
 async function get(id){return {publication:publicRow(await detail(id))};}
 // Empresa accounts have a basic public identity. A saved hidden profile remains hidden.
 // Internal seed accounts are never listed automatically.
-const visibleBusinessSql=`b.is_active and (d.published or (d.business_id is null
+const visibleBusinessSql=`b.is_active and not b.is_seller_demo and (d.published or (d.business_id is null
  and coalesce(b.settings->>'internal_account','false')<>'true'
  and coalesce(b.settings->'access'->>'source','')<>'internal_seed'))`;
 const businessSelect=`select b.id,b.name,b.slug,to_jsonb(b) business,d.category,d.city,d.address,d.latitude,d.longitude,d.description

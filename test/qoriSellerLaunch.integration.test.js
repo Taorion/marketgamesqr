@@ -43,7 +43,7 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   const body={document_key:d.document_key,phone:d.phone,city:d.city,terms_accepted:true,privacy_accepted:true,adult_confirmed:true};
   assert.equal((await api('/api/seller/application',token,{...body,ciiu:'7310'})).status,400);
   assert.equal((await api('/api/seller/application',token,body)).status,200);
-  const a=(await api('/api/seller/application',token)).application;assert.equal(a.ciiu,'4610');assert.equal(a.status,'DRAFT');assert.equal(a.terms_version,'2026-11-07-ciiu4610');
+  const a=(await api('/api/seller/application',token)).application;assert.equal(a.ciiu,'4610');assert.equal(a.status,'DRAFT');assert.equal(a.terms_version,'2026-11-11-comisiones-vf1');
  });
  await t.test('four encrypted documents, private downloads, explicit review, read audits',async()=>{
   const {PDFDocument}=require('pdf-lib'),pdf=await PDFDocument.create();pdf.addPage().drawText('LOCAL QA DOCUMENT');const bytes=Buffer.from(await pdf.save());
@@ -59,7 +59,7 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7310','Reading must preserve historical declarations');
   assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{status:'CHANGES_REQUESTED',note:'Adjunta RUT con 4610 y contrato actualizado.'})).status,200);
   assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,200);
-  const accepted=(await api('/api/seller/application',seller.token)).application;assert.equal(accepted.ciiu,'4610');assert.equal(accepted.terms_version,'2026-11-07-ciiu4610');
+  const accepted=(await api('/api/seller/application',seller.token)).application;assert.equal(accepted.ciiu,'4610');assert.equal(accepted.terms_version,'2026-11-11-comisiones-vf1');
   const audit=(await query("select detail from qori_commercial_audit where entity_id=$1 and action='SELLER_APPLICATION_SUBMITTED' order by created_at desc limit 1",[seller.id])).rows[0];assert.equal(audit.detail.previous_ciiu,'7310');
   assert.equal((await api('/api/seller/documents/CONTRACT',seller.token,{filename:'x.pdf',content_base64:bytes.toString('base64')},'PUT')).status,403);
   const review={status:'APPROVED',note:'Documentos y condiciones revisados en QA.'};assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,review)).status,400);
@@ -136,12 +136,14 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
    assert.deepEqual((await require('../backend/src/services/penseEnTiService').balances(merchant)).balances,before);
   }finally{global.fetch=original;env.mercadoPagoAccessToken=access;env.mercadoPagoWebhookSecret=secret;}
  });
- await t.test('paid-period ticket replacement preserves purchased credits, recurring plans accrue 10%',async()=>{
+ await t.test('paid-period ticket replacement preserves purchased credits and monthly VF1 installments',async()=>{
   const before=(await query('select * from business_qr_credit_accounts where business_id=$1',[merchant.business_id])).rows[0],purchased=before.qr_balance-before.included_balance;
   const meta={signup:{type:'portal_monthly_subscription',plan_code:'DESPEGA',billing_cycle:'monthly'}},o=await purchase('DESPEGA',75000,meta);await approve(o);
   let c=(await query('select * from business_qr_credit_accounts where business_id=$1',[merchant.business_id])).rows[0];assert.equal(c.qr_balance,purchased+25);assert.equal(c.included_balance,25);
   await withTransaction(db=>credits.consumeQrCredits(db,merchant.business_id,3));const second=await purchase('DESPEGA',75000,meta);await approve(second);c=(await query('select * from business_qr_credit_accounts where business_id=$1',[merchant.business_id])).rows[0];assert.equal(c.qr_balance,purchased+25);assert.equal(c.included_balance,25);
   assert.equal((await query("select count(*)::int n from qori_seller_commissions where business_id=$1 and kind='SUBSCRIPTION'",[merchant.business_id])).rows[0].n,2);
+  const commissions=(await query("select amount_cop,status from qori_seller_commissions where business_id=$1 and kind='SUBSCRIPTION' order by commission_month",[merchant.business_id])).rows;
+  assert.deepEqual(commissions.map(c=>c.amount_cop),['75000.00','7500.00']);assert.equal(commissions[1].status,'SCHEDULED');
  });
  await t.test('Thursday payout is explicit, scoped, idempotent and reversed with an adjustment after refund',async()=>{
   const latest=(await query("select * from qori_seller_commissions where seller_id=$1 and status='PENDING' order by created_at desc limit 1",[seller.id])).rows[0],day=new Date();while(day.getUTCDay()!==4)day.setUTCDate(day.getUTCDate()-1);const thursday=day.toISOString().slice(0,10);

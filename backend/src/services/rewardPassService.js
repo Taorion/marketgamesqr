@@ -171,7 +171,7 @@ function getRewardPassTicketCostFromSettings(settings = {}) {
 
 async function loadBusinessForUpdate(client, businessId) {
   const result = await client.query(
-    `select id, name, slug, settings, plan_code
+    `select id, name, slug, settings, plan_code, is_seller_demo
      from businesses
      where id = $1 and is_active = true
      for update`,
@@ -186,7 +186,7 @@ async function loadBusinessForUpdate(client, businessId) {
 
 async function loadBusiness(businessId) {
   const result = await query(
-    `select id, name, slug, settings, plan_code
+    `select id, name, slug, settings, plan_code, is_seller_demo
      from businesses
      where id = $1 and is_active = true`,
     [businessId]
@@ -480,8 +480,9 @@ async function getTicketContext(user) {
   };
   return {
     business_name: business.name,
-    reward_pass_ticket_cost: business.plan_code==='PENSE_EN_TI'?0:getRewardPassTicketCostFromSettings(business.settings || {}),
-    giftcard_balance: business.plan_code==='PENSE_EN_TI'?Number((await query('select balance from qori_giftcard_credit_accounts where business_id=$1',[businessId])).rows[0]?.balance||0):null,
+    demo_mode: Boolean(business.is_seller_demo),
+    reward_pass_ticket_cost: business.plan_code==='PENSE_EN_TI'||business.is_seller_demo?0:getRewardPassTicketCostFromSettings(business.settings || {}),
+    giftcard_balance: business.plan_code==='PENSE_EN_TI'||business.is_seller_demo?Number((await query('select balance from qori_giftcard_credit_accounts where business_id=$1',[businessId])).rows[0]?.balance||0):null,
     ticket_balance: Number(account.qr_balance || 0),
     qr_purchased_total: Number(account.qr_purchased_total || 0),
     qr_used_total: Number(account.qr_used_total || 0),
@@ -532,7 +533,7 @@ async function createRewardPass(user, payload, options = {}) {
         throw forbidden(`Tu plan ${subscription.plan.name} permite emitir ${monthlyGiftCardLimit} tarjetas de regalo al mes. Alcanzaste el limite mensual.`);
       }
     }
-    const freeGift = business.plan_code === 'PENSE_EN_TI';
+    const freeGift = business.plan_code === 'PENSE_EN_TI' || business.is_seller_demo;
     if(freeGift) {
       const capacity=await client.query('update qori_giftcard_credit_accounts set balance=balance-1,used=used+1 where business_id=$1 and balance>0 returning balance',[businessId]);
       if(!capacity.rowCount)throw badRequest('Agotaste tus emisiones de Gift Card. Compra un paquete desde Pensé en ti.');

@@ -1164,7 +1164,12 @@ function completeGlobalPlan(plan = PLAN_CATALOG[PLAN_CODES.GLOBAL]) {
 
 function planFromBusiness(row = {}) {
   const code = effectivePlanCode(row);
-  const plan = applyCommercialEntitlements(internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code])), row);
+  let plan = applyCommercialEntitlements(internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code])), row);
+  if(row.is_seller_demo){
+    const features=Object.fromEntries(Object.values(PLAN_CATALOG).flatMap(p=>Object.keys(p.features||{})).map(key=>[key,true]));
+    const limits=Object.fromEntries(Object.keys(plan.limits||{}).map(key=>[key,null]));
+    plan={...plan,name:'Demo Qori · acceso completo',features,limits,monthly_price_cop:0,access_summary:'Empresa compartida de práctica con datos ficticios. Sin valor comercial.'};
+  }
   const lifecycle = subscriptionLifecycle(row, plan);
   const growthExpiresAt = row.growth_expires_at || row.settings?.access?.growth_expires_at || null;
   const growthStartedAt = row.growth_started_at || row.settings?.access?.growth_started_at || null;
@@ -1201,7 +1206,7 @@ function listPlans() {
 
 async function getBusinessSubscription(businessId) {
   const result = await query(
-    `select id, name, slug, settings, plan_code, plan_type, portal_status,
+    `select id, name, slug, settings, is_seller_demo, plan_code, plan_type, portal_status,
             portal_activated_at, growth_started_at, growth_expires_at, growth_source,
             subscription_status,
             subscription_started_at, subscription_current_period_ends_at,

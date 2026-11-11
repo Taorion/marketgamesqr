@@ -11,6 +11,7 @@ async function publicGiftLink(id){
 }
 function links(order){return {share_url:base()+'/regalo/'+order.id,receipt_url:order.receipt_token?base()+'/pense-en-ti/comprobante.html#'+order.receipt_token:null};}
 async function invitation(db,o,recipient){
+ if((await db.query('select 1 from businesses where id=$1 and is_seller_demo',[o.business_id])).rowCount)return null;
  if(o.invitation_id)return o.invitation_id;
  if((await db.query('select 1 from customer_business_blocks where customer_id=$1 and business_id=$2',[recipient.id,o.business_id])).rowCount)return null;
  const q=(await db.query('select expires_at,status from qr_codes where id=$1',[o.qr_code_id])).rows[0];
@@ -28,6 +29,7 @@ async function sync(account){
  });
 }
 async function queue(db,o,buyerEmail,recipientEmail){
+ if((await db.query('select 1 from businesses where id=$1 and is_seller_demo',[o.business_id])).rowCount)return;
  const l=links(o),name=(await db.query('select name from businesses where id=$1',[o.business_id])).rows[0].name;
  const invite=`${o.buyer_name} te regaló ${o.snapshot.product_name} en ${name}. ${o.message||''}\n\nAbre tu regalo y presenta el QR en el negocio. No necesitas una cuenta Customer para usarlo. Si quieres guardarlo y encontrarlo fácilmente, crea tu Qori Customer gratis con el mismo correo: también te ayuda a cuidar tus finanzas.\n${l.share_url}\n\nCondiciones: ${o.snapshot.terms}\nSi no reconoces este regalo, puedes ignorar el mensaje.`;
  const receipt=`${o.snapshot.courtesy?"Tu cortesía fue entregada al destinatario.":"Tu regalo fue pagado y enviado."}\nNegocio: ${name}\nProducto: ${o.snapshot.product_name}\nDestinatario: ${o.recipient_name}\nValor recibido: COP ${o.amount}\nComprobante: ${l.receipt_url}\n\nComparte este enlace con tu contacto: ${l.share_url}\nPuede usarlo desde el enlace o QR sin crear una cuenta. Customer es opcional y gratis: le permite guardar sus beneficios y cuidar sus finanzas.\nEste es un comprobante de operación; no sustituye la factura del comercio.`;

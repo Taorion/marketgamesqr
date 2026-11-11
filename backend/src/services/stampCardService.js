@@ -118,7 +118,7 @@ async function publicEnroll(programId,data) {
   return {url:result.url,existing:result.existing};
 }
 async function enroll(businessId,userId,data,{accessKey,client:transactionClient}={}) {
-  return (transactionClient?fn=>fn(transactionClient):withTransaction)(async client=>{
+  const result=await (transactionClient?fn=>fn(transactionClient):withTransaction)(async client=>{
     const program=(await client.query('select * from stamp_programs where id=$1 and business_id=$2 for share',[data.program_id,businessId])).rows[0];
     if (!program || program.status!=='ACTIVE' || program.deleted_at) throw badRequest('El programa debe estar activo.');
     if (accessKey) {
@@ -145,6 +145,8 @@ async function enroll(businessId,userId,data,{accessKey,client:transactionClient
     await createCycle(client,member,program,1);
     return { member,url:publicUrl(member.public_token),existing:false };
   });
+  require('../middleware/businessResponseCache').clearBusinessResponseCache(businessId);
+  return result;
 }
 async function members(businessId,{search='',offset=0,program_id}={}) {
   const result=await query(`select m.*,p.name as program_name,p.status as program_status,p.deleted_at as program_deleted_at,p.allow_manual,c.id as cycle_id,c.cycle_number,c.stamps,c.rules,

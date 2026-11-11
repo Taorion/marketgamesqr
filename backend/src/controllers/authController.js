@@ -44,6 +44,7 @@ function publicUser(row = {}) {
     is_active: row.is_active,
     can_redeem_cross_business: row.can_redeem_cross_business,
     branch_id: row.branch_id || null,
+    ...(row.demo_mode?{demo_mode:true,auth_user_id:row.auth_user_id}:{}),
   };
 }
 
@@ -77,7 +78,7 @@ function passwordResetUrl(token) {
   return `${env.publicAppUrl.replace(/\/$/, "")}/empresa/?reset_token=${encodeURIComponent(token)}`;
 }
 
-async function login(req, res, next) {
+async function login(req, res, next, demoMode = false) {
   try {
     const body = validate(loginSchema, req.body);
     const result = await query(
@@ -95,6 +96,11 @@ async function login(req, res, next) {
     const ok = await bcrypt.compare(body.password, user.password_hash);
     if (!ok) {
       throw unauthorized("Invalid credentials.");
+    }
+
+    if(demoMode)return res.json(await require('../services/sellerDemoService').createSession(user));
+    if(user.business_id && (await query('select 1 from businesses where id=$1 and is_seller_demo',[user.business_id])).rowCount){
+      throw unauthorized('Entra a Demo Qori con tu cuenta aprobada de Qori Seller.');
     }
 
     if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN", "QORI_SELLER"].includes(user.role) && !user.business_id) {

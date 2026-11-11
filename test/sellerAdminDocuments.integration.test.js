@@ -1,0 +1,82 @@
+const { test, before, after } = require('node:test');
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+process.env.DATABASE_URL = 'postgresql://postgres@127.0.0.1:55441/qori_customer_qa';
+process.env.DB_SSL = 'false';
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'seller-admin-documents-isolated-qa-secret';
+process.env.AGENDA_PUSH_WORKER_ENABLED = 'false';
+const { query, pool } = require('../backend/src/config/db');
+const { app } = require('../backend/src/app');
+const jwt = require('jsonwebtoken');
+const { VERSION, CIIU } = require('../backend/src/services/qoriSellerPolicy');
+let server, base, admin, seller, other, staff, pdf;
+const kinds = ['IDENTITY', 'RUT', 'BANK', 'CONTRACT'];
+const checks = { status:'APPROVED', note:'Documentos revisados por administración de pruebas.', identity_checked:true, ciiu_checked:true, bank_ownership_checked:true, notarized_contract_checked:true, legal_terms_checked:true };
+async function api(path, user, body, method=body?'POST':'GET') {
+  const response = await fetch(base + path, { method, headers:{ 'Content-Type':'application/json', ...(user ? {Authorization:'Bearer '+jwt.sign({sub:user.id,password_version:0},process.env.JWT_SECRET)} : {}) }, ...(body ? {body:JSON.stringify(body)} : {}) });
+  const type = response.headers.get('content-type');
+  return { status:response.status, data:type?.includes('application/json') ? await response.json() : Buffer.from(await response.arrayBuffer()) };
+}
+async function user(role) { return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Documentos QA',$2) returning *",[crypto.randomUUID()+'@example.test',role])).rows[0]; }
+before(async () => {
+  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
+  server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));base='http://127.0.0.1:'+server.address().port;
+  admin=await user('QORI_SUPERADMIN');other=await user('QORI_SELLER');staff=await user('ADMIN_MARKET_GAMES');
+  const document_key=String(Date.now())+String(Math.floor(Math.random()*100));
+  const email=crypto.randomUUID()+'@example.test';
+  const signup=await api('/api/seller/register',null,{full_name:'Vendedor registro asistido',email,password:'Qori-local-tests-12345',password_confirm:'Qori-local-tests-12345',document_key,phone:'3105550000',city:'Bogotá',terms_accepted:true,privacy_accepted:true,adult_confirmed:true});
+  assert.equal(signup.status,200,JSON.stringify(signup.data));seller=(await query('select * from app_users where email=$1',[email])).rows[0];
+  const {PDFDocument}=require('pdf-lib');const doc=await PDFDocument.create();doc.addPage();pdf=Buffer.from(await doc.save());
+});
+after(async()=>{if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}await pool.end();});
+test('assisted registration, audited admin upload, explicit submission and approval preserve seller consent',async()=>{
+  const prefix='/api/seller/admin/applications/'+seller.id;
+  const file={filename:'Documento QA.pdf',content_base64:pdf.toString('base64'),expected_sha256:null};
+  const original=(await query('select * from qori_seller_applications where user_id=$1',[seller.id])).rows[0];
+  for(const [actor,status] of [[null,401],[seller,403],[other,403],[staff,403]]){
+    assert.equal((await api(prefix+'/documents/IDENTITY',actor,file,'PUT')).status,status);
+    assert.equal((await api(prefix+'/submit',actor,{})).status,status);
+  }
+  assert.equal((await api('/api/seller/admin/applications/'+admin.id+'/documents/IDENTITY',admin,file,'PUT')).status,403);
+  assert.equal((await api(prefix+'/documents/OTHER',admin,file,'PUT')).status,400);
+  assert.equal((await api(prefix+'/documents/IDENTITY',admin,{...file,content_base64:Buffer.from('not a document at all').toString('base64')},'PUT')).status,400);
+  assert.equal((await api(prefix+'/documents/IDENTITY',admin,{...file,content_base64:Buffer.alloc(8*1024*1024+1).toString('base64')},'PUT')).status,400);
+  const fakeHashes=Object.fromEntries(kinds.map(kind=>[kind,'0'.repeat(64)]));
+  const submission={documents_received:true,signed_and_notarized:true,note:'Soportes recibidos directamente del vendedor para revisión.',document_hashes:fakeHashes};
+  assert.equal((await api(prefix+'/submit',admin,submission)).status,400);
+  const concurrent=await Promise.all([api(prefix+'/documents/IDENTITY',admin,file,'PUT'),api(prefix+'/documents/IDENTITY',admin,file,'PUT')]);
+  assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
+  for(const kind of kinds.slice(1))assert.equal((await api(prefix+'/documents/'+kind,admin,file,'PUT')).status,200);
+  const docs=(await query('select * from qori_seller_documents where user_id=$1',[seller.id])).rows;
+  assert.equal(docs.length,4);assert.equal(docs[0].encrypted_content.includes(pdf),false);
+  assert.equal((await api('/api/seller/documents/'+docs[0].id,other)).status,403);
+  assert.deepEqual((await api('/api/seller/documents/'+docs[0].id,seller)).data,pdf);
+  const events=(await query("select actor_id,entity_id,detail from qori_commercial_audit where entity_id=$1 and action='SELLER_DOCUMENT_ADMIN_UPLOADED'",[seller.id])).rows;
+  assert.equal(events.length,4);assert.ok(events.every(e=>e.actor_id===admin.id&&e.detail.source==='ADMIN'));
+  assert.equal((await api('/api/seller/dashboard',seller)).status,403);
+  assert.equal((await api(prefix+'/review',admin,checks)).status,400);
+  assert.equal((await api(prefix+'/submit',admin,submission)).status,409);
+  submission.document_hashes=Object.fromEntries(docs.map(doc=>[doc.kind,doc.sha256]));
+  assert.equal((await api(prefix+'/submit',admin,{...submission,documents_received:false})).status,400);
+  await query("update qori_seller_applications set terms_version='old' where user_id=$1",[seller.id]);
+  assert.equal((await api(prefix+'/submit',admin,submission)).status,400);
+  await query('update qori_seller_applications set terms_version=$2 where user_id=$1',[seller.id,VERSION]);
+  assert.equal((await api(prefix+'/submit',admin,submission)).status,200);
+  assert.equal((await api(prefix+'/submit',admin,submission)).status,400);
+  const updated=(await query('select * from qori_seller_applications where user_id=$1',[seller.id])).rows[0];
+  assert.equal(updated.accepted_at.toISOString(),original.accepted_at.toISOString());assert.equal(updated.accepted_ip,original.accepted_ip);assert.equal(updated.ciiu,CIIU.code);
+  const identity=docs.find(doc=>doc.kind==='IDENTITY');
+  assert.equal((await api(prefix+'/documents/IDENTITY',admin,{...file,expected_sha256:identity.sha256},'PUT')).status,200);
+  const replaced=(await query('select status,submitted_at from qori_seller_applications where user_id=$1',[seller.id])).rows[0];
+  assert.equal(replaced.status,'DRAFT');assert.equal(replaced.submitted_at,null);
+  assert.equal((await api(prefix+'/review',admin,checks)).status,400);
+  assert.equal((await api(prefix+'/submit',admin,submission)).status,200);
+  assert.equal((await api(prefix+'/review',admin,{...checks,bank_ownership_checked:false})).status,400);
+  assert.equal((await api(prefix+'/review',admin,checks)).status,200);
+  assert.equal((await api('/api/seller/dashboard',seller)).status,200);
+  assert.equal((await api(prefix+'/documents/IDENTITY',admin,{...file,expected_sha256:identity.sha256},'PUT')).status,403);
+  const detail=(await api('/api/admin/accounts/sellers/'+seller.id,admin)).data.record;
+  assert.equal(detail.documentation.attention,false);assert.ok(detail.documents.every(doc=>doc.sha256&&doc.created_at));
+  assert.equal(detail.application.approval_mode,'DOCUMENTS');
+});

@@ -17,6 +17,7 @@ async function owns(a,s,db={query}){
  return !!(await db.query(require('./customerNetworkService').ticketSql+' and q.id=$2',[a.id,s.id])).rowCount;
 }
 async function available(a,s,db){
+ if((await db.query('select 1 from businesses where id=$1 and is_seller_demo',[s.business_id])).rowCount)return false;
  if(a.document_review_required||!a.declared_document_key||s.document_key!==a.declared_document_key||s.email!==a.email)return false;
  const conflict=await db.query(`select 1 where exists(select 1 from customer_business_blocks where customer_id=$1 and business_id=$2)
  or exists(select 1 from customer_relationships where business_id=$2 and document_key=$3 and state='ACCEPTED' and customer_id<>$1)

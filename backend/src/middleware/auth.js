@@ -37,6 +37,9 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
   if (Number(payload.password_version || 0) !== Number(user.password_version || 0)) {
     throw unauthorized("Tu contraseña cambió. Inicia sesión de nuevo en este dispositivo.");
   }
+  if(payload.demo_business_id){
+    return require('../services/sellerDemoService').effectiveUser(user,payload.demo_business_id);
+  }
   if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN"].includes(user.role) && user.platform_role !== "QORI_SUPERADMIN" && !(allowCommercialAccess && user.platform_role === "QORI_SELLER") && user.business_id && !user.business_is_active) {
     throw forbidden("El negocio asignado a este usuario no esta activo.");
   }
@@ -67,6 +70,7 @@ async function authRequired(req, _res, next) {
     const selfService = (req.method === "GET" && requestPath === "/api/auth/me") || (req.method === "POST" && requestPath === "/api/auth/password/change");
     const user = await authenticatedUserFromToken(token, { allowCommercialAccess: adminRequest || sellerRequest || selfService });
     req.user = user;
+    require('../services/sellerDemoService').enforceDemoRequest(req);
     if (["QORI_SUPERADMIN", "QORI_SELLER"].includes(user.platform_role) && (adminRequest || sellerRequest)) {
       req.user = { ...user, role: user.platform_role, business_role: user.role };
     }
@@ -85,7 +89,11 @@ async function authRequired(req, _res, next) {
 
 async function portalWebAccessRequired(req, res, next) {
   try {
-    req.user = await authenticatedUserFromToken(requestCookie(req, PORTAL_WEB_ACCESS_COOKIE));
+    const tokens=[requestCookie(req, PORTAL_WEB_ACCESS_COOKIE),requestCookie(req,'qori_demo_portal_access')].filter(Boolean);
+    for(const token of tokens){
+      try{req.user=await authenticatedUserFromToken(token);break;}catch(_error){/* Try the other independent portal session. */}
+    }
+    if(!req.user)throw unauthorized('Inicia sesión para acceder a este material.');
     res.locals.qoriPortalProtectedAsset = true;
     return next();
   } catch (_error) {

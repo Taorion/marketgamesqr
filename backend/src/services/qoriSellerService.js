@@ -64,18 +64,50 @@ async function openApplication(user,payload,ip){
  });
 }
 async function upload(user,kind,payload){
+ return uploadDocument(user,user.id,kind,payload,false);
+}
+async function adminUpload(user,id,kind,payload){
+ superadmin(user);validate(uuid,id);
+ if(id===user.id)throw forbidden('No puedes gestionar tu propio expediente.');
+ return uploadDocument(user,id,kind,payload,true);
+}
+async function uploadDocument(user,id,kind,payload,administrative){
  if(!kinds.includes(kind))throw badRequest('Tipo de documento inválido.');
- const d=validate(z.object({filename:text(160).min(3),content_base64:z.string().min(16).max(11184816)}).strict(),payload);
+ const fields={filename:text(160).min(3),content_base64:z.string().min(16).max(11184816)};
+ if(administrative)fields.expected_sha256=z.string().regex(/^[a-f0-9]{64}$/).nullable();
+ const d=validate(z.object(fields).strict(),payload);
  if(!/^[A-Za-z0-9+/]+={0,2}$/.test(d.content_base64))throw badRequest('Archivo inválido.');
  const bytes=Buffer.from(d.content_base64,'base64');if(bytes.length>8*1024*1024)throw badRequest('El límite es 8 MB por documento.');
  const mime=validDocument(bytes),hash=crypto.createHash('sha256').update(bytes).digest('hex');
  return withTransaction(async db=>{
-  const a=(await db.query('select status,approval_mode from qori_seller_applications where user_id=$1 for update',[user.id])).rows[0];
-  if(!a||!(['DRAFT','CHANGES_REQUESTED'].includes(a.status)||(a.status==='APPROVED'&&a.approval_mode==='ADMIN_OVERRIDE')))throw forbidden('Solo puedes cargar documentos antes de enviar la solicitud, cuando Qori solicita correcciones o si tienes un alta con documentación pendiente.');
+  if(administrative){const target=(await db.query('select role,platform_role from app_users where id=$1 for update',[id])).rows[0];if(!target||(target.platform_role||target.role)!=='QORI_SELLER')throw forbidden('Selecciona una cuenta con perfil Qori Seller vigente.');}
+  const a=(await db.query('select status,approval_mode from qori_seller_applications where user_id=$1 for update',[id])).rows[0];
+  if(!a||!(['DRAFT','CHANGES_REQUESTED'].includes(a.status)||(administrative&&a.status==='SUBMITTED')||(a.status==='APPROVED'&&a.approval_mode==='ADMIN_OVERRIDE')))throw forbidden('La carga requiere un expediente por completar, con correcciones o con alta documental pendiente. Para cambiar documentos ya aprobados, solicita correcciones primero.');
+  const previous=(await db.query('select id,sha256 from qori_seller_documents where user_id=$1 and kind=$2',[id,kind])).rows[0];
+  if(administrative&&d.expected_sha256!==(previous?.sha256||null)){const error=badRequest('Otro integrante actualizó este documento. Abre de nuevo el expediente antes de reemplazarlo.');error.status=409;throw error;}
   await db.query(`insert into qori_seller_documents(user_id,kind,filename,mime_type,byte_size,sha256,encrypted_content)
    values($1,$2,$3,$4,$5,$6,$7) on conflict(user_id,kind) do update set filename=excluded.filename,mime_type=excluded.mime_type,byte_size=excluded.byte_size,sha256=excluded.sha256,encrypted_content=excluded.encrypted_content,created_at=now()`,
-   [user.id,kind,d.filename.replace(/[^\p{L}\p{N} ._()-]/gu,'_'),mime,bytes.length,hash,encrypt(bytes)]);
-  await audit(db,user,'SELLER_DOCUMENT_UPLOADED',user.id,{kind,sha256:hash,byte_size:bytes.length});
+   [id,kind,d.filename.replace(/[^\p{L}\p{N} ._()-]/gu,'_'),mime,bytes.length,hash,encrypt(bytes)]);
+  await db.query("update qori_seller_applications set status=case when status='SUBMITTED' then 'DRAFT' else status end,submitted_at=null,updated_at=now() where user_id=$1",[id]);
+  await audit(db,user,administrative?'SELLER_DOCUMENT_ADMIN_UPLOADED':'SELLER_DOCUMENT_UPLOADED',id,{kind,sha256:hash,previous_sha256:previous?.sha256||null,byte_size:bytes.length,source:administrative?'ADMIN':'SELLER'});
+  return {ok:true};
+ });
+}
+async function adminSubmit(user,id,payload){
+ superadmin(user);validate(uuid,id);requireClassification();
+ if(id===user.id)throw forbidden('No puedes gestionar tu propio expediente.');
+ const d=validate(z.object({documents_received:z.literal(true),signed_and_notarized:z.literal(true),note:text(2000).min(15),document_hashes:z.object(Object.fromEntries(kinds.map(k=>[k,z.string().regex(/^[a-f0-9]{64}$/)]))).strict()}).strict(),payload);
+ return withTransaction(async db=>{
+  const target=(await db.query('select role,platform_role from app_users where id=$1 for update',[id])).rows[0];
+  if(!target||(target.platform_role||target.role)!=='QORI_SELLER')throw forbidden('Selecciona una cuenta con perfil Qori Seller vigente.');
+  const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[id])).rows[0];
+  if(!a||!(['DRAFT','CHANGES_REQUESTED'].includes(a.status)||(a.status==='APPROVED'&&a.approval_mode==='ADMIN_OVERRIDE')))throw badRequest('Este expediente no admite un nuevo envío.');
+  if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('El vendedor debe aceptar las condiciones vigentes desde su cuenta antes de enviar este expediente.');
+  const docs=(await db.query('select kind,sha256 from qori_seller_documents where user_id=$1',[id])).rows;
+  if(kinds.some(k=>!docs.some(doc=>doc.kind===k)))throw badRequest('Adjunta cédula, RUT, certificado bancario y contrato firmado y autenticado.');
+  if(docs.some(doc=>d.document_hashes[doc.kind]!==doc.sha256)){const error=badRequest('Los documentos cambiaron. Abre de nuevo el expediente antes de enviarlo.');error.status=409;throw error;}
+  await db.query("update qori_seller_applications set status=case when status='APPROVED' then 'APPROVED' else 'SUBMITTED' end,submitted_at=now(),updated_at=now() where user_id=$1",[id]);
+  await audit(db,user,'SELLER_APPLICATION_ADMIN_SUBMITTED',id,{note:d.note,documents:docs,documents_received:true,signed_and_notarized:true,terms_version:a.terms_version,source:'ADMIN'});
   return {ok:true};
  });
 }
@@ -145,24 +177,32 @@ async function dashboard(user){
  const [totals,ledger,payouts,accounts]=await Promise.all([
   query(`select coalesce(sum(amount_cop) filter(where status='PENDING'),0) pending_cop,
    coalesce(sum(amount_cop) filter(where status='PAID'),0) paid_cop,
+   coalesce(sum(amount_cop) filter(where status='SCHEDULED'),0) scheduled_cop,
    coalesce(sum(amount_cop) filter(where status='PENDING' and due_on<=(now() at time zone 'America/Bogota')::date),0) due_cop,
    count(distinct business_id)::int paying_businesses from qori_seller_commissions where seller_id=$1`,[user.id]),
   query(`select c.*,b.name business_name,o.package_title from qori_seller_commissions c join businesses b on b.id=c.business_id join qr_credit_purchase_orders o on o.id=c.order_id where seller_id=$1 order by c.created_at desc,c.id limit 200`,[user.id]),
   query('select * from qori_seller_payouts where seller_id=$1 order by created_at desc limit 100',[user.id]),
   accountRows(user)
  ]);
- return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts,next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,rate:0.10};
+ const policy=require('./sellerCommissionPolicy').publicPolicy();
+ const rollout=(await query("select effective_at,base_mode,scope from qori_seller_commission_policy where version='QORI_2026_VF1'")).rows[0];
+ return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts,next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,commission_policy:{...policy,...rollout},tickets_rate:0.10};
 }
 async function accountRows(user){
- const rows=(await query(`select b.*,a.created_at assigned_at,p.last_subscription_paid_at
+ const rows=(await query(`select b.*,a.created_at assigned_at,p.last_subscription_paid_at,cp.starts_on commission_starts_on,
+  coalesce(cp.policy_version,case when b.created_at>=policy.effective_at then 'QORI_2026_VF1' else 'LEGACY_10' end) commission_policy,
+  case when cp.policy_version='QORI_2026_VF1' then public.qori_seller_commission_month(cp.starts_on,(now() at time zone 'America/Bogota')::date) else null end commission_month,
+  case when cp.policy_version='QORI_2026_VF1' then public.qori_seller_commission_boundary(cp.starts_on,6) else null end commission_ends_on
   from qori_sales_accounts a join businesses b on b.id=a.business_id
+  left join qori_seller_commission_programs cp on cp.business_id=b.id
+  cross join qori_seller_commission_policy policy
   left join lateral (select max(o.credited_at) last_subscription_paid_at from qr_credit_purchase_orders o
    where o.business_id=b.id and o.status='APPROVED' and o.credited_at is not null and o.price_cop>0
    and o.metadata->'signup'->>'type' in ('portal_monthly_subscription','portal_annual_subscription','portal_monthly_subscription_auto_renewal')) p on true
-  where a.seller_id=$1 order by a.created_at desc,b.id limit 200`,[user.id])).rows;
+  where a.seller_id=$1 and policy.version='QORI_2026_VF1' order by a.created_at desc,b.id limit 200`,[user.id])).rows;
  const now=new Date(),{accountLifecycle}=require('./sellerAccountLifecycle');
  return rows.map(b=>({id:b.id,name:b.name,plan_code:b.plan_code,subscription_status:b.subscription_status,
-  created_at:b.assigned_at,lifecycle:accountLifecycle(b,now)}));
+  created_at:b.assigned_at,lifecycle:accountLifecycle(b,now),commission:{policy_version:b.commission_policy,starts_on:b.commission_starts_on,ends_on:b.commission_ends_on,month:b.commission_month}}));
 }
 async function accounts(user){await requireApproved(user);return {accounts:await accountRows(user)};}
 async function adminQueue(user){
@@ -195,4 +235,4 @@ async function pay(user,payload){
   return {payout:p};
  });
 }
-module.exports={VERSION,register,openApplication,application,upload,document,submit,review,authorizeAccess,documentation,requireApproved,dashboard,accounts,adminQueue,pay,nextThursday};
+module.exports={VERSION,register,openApplication,application,upload,adminUpload,adminSubmit,document,submit,review,authorizeAccess,documentation,requireApproved,dashboard,accounts,adminQueue,pay,nextThursday};

@@ -15,8 +15,11 @@ router.put('/documents/:kind',rateLimit({keyPrefix:'seller-document-upload',max:
 router.get('/documents/:id',async(req,res,next)=>{try{const d=await s.document(req.user,req.params.id);res.set({'Cache-Control':'private, no-store','Content-Type':d.mime,'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(d.filename)}`,'X-Content-Type-Options':'nosniff'}).send(d.bytes);}catch(e){next(e);}});
 router.post('/application/submit',handle(req=>s.submit(req.user,req.body,req.ip)));
 router.get('/dashboard',handle(req=>s.dashboard(req.user)));
+router.post('/demo/session',handle(req=>require('../services/sellerDemoService').createSession(req.user)));
 router.get('/accounts',handle(req=>s.accounts(req.user)));
 router.get('/admin/queue',handle(req=>s.adminQueue(req.user)));
+router.put('/admin/applications/:id/documents/:kind',requireRoles('QORI_SUPERADMIN'),rateLimit({keyPrefix:'seller-admin-document-upload',max:60,windowMs:3600000}),handle(req=>s.adminUpload(req.user,req.params.id,req.params.kind,req.body)));
+router.post('/admin/applications/:id/submit',requireRoles('QORI_SUPERADMIN'),handle(req=>s.adminSubmit(req.user,req.params.id,req.body)));
 router.post('/admin/applications/:id/review',handle(req=>s.review(req.user,req.params.id,req.body)));
 router.post('/admin/applications/:id/authorize-access',handle(req=>s.authorizeAccess(req.user,req.params.id,req.body)));
 router.post('/admin/payouts',handle(req=>s.pay(req.user,req.body)));

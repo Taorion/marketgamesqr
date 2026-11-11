@@ -11,6 +11,9 @@ async function drain(){for(let n=0;n<1000;n++)if(!await notices.processNext())re
 test('new benefits after one-time recovery reach Customer and generate owned persistent notices',async t=>{
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  buyer=await account();other=await account();
+ // These existing Customer accounts have completed the finance onboarding gate.
+ await query("update customer_accounts set finance_setup_state='LEGACY' where id=any($1::uuid[])",[[buyer.id,other.id]]);
+ await query('update customer_accounts set declared_document_key=$2 where id=$1',[other.id,'other'+uuid().replaceAll('-','')]);
  biz=(await query("insert into businesses(name,slug,plan_code,subscription_status,settings) values('Delivery QA',$1,'PRO','ACTIVE',$2::jsonb) returning *",[uuid(),JSON.stringify({subscription:{lifetime_access:true,monthly_payment_required:false}})])).rows[0];
  user=(await query("insert into app_users(business_id,email,password_hash,full_name,role) values($1,$2,'qa','Operador','BUSINESS_OWNER') returning *",[biz.id,uuid()+'@example.test'])).rows[0];
  await query('update customer_accounts set declared_document_key=$2,benefit_recovery_completed_at=now() where id=$1',[buyer.id,doc.toLowerCase().replace(/[^a-z0-9]/g,'')]);

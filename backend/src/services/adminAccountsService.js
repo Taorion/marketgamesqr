@@ -35,7 +35,7 @@ async function detail(user,kind,id){
  }
  if(kind==='sellers'){
   const d=definitions.sellers;record=(await query(`select ${d.fields} from ${d.from} where ${d.where} and u.id=$1`,[id])).rows[0];
-  if(record){record.application=(await query('select status,approval_mode,ciiu,terms_version,review_note,submitted_at,reviewed_at from qori_seller_applications where user_id=$1',[id])).rows[0]||null;record.documents=(await query('select id,kind,filename,byte_size from qori_seller_documents where user_id=$1 order by kind',[id])).rows;
+  if(record){record.application=(await query('select status,approval_mode,ciiu,terms_version,review_note,submitted_at,reviewed_at from qori_seller_applications where user_id=$1',[id])).rows[0]||null;record.documents=(await query('select id,kind,filename,byte_size,sha256,created_at from qori_seller_documents where user_id=$1 order by kind',[id])).rows;
    record.documentation=require('./qoriSellerService').documentation(record.application,record.documents);
    record.commissions=(await query("select coalesce(sum(amount_cop) filter(where status='PENDING'),0) pending_cop,coalesce(sum(amount_cop) filter(where status='PAID'),0) paid_cop from qori_seller_commissions where seller_id=$1",[id])).rows[0];
   }

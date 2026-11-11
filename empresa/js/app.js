@@ -1,7 +1,8 @@
-const SESSION_KEY = "qr_business_portal_session_v1";
-const PORTAL_ACCESS_COOKIE = "qori_portal_access";
+const SELLER_DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
+const SESSION_KEY = SELLER_DEMO_MODE ? 'qori_demo_portal_session_v1' : "qr_business_portal_session_v1";
+const PORTAL_ACCESS_COOKIE = SELLER_DEMO_MODE ? 'qori_demo_portal_access' : "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
-const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
+const VALIDATOR_SESSION_KEY = SELLER_DEMO_MODE ? 'qori_demo_validator_session_v1' : "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260910-qori-public-links-v472";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "validator-inventory-sale-v513-20260928 validator-customer-search-v512-20260928 empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910 empresa-20260909-activation-status-filters-v467 validator-beneficiary-v477-20260911";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
@@ -3649,6 +3650,7 @@ function clearBusinessScopedStorage(businessId = "", options = {}) {
 }
 
 function isPortalStorageKey(key) {
+  if(SELLER_DEMO_MODE)return key===SESSION_KEY||key===VALIDATOR_SESSION_KEY;
   return key === SESSION_KEY
     || key === VALIDATOR_SESSION_KEY
     || key === APP_VERSION_KEY
@@ -8043,6 +8045,7 @@ function setPortalAuthenticationState(logged) {
 }
 
 function renderShell() {
+  window.QoriSellerDemo?.render(session?.user);
   window.QoriAgendaPush?.refresh();
   const logged = Boolean(session?.token);
   setPortalAuthenticationState(logged);
@@ -8190,7 +8193,7 @@ async function login(event) {
   setInlineMessage(loginError, "Validando credenciales...", "info");
   showFeedback("Validando credenciales y preparando el portal.", "loading", { title: "Iniciando sesión", timeout: 0 });
   try {
-    const data = await api("/api/auth/login", {
+    const data = await api(SELLER_DEMO_MODE ? '/api/auth/demo/login' : "/api/auth/login", {
       method: "POST",
       body: JSON.stringify({
         email: loginEmail,
@@ -40364,6 +40367,8 @@ function leadDirectoryIsCustomer(item = {}) {
   const commercialStatus = String(item.commercial_status || item.stored_status || item.status || metadata.commercial_status || "").toUpperCase();
   return item.is_customer === true
     || String(item.is_customer || "").toLowerCase() === "true"
+    || item.has_stamp_card === true
+    || String(item.has_stamp_card || "").toLowerCase() === "true"
     || item.is_affiliate === true
     || String(item.is_affiliate || "").toLowerCase() === "true"
     || String(item.source_type || "").toUpperCase() === "AFFILIATE"
@@ -46341,7 +46346,7 @@ function renderRewardPassContext() {
   const balance = toNumber(context.ticket_balance ?? context.qr_balance ?? 0);
   if (rewardPassTicketContext) {
     rewardPassTicketContext.textContent = context.giftcard_balance!=null
-      ? `Pensé en ti: ${Number(context.giftcard_balance)} emisiones de Gift Card disponibles. Cada Gift Card usa una emisión de este saldo independiente.`
+      ? `${context.demo_mode?'Demo Qori':'Pensé en ti'}: ${Number(context.giftcard_balance)} emisiones de Gift Card disponibles. Cada Gift Card usa una emisión de este saldo independiente.`
       : `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
   }
 }

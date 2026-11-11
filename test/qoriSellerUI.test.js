@@ -5,6 +5,7 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.onclose?.();};
  w.sessionStorage.setItem('qori-seller-token','qa-only');w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});let d={ok:true};
  if(path.endsWith('/terms'))d={clauses:[{title:'Condiciones',text:'10% sobre compras confirmadas'}]};
+ if(path.endsWith('/demo/session'))d={token:'demo-only-token',user:{id:'demo-actor',business_id:'demo-business',demo_mode:true}};
  if(path.endsWith('/application'))d={user:{id:'seller-1',full_name:'Embajador <img src=x>',email:'qa@example.test',role},legacy:status===null,application:status===null?null:{status,approval_mode:override?'ADMIN_OVERRIDE':'DOCUMENTS'},documents:[],documentation:override?{attention:true,override:true,missing:['IDENTITY','RUT','BANK','CONTRACT']}:undefined};
  if(path.endsWith('/dashboard')&&status==='SUSPENDED')return {ok:false,json:async()=>({error:{message:'Acceso bloqueado',details:{code:'SELLER_APPROVAL_REQUIRED'}}})};
  if(path.endsWith('/dashboard'))d={totals:{pending_cop:15000,paid_cop:0,paying_businesses:1},accounts:[{id:'b',name:'Café',plan_code:'PENSE_EN_TI',subscription_status:'ACTIVE'}],commissions:[],payouts:[],next_payment_date:'2026-11-12',referral_url:'https://example.test/pense-en-ti/?seller=seller-1',plan_referral_url:'https://example.test/paquetes/?advisor=seller-1'};
@@ -14,6 +15,20 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  return {ok:true,json:async()=>d};
  };w.eval(fs.readFileSync('seller/accounts.js','utf8'));w.eval(fs.readFileSync('seller/app.js','utf8'));return {w,calls,setStatus:value=>{status=value;}};
 }
+test('approved Seller hands off a separate demo session while pending Seller has no demo access',async()=>{
+ const {w,calls}=setup({status:'APPROVED'});try{
+  await until(()=>w.document.querySelector('#referralLink'));
+  w.localStorage.setItem('qr_business_portal_session_v1','original-business');
+  w.document.querySelector('#openDemoQori').click();
+  await until(()=>w.localStorage.getItem('qori_demo_portal_session_v1'));
+  assert.equal(JSON.parse(w.localStorage.getItem('qori_demo_portal_session_v1')).token,'demo-only-token');
+  assert.equal(w.localStorage.getItem('qr_business_portal_session_v1'),'original-business');
+  assert.equal(w.sessionStorage.getItem('qori-seller-token'),'qa-only');
+  assert.ok(calls.some(c=>c.path.endsWith('/demo/session')));
+ }finally{w.close();}
+ const locked=setup();try{await until(()=>locked.w.document.querySelector('#approvalTitle'));assert.equal(locked.w.document.querySelector('#openDemoQori'),null);}finally{locked.w.close();}
+});
+
 test('pending application keeps commercial UI hidden and document workflow available',async()=>{
  const {w,calls}=setup();try{await until(()=>w.document.querySelector('#completeApplication'));assert.match(w.document.querySelector('#approvalTitle').textContent,/pendiente de aprobación/);w.document.querySelector('#completeApplication').click();await until(()=>w.document.querySelector('#downloadContract'));assert.equal(w.document.querySelector('[data-view=crm]'),null);assert.equal(w.document.querySelectorAll('[data-kind]').length,4);assert.equal(w.document.querySelector('h1 img'),null);assert.equal(calls.some(x=>x.path.endsWith('/dashboard')),false);assert.equal(w.document.querySelector('[name=ciiu]'),null);assert.equal(w.document.querySelector('#signupForm button').disabled,false);assert.equal(w.document.querySelector('#submitApplication button').disabled,false);assert.match(w.document.querySelector('#signupForm').textContent,/4610 — Comercio al por mayor a cambio de una retribución o por contrata/);assert.match(w.document.querySelector('#panel').textContent,/4610 — Comercio al por mayor a cambio de una retribución o por contrata/);
  const f=w.document.querySelector('#submitApplication');f.elements.signed.checked=true;f.elements.truthful.checked=true;f.elements.ciiu_terms.checked=true;await f.onsubmit({currentTarget:f,preventDefault(){}});await until(()=>calls.some(x=>x.path.endsWith('/submit')));assert.deepEqual(calls.find(x=>x.path.endsWith('/submit')).body,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true});await new Promise(r=>setImmediate(r));}finally{w.close();}
