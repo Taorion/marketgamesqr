@@ -8,6 +8,11 @@ async function api(a,path,body,book,method=body?'POST':'GET'){const r=await fetc
 test('verified business purchases require consent, keep original products and use the selected private pocket once',async t=>{
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  const a=await account(),b=await account(),shop=await business(),foreign=await business(),doc='AUTO'+uuid().replaceAll('-','');
+ for(const [customer,document] of [[a,doc],[b,'OTHER'+uuid()]]){
+  const registered=await api(customer,'/me',{full_name:'Purchase QA',currency:'COP',timezone:'America/Bogota',preferences:{notifications:{purchases:true,benefits:true,budget:true,summary:true}},document_id:document,document_confirmation:document},null,'PATCH');assert.equal(registered.status,200,JSON.stringify(registered));
+  const setup=await api(customer,'/finance-setup');assert.equal(setup.status,200,JSON.stringify(setup));
+  const ready=await api(customer,'/finance-setup',{request_id:uuid(),balance:'0',currency:setup.currency,expected_date:setup.today,confirmed:true});assert.equal(ready.status,200,JSON.stringify(ready));
+ }
  const personal=(await api(a,'/finance-books')).books[0],otherBook=(await api(b,'/finance-books')).books[0],home=(await api(a,'/finance-books',{request_id:uuid(),name:'Casa',currency:'COP'})).book;
  const proposal=await svc.proposeRelationship(shop.u,{public_id:a.public_id,document_id:doc,identity_checked:true});
  assert.equal((await api(a,'/relationships/'+proposal.relationship.id+'/decision',{action:'ACCEPT',document_id:doc,document_confirmation:doc,include_history:true,capture_purchases:false})).status,200);

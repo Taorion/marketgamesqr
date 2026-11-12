@@ -157,6 +157,22 @@
       <div class="plan-grid" id="planGrid" aria-live="polite"></div>
     </section>
 
+    <section class="section" id="retomar">
+      <details id="signupRecovery">
+        <summary><strong>¿Ya creaste tu cuenta? Retomar mi inscripción</strong></summary>
+        <p>Consulta el estado con tu correo y contraseña. Conservaremos tu cuenta y el embajador que te acompañó. Si ya pagaste, espera la confirmación antes de repetir el pago.</p>
+        <p id="signupReturnNotice" role="status"></p>
+        <form id="signupRecoveryForm" class="request-form">
+          <label><span>Correo de tu cuenta</span><input name="email" type="email" autocomplete="username" maxlength="180" required></label>
+          <label><span>Contraseña que creaste</span><input name="password" type="password" autocomplete="current-password" maxlength="120" required></label>
+          <button type="submit" class="primary-button full">Consultar mi inscripción</button>
+          <p class="message full" data-recovery-status role="status"></p>
+          <div class="full" data-recovery-result></div>
+        </form>
+        <p>Si olvidaste tu contraseña y aún no has pagado, <a href="mailto:contacto@gosqori.com">solicita ayuda a Qori</a>. No crees otra cuenta.</p>
+      </details>
+    </section>
+
     <section class="section selected-section hidden" id="signupSection">
       <div class="section-head compact">
         <span class="eyebrow" id="formEyebrow">Activación del plan</span>
@@ -322,6 +338,7 @@
   </main>
 
   <script src="/js/seller-referral.js?v=20261112-crm1" defer></script>
+  <script src="js/signup-recovery.js?v=20261112-audit1" defer></script>
   <script src="js/app.js?referral=20261112-crm1&v=qori-plan-matrix-v1-20260928&prices=20261009&limits=20261009&amp;descubre=v2-20261016" defer></script>
 </body>
 </html>

@@ -14,7 +14,9 @@ async function login(){
   const email=crypto.randomUUID()+'@example.test';const c=await api('/api/customer/auth/code',null,{email});
   const mail=JSON.parse(await fs.readFile(path.join(__dirname,'../.local-customer/mailbox',c.challenge_id+'.json'),'utf8'));
   const result=await api('/api/customer/auth/verify',null,{challenge_id:c.challenge_id,code:mail.code});
-  await query("update customer_accounts set full_name='Comprador de red' where id=$1",[result.account.id]);return result;
+  const registered=await api('/api/customer/me',result.token,{full_name:'Comprador de red',currency:'COP',timezone:'America/Bogota',preferences:{notifications:{purchases:true,benefits:true,budget:true,summary:true}},document_id:'NEW-QORI-01',document_confirmation:'NEW-QORI-01'},'PATCH');assert.equal(registered.status,200,JSON.stringify(registered));
+  const setup=await api('/api/customer/finance-setup',result.token);assert.equal(setup.status,200,JSON.stringify(setup));
+  const done=await api('/api/customer/finance-setup',result.token,{request_id:crypto.randomUUID(),balance:'0',currency:setup.currency,expected_date:setup.today,confirmed:true});assert.equal(done.status,200,JSON.stringify(done));return result;
 }
 async function business(){
   const b=(await query(`insert into businesses(name,slug,plan_code,subscription_status,settings) values('Negocio de red',$1,'PRO','ACTIVE',$2::jsonb) returning *`,[crypto.randomUUID(),JSON.stringify({subscription:{lifetime_access:true,monthly_payment_required:false}})])).rows[0];

@@ -37,3 +37,15 @@ test('Admin reviews same-seller business and sends exact previous link plus reas
   }finally{w.close();}
  }
 });
+test('a delayed prospect link cannot reopen Admin data after logout',async()=>{
+ const w=new JSDOM('<div id="commercialWorkspace"></div>',{url:'https://example.test/admin/',runScripts:'outside-only'}).window;dialogs(w);let resolveLink;
+ try{
+  const ctx={api:async path=>{
+   if(path.endsWith('/referral'))return new Promise(resolve=>{resolveLink=resolve;});
+   if(path.includes('/bootstrap'))return {counts:{},user:{id:'s',role:'QORI_SUPERADMIN',name:'QA',permissions:['prospects.manage']},sellers:[],plans:[],policies:[],modules:{},limit_labels:{}};
+   if(path.includes('/prospects?'))return {rows:[{id:'p',business_name:'Café',email:referral.email,stage:'NEW'}],has_more:false};throw Error(path);
+  }};
+  w.eval(source('admin/js/commercial.js'));await w.QoriCommercial.load(ctx);w.document.querySelector('[data-action=tab][data-id=prospects]').click();await until(()=>w.document.querySelector('[data-action=prospect-referral]'));
+  w.document.querySelector('[data-action=prospect-referral]').click();await until(()=>resolveLink);w.QoriCommercial.clear();resolveLink(referral);await new Promise(r=>setImmediate(r));assert.equal(w.document.querySelector('dialog'),null);assert.equal(w.document.querySelector('#commercialWorkspace').textContent,'');
+ }finally{w.close();}
+});

@@ -68,7 +68,7 @@ async function assertUniqueSignupIdentity(client, body, { descubre = false } = {
     [email]
   );
   if (existingUser.rowCount) {
-    throw badRequest("Ya existe un usuario registrado con este correo electronico. Inicia sesion o usa otro correo.");
+      throw badRequest("Ya existe una cuenta con este correo. Si no terminaste el pago, usa Retomar mi inscripción en la página de planes. Si tu cuenta está activa, inicia sesión.");
   }
 
   const existingBusiness = await client.query(

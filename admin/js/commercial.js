@@ -259,7 +259,9 @@
     const policy=data.policies.find(p=>p.id===id);
     if(name==="enroll-prospect")return enrollmentEditor(item);
     if(name==="prospect-referral"){
+      const referralSession=sessionGeneration,referralView=generation;
       const r=await ctx.api('/api/admin/commercial/prospects/'+id+'/referral');
+      if(referralSession!==sessionGeneration||referralView!==generation)return;
       dialog('Enlace de suscripción', '<p class="full">Comparte este enlace con el contacto. Debe registrarse con '+esc(r.email)+'. El negocio quedará vinculado a este prospecto. Vence en '+r.expires_in_days+' días.</p><label class="full">Planes pagos<textarea readonly rows="4">'+esc(r.plan_referral_url)+'</textarea></label><label class="full">Pensé en ti gratis<textarea readonly rows="4">'+esc(r.referral_url)+'</textarea></label>');return;
     }
     if(name==="link-prospect"){

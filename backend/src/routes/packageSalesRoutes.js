@@ -6,7 +6,7 @@ const {
   createPrepaidSignup,
   createPortalSignup,
 } = require("../controllers/packageSalesController");
-const { rateLimit } = require("../middleware/rateLimit");
+const { rateLimit, emailRateLimit } = require("../middleware/rateLimit");
 const { listPublicSalesAdvisors } = require("../controllers/sellerController");
 
 const router = express.Router();
@@ -21,5 +21,9 @@ router.post("/packages/requests", rateLimit({ keyPrefix: "package-request", max:
 router.post("/signup/ticket-base", rateLimit({ keyPrefix: "signup-ticket-base", max: 6, windowMs: 15 * 60_000 }), createPrepaidSignup);
 router.post("/signup/prepaid", rateLimit({ keyPrefix: "signup-prepaid", max: 6, windowMs: 15 * 60_000 }), createPrepaidSignup);
 router.post("/signup/portal", rateLimit({ keyPrefix: "signup-portal", max: 6, windowMs: 15 * 60_000 }), createPortalSignup);
+router.post('/signup/portal/recover',rateLimit({keyPrefix:'signup-portal-recover',max:6,windowMs:15*60_000}),emailRateLimit({keyPrefix:'signup-recover-email',max:8,windowMs:15*60_000}),async(req,res,next)=>{
+  res.set('Cache-Control','private, no-store');
+  try{res.json(await require('../services/signupRecoveryService').recover(req.body));}catch(error){next(error);}
+});
 
 module.exports = router;

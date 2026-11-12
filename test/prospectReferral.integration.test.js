@@ -80,6 +80,31 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
   assert.equal((await query("select id from qori_commercial_audit where entity_id=$1 and action='PROSPECT_BUSINESS_LINKED'",[p.id])).rowCount,1);
   assert.equal((await query('select seller_id from qori_sales_accounts where business_id=$1',[business])).rows[0].seller_id,seller.id);
  });
+ await t.test('abandoned checkout recovers the same order without access or changes to attribution; approved payment stops repayment',async()=>{
+  const p=await prospect(),token=await link(p),input=signup(p,token),created=await api('/api/public/signup/portal',null,input);assert.equal(created.status,201,JSON.stringify(created));
+  const route='/api/public/signup/portal/recover',credentials={email:input.email,password:input.password};
+  assert.equal((await api('/api/auth/login',null,credentials)).status,401,'Pending signup must not grant a portal session');
+  assert.equal((await api(route,null,{...credentials,password:'wrong'})).status,401);
+  assert.equal((await api(route,null,{...credentials,email:uid()+'@example.test'})).status,401);
+  assert.equal((await api(route,null,{...credentials,commercial_advisor_id:other.id})).status,400);
+  const recovered=await api(route,null,credentials);assert.equal(recovered.status,200,JSON.stringify(recovered));assert.equal(recovered.data.state,'PENDING_PAYMENT');assert.equal(recovered.data.order.id,created.data.order.id);assert.equal(recovered.data.token,undefined);assert.equal(recovered.data.order.payment_payload,undefined);
+  assert.equal((await query('select id from qr_credit_purchase_orders where business_id=$1',[created.data.business.id])).rowCount,1);assert.equal((await current(p.id)).business_id,created.data.business.id);
+  assert.equal((await query('select commission_seller_id from qr_credit_purchase_orders where id=$1',[created.data.order.id])).rows[0].commission_seller_id,seller.id);
+  await query("update qr_credit_purchase_orders set status='REJECTED' where id=$1",[created.data.order.id]);assert.equal((await api(route,null,credentials)).status,200);
+  await query("update qr_credit_purchase_orders set status='CANCELLED' where id=$1",[created.data.order.id]);assert.equal((await api(route,null,credentials)).status,400);
+  await query("update qr_credit_purchase_orders set status='PENDING' where id=$1",[created.data.order.id]);await approve(created.data.order.id);
+  const active=await api(route,null,credentials);assert.equal(active.status,200);assert.equal(active.data.state,'ACTIVE');assert.equal(active.data.order,undefined);
+  await query("update businesses set subscription_status='SUSPENDED' where id=$1",[created.data.business.id]);assert.equal((await api(route,null,credentials)).status,400);
+ });
+ await t.test('credential throttles cannot be bypassed by rotating X-Forwarded-For or login entrypoint',async()=>{
+  for(const kind of ['login','recovery']){
+   const email=uid()+'@example.test';
+   for(let attempt=0;attempt<9;attempt++){
+    const route=kind==='recovery'?'/api/public/signup/portal/recover':attempt%2?'/api/auth/demo/login':'/api/auth/login';
+    const response=await api(route,null,{email:attempt%2?email.toUpperCase():email,password:'IncorrectPassword!2026'});assert.equal(response.status,attempt<8?401:429,JSON.stringify(response));
+   }
+  }
+ });
  await t.test('Admin repairs legacy missing link but cannot move another seller account or replace managed/closed contacts',async()=>{
   const p=await prospect(),otherP=await prospect(other),r=await api('/api/public/signup/portal',null,signup());assert.equal(r.status,201,JSON.stringify(r));const business=r.data.business.id,auto=(await query('select * from qori_sales_prospects where business_id=$1',[business])).rows[0];
   const payload={business_id:business,expected_linked_prospect_id:auto.id,reason:'Revisión administrativa del negocio de ejemplo histórico.'};
