@@ -5,12 +5,12 @@
   function open({ record, dialog, request, download, isCurrent }) {
     let current = record;
     const editable = a => a && (['DRAFT', 'CHANGES_REQUESTED', 'SUBMITTED'].includes(a.status) || (a.status === 'APPROVED' && a.approval_mode === 'ADMIN_OVERRIDE'));
-    const canSubmit = () => !current.password_setup_required && editable(current.application) && current.application.status !== 'SUBMITTED' && Object.keys(labels).every(kind => current.documents.some(doc => doc.kind === kind));
+    const canSubmit = () => editable(current.application) && current.application.status !== 'SUBMITTED' && Object.keys(labels).every(kind => current.documents.some(doc => doc.kind === kind));
     const d = dialog('Documentos de ' + record.name, `
       <section class="full seller-document-intro"><p>Adjunta los documentos que el vendedor ya entregó al equipo de Qori. La carga queda registrada con tu usuario y requiere revisión antes de aprobar el expediente.</p><p><strong>${esc(record.name)}</strong><br>${esc(record.email)}</p></section>
       <div class="full seller-document-grid" data-documents></div>
       <section class="full seller-document-submit" data-submit-section>
-        <h3>Preparar la revisión</h3>${record.password_setup_required?'<p role="note">Puedes adjuntar archivos ahora. Para enviar a revisión, el embajador debe activar su cuenta y aceptar las condiciones.</p>':''}<p>Confirma la recepción de los cuatro documentos. Las condiciones aceptadas por el vendedor durante su registro se conservan.</p>
+        <h3>Preparar la revisión</h3>${record.password_setup_required?'<p role="note">Puedes verificar y aprobar el expediente antes del primer ingreso. La aceptación electrónica queda pendiente hasta que el embajador active su cuenta; no se registrará en su nombre.</p>':''}<p>Confirma la recepción de los cuatro documentos, incluido el contrato firmado y autenticado.</p>
         <label class="checkbox-row"><input name="documents_received" type="checkbox" required><span>Recibí del vendedor los cuatro documentos completos y legibles.</span></label>
         <label class="checkbox-row"><input name="signed_and_notarized" type="checkbox" required><span>El contrato adjunto está firmado y autenticado ante notaría.</span></label>
         <label><span>Nota para el historial del expediente</span><textarea name="note" minlength="15" maxlength="2000" required placeholder="Documentación recibida y adjuntada por el equipo de Qori."></textarea></label>

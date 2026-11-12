@@ -16,8 +16,8 @@ async function audit(db,user,action,id,detail={}){await db.query("insert into qo
 async function requireApproved(user,db={query}){
  if(!['QORI_SELLER','QORI_SUPERADMIN'].includes(user.platform_role||user.role))throw forbidden('Necesitas acceso Qori Seller.');
  if((user.platform_role||user.role)==='QORI_SUPERADMIN')return;
- const a=(await db.query('select status from qori_seller_applications where user_id=$1',[user.id])).rows[0];
- if(a?.status!=='APPROVED'){
+ const a=(await db.query('select a.status,u.password_setup_required from qori_seller_applications a join app_users u on u.id=a.user_id where a.user_id=$1',[user.id])).rows[0];
+ if(a?.status!=='APPROVED'||a.password_setup_required){
   const error=forbidden('Tu acceso a Qori Seller está bloqueado hasta que Qori apruebe tu solicitud de Embajador.');
   error.details={code:'SELLER_APPROVAL_REQUIRED',application_status:a?.status||'NOT_STARTED'};throw error;
  }
@@ -102,12 +102,13 @@ async function adminSubmit(user,id,payload){
   if(!target||(target.platform_role||target.role)!=='QORI_SELLER')throw forbidden('Selecciona una cuenta con perfil Qori Seller vigente.');
   const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[id])).rows[0];
   if(!a||!(['DRAFT','CHANGES_REQUESTED'].includes(a.status)||(a.status==='APPROVED'&&a.approval_mode==='ADMIN_OVERRIDE')))throw badRequest('Este expediente no admite un nuevo envío.');
-  if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('El vendedor debe aceptar las condiciones vigentes desde su cuenta antes de enviar este expediente.');
+  const pendingActivation=await pendingManualActivation(db,id,a);
+  if(a.ciiu!==CIIU.code||(a.terms_version!==VERSION&&!pendingActivation))throw badRequest('El vendedor debe aceptar las condiciones vigentes desde su cuenta antes de enviar este expediente.');
   const docs=(await db.query('select kind,sha256 from qori_seller_documents where user_id=$1',[id])).rows;
   if(kinds.some(k=>!docs.some(doc=>doc.kind===k)))throw badRequest('Adjunta cédula, RUT, certificado bancario y contrato firmado y autenticado.');
   if(docs.some(doc=>d.document_hashes[doc.kind]!==doc.sha256)){const error=badRequest('Los documentos cambiaron. Abre de nuevo el expediente antes de enviarlo.');error.status=409;throw error;}
   await db.query("update qori_seller_applications set status=case when status='APPROVED' then 'APPROVED' else 'SUBMITTED' end,submitted_at=now(),updated_at=now() where user_id=$1",[id]);
-  await audit(db,user,'SELLER_APPLICATION_ADMIN_SUBMITTED',id,{note:d.note,documents:docs,documents_received:true,signed_and_notarized:true,terms_version:a.terms_version,source:'ADMIN'});
+  await audit(db,user,'SELLER_APPLICATION_ADMIN_SUBMITTED',id,{note:d.note,documents:docs,documents_received:true,signed_and_notarized:true,terms_version:a.terms_version,pending_electronic_acceptance:pendingActivation,source:'ADMIN'});
   return {ok:true};
  });
 }
@@ -134,6 +135,10 @@ async function submit(user,payload,ip){
   return {ok:true};
  });
 }
+async function pendingManualActivation(db,id,a){
+ if(a.terms_version!=='PENDING_ACTIVATION'||a.accepted_at)return false;
+ return Boolean((await db.query('select 1 from app_users u join qori_seller_activations t on t.user_id=u.id where u.id=$1 and u.password_setup_required and t.completed_at is null',[id])).rowCount);
+}
 async function review(user,id,payload){
  superadmin(user);validate(uuid,id);
  const d=validate(z.object({status:z.enum(['APPROVED','CHANGES_REQUESTED','REJECTED','SUSPENDED']),note:text(2000).min(15),identity_checked:z.boolean().default(false),ciiu_checked:z.boolean().default(false),bank_ownership_checked:z.boolean().default(false),notarized_contract_checked:z.boolean().default(false),legal_terms_checked:z.boolean().default(false)}).strict(),payload);
@@ -143,12 +148,12 @@ async function review(user,id,payload){
   if(d.status==='APPROVED'){
    requireClassification();
    if(a.status!=='SUBMITTED'&&!(a.status==='APPROVED'&&a.approval_mode==='ADMIN_OVERRIDE'&&a.submitted_at))throw badRequest('Solo se aprueban solicitudes enviadas a revisión.');
-   if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('Solicita correcciones: el postulante debe aceptar el requisito CIIU definido por Qori y presentar el contrato actualizado.');
+   if(a.ciiu!==CIIU.code||(a.terms_version!==VERSION&&!await pendingManualActivation(db,id,a)))throw badRequest('Solicita correcciones: el postulante debe aceptar el requisito CIIU definido por Qori y presentar el contrato actualizado.');
    if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, CIIU 4610 en el RUT, titularidad bancaria, autenticación notarial y condiciones contractuales.');
    if((await db.query('select count(*)::int n from qori_seller_documents where user_id=$1',[id])).rows[0].n!==4)throw badRequest('La documentación está incompleta.');
   }else if(d.status==='SUSPENDED'&&a.status!=='APPROVED')throw badRequest('Solo puedes suspender un Embajador aprobado.');
   await db.query("update qori_seller_applications set status=$2,approval_mode=case when $2='APPROVED' then 'DOCUMENTS' else approval_mode end,review_note=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now() where user_id=$1",[id,d.status,d.note,user.id]);
-  await audit(db,user,'SELLER_APPLICATION_'+d.status,id,d);
+  await audit(db,user,'SELLER_APPLICATION_'+d.status,id,{...d,pending_electronic_acceptance:await pendingManualActivation(db,id,a)});
   return {ok:true};
  });
 }
@@ -223,8 +228,8 @@ async function pay(user,payload){
   if(prior){if(prior.seller_id!==d.seller_id||prior.transfer_reference!==d.transfer_reference)throw badRequest('La solicitud ya corresponde a otro pago.');return {payout:prior};}
   const day=(await db.query("select (now() at time zone 'America/Bogota')::date::text today")).rows[0].today;
   if(d.paid_on>day||new Date(d.paid_on+'T12:00:00Z').getUTCDay()!==4)throw badRequest('Registra la fecha real de transferencia: un jueves, sin fechas futuras.');
-  const approved=(await db.query("select a.status,a.approval_mode,u.is_active from qori_seller_applications a join app_users u on u.id=a.user_id where a.user_id=$1 for update of a",[d.seller_id])).rows[0];
-  if(!approved||approved.status!=='APPROVED'||approved.approval_mode==='ADMIN_OVERRIDE'||!approved.is_active)throw badRequest('El pago exige un expediente de Embajador aprobado documentalmente y una cuenta activa.');
+  const approved=(await db.query("select a.status,a.approval_mode,a.accepted_at,u.is_active,u.password_setup_required from qori_seller_applications a join app_users u on u.id=a.user_id where a.user_id=$1 for update of a",[d.seller_id])).rows[0];
+  if(!approved||approved.status!=='APPROVED'||approved.approval_mode==='ADMIN_OVERRIDE'||!approved.is_active||approved.password_setup_required||!approved.accepted_at)throw badRequest('El pago exige un expediente de Embajador aprobado documentalmente y una cuenta activada con las condiciones aceptadas.');
   const rows=(await db.query("select id,amount_cop from qori_seller_commissions where seller_id=$1 and status='PENDING' and due_on<=$2 order by id for update",[d.seller_id,d.paid_on])).rows;
   const cents=rows.reduce((s,r)=>s+Math.round(Number(r.amount_cop)*100),0);
   if(cents<=0||cents!==Math.round(d.expected_gross_cop*100))throw badRequest('El saldo cambió o no hay comisiones exigibles. Actualiza antes de registrar el pago.');

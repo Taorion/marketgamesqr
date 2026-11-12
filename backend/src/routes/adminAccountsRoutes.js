@@ -5,6 +5,8 @@ const handle=fn=>async(req,res,next)=>{try{res.json(await fn(req));}catch(e){if(
 router.get('/bootstrap',handle(r=>service.bootstrap(r.user)));
 router.post('/sellers',handle(r=>require('../services/sellerActivationService').create(r.user,r.body)));
 router.post('/sellers/:id/activation',handle(r=>require('../services/sellerActivationService').renew(r.user,r.params.id)));
+router.get('/sellers/:id/welcome',handle(r=>require('../services/sellerWelcomeService').preview(r.user,r.params.id)));
+router.post('/sellers/:id/welcome',handle(r=>require('../services/sellerWelcomeService').send(r.user,r.params.id,r.body)));
 router.get('/:kind',handle(r=>service.list(r.user,r.params.kind,r.query)));
 router.get('/:kind/:id',handle(r=>service.detail(r.user,r.params.kind,r.params.id)));
 router.patch('/customers/:id',handle(r=>service.updateCustomer(r.user,r.params.id,r.body)));

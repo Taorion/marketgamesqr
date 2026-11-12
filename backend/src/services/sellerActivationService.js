@@ -83,4 +83,4 @@ async function complete(payload,ip) {
     return {ok:true,email:u.email,message:'Tu contraseña quedó creada. Ya puedes iniciar sesión en Qori Seller.'};
   });
 }
-module.exports={create,renew,inspect,complete};
+module.exports={create,renew,inspect,complete,issue};
