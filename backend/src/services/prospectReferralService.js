@@ -27,7 +27,18 @@ async function referral(user, id) {
   const base = env.publicAppUrl.replace(/\/$/,'');
   const plan_referral_url=base+'/paquetes/?'+new URLSearchParams({advisor:p.seller_id,prospect_ref:token});
   const referral_url=base+'/pense-en-ti/?'+new URLSearchParams({seller:p.seller_id,prospect_ref:token});
-  return {plan_referral_url,referral_url,plan_referral_links:require('./sellerPlanReferralLinks').planReferralLinks(referral_url,plan_referral_url),email:p.email,expires_in_days:30};
+  const presentation_url=base+'/conoce-qori/?'+new URLSearchParams({seller:p.seller_id,prospect_ref:token});
+  return {presentation_url,plan_referral_url,referral_url,plan_referral_links:require('./sellerPlanReferralLinks').planReferralLinks(referral_url,plan_referral_url),email:p.email,expires_in_days:30};
+}
+// Viewing a presentation is read-only and never discloses the contact's email.
+async function validatePresentationContext(sellerId,token){
+  if(!token)return;
+  let claims;
+  try{claims=jwt.verify(token,signingKey(),{algorithms:['HS256'],audience});}
+  catch{throw badRequest('El enlace de este contacto venció o no es válido. Pide uno nuevo a tu embajador.');}
+  if(claims.seller_id!==sellerId||!uuid.safeParse(claims.prospect_id).success)throw badRequest('El enlace no corresponde a este embajador.');
+  const p=(await query('select * from qori_sales_prospects where id=$1',[claims.prospect_id])).rows[0];
+  if(!eligible(p)||p.seller_id!==sellerId||claims.contact_key!==contactKey(p.email))throw badRequest('El contacto cambió o ya está inscrito. Solicita un enlace actualizado a tu embajador.');
 }
 // Run before provisioning, in the same transaction. A shared/expired/reassigned
 // prospect link fails explicitly instead of silently becoming a generic signup.
@@ -94,4 +105,4 @@ async function repairLink(user,id,payload) {
     return {ok:true,prospect:linked};
   });
 }
-module.exports = {referral,resolveSignupProspect,linkSignupProspect,linkableBusinesses,repairLink};
+module.exports = {referral,validatePresentationContext,resolveSignupProspect,linkSignupProspect,linkableBusinesses,repairLink};

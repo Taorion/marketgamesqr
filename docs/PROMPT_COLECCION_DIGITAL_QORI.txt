@@ -1,0 +1,85 @@
+Actúa como director editorial, diseñador de documentos y especialista en capacitación comercial de Qori. Crea una colección completa de archivos digitales, coherente y lista para revisión y publicación en la biblioteca de Qori Seller.
+
+OBJETIVO
+El embajador debe saber qué material usar, cuándo usarlo y cuál es el siguiente paso para que un negocio entienda Qori, elija una opción adecuada, cree su cuenta y complete el pago cuando corresponda. El prospecto debe poder avanzar con claridad desde una presentación hasta el registro, sin depender de una explicación continua del embajador. No prometas ventas automáticas ni resultados económicos garantizados.
+
+ENTREGABLES REALES
+No te limites a proponer un índice, dar consejos o describir archivos que no creaste. Produce archivos descargables con contenido completo y diseño consistente. Entrega PDF, DOCX, PPTX y PNG según el inventario de la fuente adjunta. Cada presentación debe existir como PPTX editable y como PDF; cada manual indicado como editable debe tener DOCX y PDF. Los PNG deben ser archivos de imagen reales, no diapositivas con una extensión cambiada.
+Si una herramienta necesaria no está disponible, explica exactamente qué formato no puedes generar, entrega los demás y proporciona el contenido editable de ese activo. Nunca digas que un archivo está creado sin adjuntarlo. No dependas de Canva ni de enlaces externos sin autorización para exportarlos.
+
+FUENTES Y VERDAD DEL PRODUCTO
+Usa como referencia prioritaria el archivo FUENTE_VIGENTE_QORI.json que adjuntaré, obtenido desde Admin → Materiales Seller. Contiene fecha de consulta, planes, precios en COP, características, límites, enlaces oficiales, tabla comercial vigente e inventario de activos. Usa el logo y los materiales de marca que adjunte. No inventes logotipos, certificaciones, testimonios, capturas de pantalla, integraciones, estadísticas, descuentos ni garantías.
+Verifica la información pública en https://gosqori.com/api/public/subscription-plans y https://gosqori.com/paquetes/ cuando tengas acceso a navegación. Una página comercial antigua no debe contradecir la fuente vigente. Si existen discrepancias, señálalas en un registro de revisión y pregunta únicamente por el dato necesario. Si no adjunto el JSON, consulta esas fuentes y avanza en lo verificable; marca como pendiente cualquier dato interno no comprobado, especialmente las comisiones.
+No confundas las capacidades de todo Qori con las de cada plan. Relaciona cada promesa con una herramienta real incluida en la opción que corresponde. No inventes términos tributarios o jurídicos: remite a las condiciones oficiales.
+
+CONTEXTO
+Qori Empresa es el espacio de los negocios. Qori Customer es el espacio de los clientes de esos negocios. Qori Seller reúne herramientas, enlaces personales, seguimiento y comisiones del embajador. Qori Admin supervisa la plataforma. Los clientes no necesitan conocer los procesos internos de comisiones o administración.
+El tono debe ser elegante, cercano, directo y profesional, en español de Colombia. Habla de una oportunidad de ganar con Qori por resultados elegibles, sin prometer ingresos. No uses lenguaje sobre empleo, sueldos, condición laboral o independencia. No incluyas estrategias empresariales privadas ni modelos de reclutamiento. Sirve tanto para alguien que recomienda ocasionalmente como para quien dedica más tiempo a vender.
+
+REGLAS QUE DEBES RESPETAR
+1. Existen tres programas gratuitos separados, no un paquete con los tres: Pensé en ti, Una razón para volver y Crea activaciones.
+2. Cada gratuito permite hasta cinco productos registrados y validador gratis. Las herramientas ajenas corresponden a las suscripciones que las incluyan.
+3. Pensé en ti concede 20 tickets iniciales, una sola vez. No incluye Gift Cards ni un programa de sellos.
+4. Una razón para volver permite un programa de sellos. Los QR de premios consumen tickets comprados; no tiene tickets de bienvenida.
+5. Crea activaciones permite dos activaciones activas al mismo tiempo. Se puede pausar una para activar otra; los borradores no consumen cupos activos. Los QR de premios consumen tickets comprados; no tiene tickets de bienvenida.
+6. Comprar tickets aumenta saldo y no habilita módulos adicionales ni cambia la suscripción. El valor del producto o premio lo define y respalda el negocio.
+7. El catálogo de pago vigente incluye Despega, Crece, Escala y Expande. Usa los precios y capacidades del JSON vigente, no cifras recordadas. No vendas planes internos o de demostración como opciones públicas.
+8. El embajador comparte su enlace. Si existe un prospecto en Mi CRM, debe usar Compartir suscripción desde ese contacto; ese enlace también conserva el vínculo con el prospecto. El cliente debe usar el correo registrado en ese contacto. Si cambió, se actualiza antes de generar un enlace nuevo.
+9. El titular crea su contraseña y paga directamente a Qori. El embajador no solicita contraseñas, códigos bancarios ni datos de tarjeta.
+10. Cuenta creada, pago confirmado, cierre validado por Admin y comisión pagada son estados distintos. Una captura de pago, un retorno desde la pasarela o una cuenta marcada activa no sustituyen la confirmación del pago.
+11. Si hay un pago pendiente, un vínculo histórico faltante o una cuenta existente, se revisa la cuenta y la orden; no se crea otra cuenta ni se fuerza un cierre.
+12. El alta gratuita no genera comisión. Las comisiones se presentan únicamente en activos internos, con la política vigente, bases, condiciones y calendario verificados. Las cifras ilustrativas deben identificarse como ejemplos, no promesas.
+
+DOS AUDIENCIAS ESTRICTAMENTE SEPARADAS
+Carpeta 01_PARA_EL_EMBAJADOR: bienvenida, guía líder, manual de venta, escenarios, objeciones, tutorial tecnológico, formación, mensajes, ejercicios, seguimiento y consulta de resultados.
+Carpeta 02_PARA_EL_CLIENTE: presentación, brochure, flyers, comparativa de planes, ficha funcional, registro y pago, primeros pasos, ejemplos por sector y preguntas frecuentes.
+Los archivos para clientes no incluirán comisiones, tácticas internas, notas de capacitación, instrucciones del presentador ni detalles privados de Admin. Revisa también las notas y metadatos del PPTX antes de exportarlo para clientes.
+
+GUÍA LÍDER OBLIGATORIA
+Crea primero a00_guia_maestra. Debe permitir que un embajador use toda la colección sin capacitación adicional. Incluye:
+- Mapa de carpetas y un catálogo completo de todos los archivos.
+- Para cada activo: código, nombre, audiencia, formato, qué contiene, para qué sirve, cuándo usarlo, cómo compartirlo, qué decir al enviarlo y cuál es la siguiente acción.
+- Ruta corta para una recomendación de pocos minutos y ruta completa con diagnóstico, demostración y seguimiento.
+- Matriz: etapa del prospecto → señal o necesidad → recurso recomendado → mensaje sugerido → siguiente paso.
+- Qué materiales jamás se envían al cliente.
+- Cómo usar la biblioteca Seller, distinguir una guía web de un archivo, y comprobar versión y vigencia.
+- Lista de verificación de atribución, CRM, elección del plan, registro, pago y activación.
+- Qué hacer ante cuenta existente, correo cambiado, enlace vencido, pago pendiente, error o prospecto que no desea continuar.
+
+VENTA, ESCENARIOS Y OBJECIONES
+Desarrolla al menos ocho escenarios ilustrativos: cafetería, restaurante, veterinaria, comercio de productos, servicio por citas, evento, negocio con equipo y recomendación breve a un conocido. No los presentes como casos de éxito reales. En cada uno: contexto, preguntas, necesidad, herramienta pertinente, límites que aclarar, demostración breve, material a enviar y siguiente paso. No atribuyas funciones clínicas, reservas, punto de venta, facturación o integraciones si la fuente no las acredita.
+Desarrolla al menos quince objeciones: precio, falta de tiempo, herramienta existente, poca habilidad tecnológica, dudas sobre resultados, gratuidad frente a tickets, límites, datos, confianza, permanencia, pago, falta de decisión, consulta con socio, no necesitar todas las herramientas y “lo pensaré”. Para cada una: qué puede significar, respuesta respetuosa, pregunta de aclaración, evidencia que mostrar y siguiente paso. Incluye cuándo reconocer que no hay buen encaje. No uses presión, falsa urgencia ni descuentos inventados.
+
+TUTORIAL TECNOLÓGICO
+Describe el flujo exacto desde Seller: acceso aprobado → Demo con datos ficticios → Mi CRM → prospecto y correo correcto → Compartir suscripción → enlace de presentación o de plan → el titular completa registro → checkout cuando aplica → confirmación del pago → consulta del negocio → revisión del cierre por Admin → primera acción del negocio → consulta de comisiones y pagos.
+Incluye una ruta alternativa para la invitación personal sin prospecto previo y explica su diferencia con el enlace de Mi CRM. Incluye la recuperación de una contratación pendiente sin duplicar cuenta u orden.
+Usa capturas reales solo si fueron proporcionadas o si puedes obtenerlas de una sesión autorizada. No fabriques pantallas que parezcan reales. Si faltan, usa diagramas claramente rotulados “Esquema ilustrativo” y entrega una lista precisa de capturas pendientes.
+
+ENLACES Y ATRIBUCIÓN
+Sitio oficial: https://gosqori.com/
+Seller: https://gosqori.com/seller/
+Empresa: https://gosqori.com/empresa/
+Customer: https://gosqori.com/customer/
+Comparación pública: https://gosqori.com/paquetes/
+Programas gratuitos: https://gosqori.com/pense-en-ti/
+Presentación para compartir: se obtiene desde Seller y contiene el identificador real del embajador; desde Mi CRM también contiene el contexto del prospecto.
+No inventes un ID de embajador ni un token de prospecto. No sustituyas un enlace personal por uno genérico. Usa {{ENLACE_PERSONAL}} y {{NOMBRE_EMBAJADOR}} únicamente en plantillas editables, claramente identificadas como plantillas por personalizar. No dejes un enlace o QR ficticio como si estuviera listo para enviar.
+Para las piezas genéricas finales, usa la llamada “Elige tu opción en el enlace personal que te compartió tu embajador”. Explica en la guía que los archivos se comparten desde la presentación personal disponible en Seller, que conserva la ruta hacia registro y pago. Los enlaces oficiales de consulta pueden ser clicables, pero no sustituyen ese enlace de contratación. Si te proporciono un enlace personal real, puedes producir además una variante personalizada con URL y QR verificados, separada de la versión general.
+
+DISEÑO
+Entrega un sistema visual consistente: tipografía legible, jerarquía clara, márgenes generosos, tablas de planes que no se corten, buen contraste y lectura cómoda en móvil. Usa el logo oficial y colores comprobados en los materiales de marca. Evita páginas recargadas y texto demasiado pequeño en los flyers. Las presentaciones para prospectos deben ser sintéticas; los detalles se amplían en las guías y anexos.
+Cada documento lleva código, audiencia adecuada, versión y fecha. Los activos internos llevan “Uso del embajador”. Los de cliente no necesitan advertencias internas. El comparativo de planes lleva fecha, fuente y recordatorio de consultar información vigente antes de contratar. Genera PDF con texto seleccionable y enlaces funcionales. Revisa visualmente los PDF y las diapositivas antes de entregarlos.
+
+PRODUCCIÓN Y ENTREGA
+Trabaja por lotes para mantener calidad y no omitir archivos:
+Lote 1: fuente validada, inventario y guía líder.
+Lote 2: materiales internos de capacitación y venta.
+Lote 3: materiales comerciales para el prospecto.
+Lote 4: variantes visuales, originales editables, revisión cruzada y empaquetado.
+Empieza con lo disponible y completa los lotes; no me pidas aprobación para decisiones rutinarias de maquetación. Pregunta solo por datos imprescindibles que no puedas verificar. Si necesitas otra respuesta para continuar por límites de la sesión, entrega los archivos terminados y un estado de avance exacto; no los presentes como la colección completa.
+Cada archivo debe tener contenido propio y útil, no el mismo resumen reciclado. No rellenes páginas para alcanzar una extensión arbitraria.
+Entrega un ZIP maestro con las dos carpetas, originales editables y exportaciones. Adjunta también la guía líder y los principales archivos individualmente. Incluye MANIFIESTO_ACTIVOS.csv con: codigo, titulo, audiencia (SELLER/PROSPECT), etapa (START/DISCOVER/PRESENT/CLOSE/ACTIVATE/FOLLOW_UP), formato, nombre_archivo, version, fecha, descripcion, instrucciones_uso, enlace_o_cta, estado_revision. Un archivo por fila. Mantén cada archivo de publicación por debajo de 15 MB, comprimiendo imágenes sin perder legibilidad o dividiendo documentos largos de forma lógica.
+Incluye CONTROL_DE_CALIDAD.txt: archivos realmente generados, vínculos comprobados, precios y límites contrastados, fuentes, capturas reales utilizadas, campos pendientes y piezas que aún necesitan personalización. No marques como listo para clientes un archivo con datos sin confirmar o marcadores de posición.
+Termina con una tabla de cobertura que demuestre que todos los activos del inventario fueron entregados o identifique exactamente lo que falta. Indica qué archivos están listos para subir a Admin como borradores para revisión y posterior publicación.
+
+Comienza validando la fuente adjunta, organiza el inventario y crea la guía líder. Después produce el resto de la colección.
