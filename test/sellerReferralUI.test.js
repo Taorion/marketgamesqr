@@ -37,3 +37,26 @@ test('referral still works when browser storage is unavailable',()=>{
  const w=new JSDOM('',{url:'https://example.test/paquetes/?advisor='+id,runScripts:'outside-only'}).window;
  try{Object.defineProperty(w,'localStorage',{get(){throw Error('blocked');}});w.eval(source('qori-web/js/seller-referral.js'));assert.equal(w.QoriReferral.get(),id);w.QoriReferral.clear();assert.equal(w.QoriReferral.get(),null);}finally{w.close();}
 });
+
+test('referral crosses Home without storage, supports slashless links and skips malformed or external links',()=>{
+ const html='<a href="http://[invalid">Malformed</a><a href="/">Home</a><a href="/paquetes?plan=STARTER#signupSection">Plans</a><a href="/pense-en-ti">Free</a><a href="https://external.test/">External</a><a href="/paquetes/?advisor='+other+'">Other ambassador</a>';
+ const first=new JSDOM(html,{url:'https://example.test/pense-en-ti/?seller='+id,runScripts:'outside-only'}).window;
+ let next;
+ try {
+  Object.defineProperty(first,'localStorage',{get(){throw Error('blocked');}});
+  first.eval(source('qori-web/js/seller-referral.js'));first.QoriReferral.decorate();
+  const links=first.document.querySelectorAll('a');next=links[1].href;
+  assert.equal(new URL(next).searchParams.get('advisor'),id);
+  assert.equal(new URL(links[2].href).searchParams.get('advisor'),id);
+  assert.equal(new URL(links[2].href).searchParams.get('plan'),'STARTER');assert.equal(new URL(links[2].href).hash,'#signupSection');
+  assert.equal(new URL(links[3].href).searchParams.get('seller'),id);
+  assert.equal(links[4].href,'https://external.test/');assert.equal(new URL(links[5].href).searchParams.get('advisor'),other);
+ } finally {first.close();}
+ const home=new JSDOM('<a href="/paquetes/">Plans</a>',{url:next,runScripts:'outside-only'}).window;
+ try {Object.defineProperty(home,'localStorage',{get(){throw Error('blocked');}});home.eval(source('qori-web/js/seller-referral.js'));home.QoriReferral.decorate();assert.equal(new URL(home.document.querySelector('a').href).searchParams.get('advisor'),id);}finally{home.close();}
+});
+
+test('new explicit referral replaces automatically decorated links without overwriting authored referrals',()=>{
+ const w=new JSDOM('<a href="/paquetes/">Plans</a><a href="/paquetes/?advisor='+id+'">Original link</a>',{url:'https://example.test/?advisor='+id,runScripts:'outside-only'}).window;
+ try {w.eval(source('qori-web/js/seller-referral.js'));w.QoriReferral.decorate();w.history.replaceState(null,'','/?advisor='+other);w.eval(source('qori-web/js/seller-referral.js'));w.QoriReferral.decorate();const links=w.document.querySelectorAll('a');assert.equal(new URL(links[0].href).searchParams.get('advisor'),other);assert.equal(new URL(links[1].href).searchParams.get('advisor'),id);}finally{w.close();}
+});

@@ -70,6 +70,18 @@ test('Referral checkout through payment, supervision and administrative reassign
   const o=(await query("insert into qr_credit_purchase_orders(business_id,package_code,package_size,package_title,price_cop,external_reference,metadata) values($1,'STARTER',0,'Conversión QA',229000,$2,$3) returning *",[r.data.business_id,uid(),JSON.stringify({signup:{type:'portal_monthly_subscription',plan_code:'STARTER'}})])).rows[0];assert.equal(o.commission_seller_id,seller.id);
   await approve(o.id);assert.equal((await query('select seller_id from qori_seller_commissions where order_id=$1',[o.id])).rows[0].seller_id,seller.id);
  });
+ await t.test('supervisor distinguishes refunds and chargebacks without exposing payment payloads',async()=>{
+  const ids={};
+  for(const status of ['refunded','charged_back']) {
+   ids[status]=(await query("insert into qr_credit_purchase_orders(business_id,package_code,package_size,package_title,price_cop,external_reference,status,payment_payload) values($1,'STARTER',0,'Supervisión QA',229000,$2,'CANCELLED',$3::jsonb) returning id",[paid.business.id,uid(),JSON.stringify({status,payer:{email:'private-payer@example.test'}})])).rows[0].id;
+   const r=await api('/api/seller/admin/supervision?'+new URLSearchParams({view:'orders',business_id:paid.business.id,status:status.toUpperCase()}),admin);
+   assert.equal(r.status,200);assert.equal(r.data.summary.total,1);assert.equal(Number(r.data.summary.approved_cop),0);
+   assert.deepEqual(r.data.rows.map(o=>o.id),[ids[status]]);assert.equal(r.data.rows[0].provider_status,status);
+   assert.equal(JSON.stringify(r.data).includes('private-payer'),false);assert.equal('payment_payload' in r.data.rows[0],false);
+  }
+  const cancelled=await api('/api/seller/admin/supervision?'+new URLSearchParams({view:'orders',business_id:paid.business.id,status:'CANCELLED'}),admin);
+  assert.equal(cancelled.data.summary.total,2);assert.deepEqual(new Set(cancelled.data.rows.map(o=>o.id)),new Set(Object.values(ids)));
+ });
  await t.test('self referral, inactive seller and failed provider cannot leave an attributed unpaid account',async()=>{
   const document=(await query('select document_key from qori_seller_applications where user_id=$1',[seller.id])).rows[0].document_key;
   const own=await api('/api/public/signup/portal',null,{...body(),nit:document});assert.equal(own.status,400,JSON.stringify(own));

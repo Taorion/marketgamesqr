@@ -22,3 +22,16 @@ test('a late supervisor response is discarded after logout',async()=>{
  const pending=w.QoriSellerSupervision.open({dialog:(_t,body)=>{const d=w.document.createElement('dialog');d.innerHTML=body;w.document.body.append(d);return d;},request:()=>new Promise(r=>resolve=r),isCurrent:()=>current});
  current=false;resolve({sellers:[{id:'secret',full_name:'Private seller'}]});await pending;assert.doesNotMatch(w.document.body.textContent,/Private seller/);w.close();
 });
+
+test('supervisor can filter refunded orders and see their payment outcome',async()=>{
+ const w=new JSDOM('<body></body>',{url:'https://example.test/admin/',runScripts:'outside-only'}).window,calls=[];
+ const request=async path=>{calls.push(path);if(path.endsWith('/bootstrap'))return {sellers:[]};const q=new URL('https://test'+path).searchParams;return {rows:q.get('view')==='orders'?[{id:'order-1',business_id:'business-1',business_name:'Prueba',status:'CANCELLED',provider_status:q.get('status')==='CHARGED_BACK'?'charged_back':'refunded',commission_entries:0}]:[],summary:{total:1},has_more:false};};
+ w.eval(fs.readFileSync('admin/js/seller-supervision.js','utf8'));
+ try {
+  await w.QoriSellerSupervision.open({dialog:(_t,body)=>{const d=w.document.createElement('dialog');d.innerHTML=body;w.document.body.append(d);return d;},request,isCurrent:()=>true});
+  const view=w.document.querySelector('[data-view]');view.value='orders';view.dispatchEvent(new w.Event('change'));await until(()=>w.document.querySelector('td'));
+  assert.match(w.document.querySelector('[data-rows]').textContent,/Devuelto/);
+  const status=w.document.querySelector('[data-state]');status.value='REFUNDED';w.document.querySelector('[data-search-button]').click();await until(()=>calls.at(-1).includes('status=REFUNDED')&&w.document.querySelector('td'));
+  status.value='CHARGED_BACK';w.document.querySelector('[data-search-button]').click();await until(()=>w.document.querySelector('[data-rows]').textContent.includes('Contracargo'));assert.match(calls.at(-1),/status=CHARGED_BACK/);
+ }finally{w.close();}
+});

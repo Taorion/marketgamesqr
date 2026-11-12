@@ -28,8 +28,8 @@ async function list(user, params) {
   const f = validate(filterSchema, params);
   const values=[f.seller_id,f.business_id,'%'+f.search+'%',f.status,f.offset];
   // Both seller ids are meaningful: current portfolio owner and frozen recipient of an order.
-  const scope = (seller,business,search,status) => `($1='' or ($1='unassigned' and ${seller} is null) or ${seller}::text=$1)
-    and ($2='' or ${business}::text=$2) and (${search}) and ($4='' or ${status}=$4)`;
+  const scope = (seller,business,search,status,providerStatus='false') => `($1='' or ($1='unassigned' and ${seller} is null) or ${seller}::text=$1)
+    and ($2='' or ${business}::text=$2) and (${search}) and ($4='' or ${status}=$4 or ${providerStatus})`;
   let from, fields, where, sort, totals;
   if (f.view==='accounts') {
     from=`businesses b left join qori_sales_accounts a on a.business_id=b.id left join app_users s on s.id=a.seller_id`;
@@ -43,9 +43,10 @@ async function list(user, params) {
       left join qori_sales_accounts a on a.business_id=b.id left join app_users current_s on current_s.id=a.seller_id`;
     fields=`o.id,o.business_id,b.name business_name,o.package_title,o.package_code,o.price_cop,o.status,o.credited_at,o.created_at,
       o.mercado_pago_payment_id,o.commission_seller_id seller_id,s.full_name seller_name,a.seller_id current_seller_id,current_s.full_name current_seller_name,
+      o.payment_payload->>'status' provider_status,
       o.metadata->>'source' source,
       (select count(*)::int from qori_seller_commissions c where c.order_id=o.id) commission_entries`;
-    where=scope('o.commission_seller_id','b.id',"b.name ilike $3 or s.full_name ilike $3 or o.id::text ilike $3 or o.mercado_pago_payment_id ilike $3",'o.status');sort='o.created_at desc,o.id';
+    where=scope('o.commission_seller_id','b.id',"b.name ilike $3 or s.full_name ilike $3 or o.id::text ilike $3 or o.mercado_pago_payment_id ilike $3",'o.status',"upper(o.payment_payload->>'status')=$4");sort='o.created_at desc,o.id';
     totals=`count(*)::int total,coalesce(sum(o.price_cop) filter(where o.status='APPROVED' and o.credited_at is not null),0) approved_cop`;
   } else if (f.view==='commissions') {
     from=`qori_seller_commissions c join businesses b on b.id=c.business_id join app_users s on s.id=c.seller_id`;

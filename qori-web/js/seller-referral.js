@@ -17,10 +17,13 @@
   function decorate() {
     if (!current) return;
     document.querySelectorAll('a[href]').forEach(a => {
-      const url = new URL(a.getAttribute('href'), location.href);
-      if (url.origin !== location.origin || !/^\/(paquetes|pense-en-ti)\/(?:index\.html)?$/.test(url.pathname)) return;
-      if (url.searchParams.has('advisor') || url.searchParams.has('seller')) return;
-      url.searchParams.set(url.pathname.startsWith('/paquetes/') ? 'advisor' : 'seller', current.id);
+      let url;
+      try { url = new URL(a.getAttribute('href'), location.href); } catch { return; }
+      // Carry the referral through Home too, including browsers without storage.
+      if (url.origin !== location.origin || !/^\/(?:(?:paquetes|pense-en-ti)(?:\/(?:index\.html)?)?|index\.html)?$/.test(url.pathname)) return;
+      if (!a.dataset.qoriReferral && (url.searchParams.has('advisor') || url.searchParams.has('seller'))) return;
+      url.searchParams.delete('advisor'); url.searchParams.delete('seller');
+      url.searchParams.set(url.pathname.startsWith('/pense-en-ti') ? 'seller' : 'advisor', current.id);
       a.href = url.href;
       a.dataset.qoriReferral = 'true';
     });
