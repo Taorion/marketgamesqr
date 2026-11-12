@@ -11,7 +11,7 @@ const {requireSuperadmin}=require('./commercialAuthorization');
 const {guides,productionAssets}=require('./sellerResourceContent');
 const uuid=z.string().uuid(),maxBytes=15*1024*1024;
 const columns='id,resource_key,title,description,usage,audience,stage,kind,state,version_label,url,filename,mime,byte_size,sha256,revision,created_at,updated_at';
-const schema=z.object({resource_key:z.string().regex(/^[a-z0-9][a-z0-9_-]{1,79}$/),title:z.string().trim().min(3).max(140),description:z.string().trim().max(800).default(''),usage:z.string().trim().max(2000).default(''),audience:z.enum(['SELLER','PROSPECT']),stage:z.enum(['START','DISCOVER','PRESENT','CLOSE','ACTIVATE','FOLLOW_UP']),kind:z.enum(['FILE','LINK']),state:z.enum(['DRAFT','PUBLISHED','ARCHIVED']).default('DRAFT'),version_label:z.string().trim().min(1).max(40),url:z.string().max(2000).nullable().optional(),filename:z.string().min(1).max(180).optional(),base64:z.string().max(Math.ceil(maxBytes/3)*4).optional(),expected_revision:z.number().int().positive().optional()}).strict();
+const schema=z.object({resource_key:z.string().regex(/^[a-z0-9][a-z0-9_-]{1,79}$/),title:z.string().trim().min(3).max(140),description:z.string().trim().max(800).default(''),usage:z.string().trim().max(2000).default(''),audience:z.enum(['SELLER','PROSPECT','CANDIDATE']),stage:z.enum(['START','DISCOVER','PRESENT','CLOSE','ACTIVATE','FOLLOW_UP']),kind:z.enum(['FILE','LINK']),state:z.enum(['DRAFT','PUBLISHED','ARCHIVED']).default('DRAFT'),version_label:z.string().trim().min(1).max(40),url:z.string().max(2000).nullable().optional(),filename:z.string().min(1).max(180).optional(),base64:z.string().max(Math.ceil(maxBytes/3)*4).optional(),expected_revision:z.number().int().positive().optional()}).strict();
 function safeUrl(value){
  let u;try{u=new URL(value);}catch{throw badRequest('Indica un enlace HTTPS completo.');}
  if(u.protocol!=='https:'||u.username||u.password||u.port||!u.hostname.includes('.')||u.hostname.endsWith('.local')||u.hostname.endsWith('.localhost')||u.hostname.endsWith('.internal')||/^[\d.]+$/.test(u.hostname)||u.hostname.includes(':'))throw badRequest('Usa un enlace HTTPS público, sin credenciales ni puertos.');
@@ -79,9 +79,13 @@ async function download(user,id,params){
  if(!r||r.kind!=='FILE'||(!user&&(r.audience!=='PROSPECT'||r.state!=='PUBLISHED'))||(user&&user.role!=='QORI_SUPERADMIN'&&r.state!=='PUBLISHED'))throw notFound('Archivo no disponible.');
  return r;
 }
+async function opportunity(){return {resources:(await query(`select ${columns} from qori_seller_resources where state='PUBLISHED' and audience='CANDIDATE' order by resource_key,id`)).rows};}
+async function opportunityDownload(id){
+ validate(uuid,id);const r=(await query("select * from qori_seller_resources where id=$1 and audience='CANDIDATE' and state='PUBLISHED' and kind='FILE'",[id])).rows[0];if(!r)throw notFound('Archivo no disponible.');return r;
+}
 function brief(user){
  requireSuperadmin(user);const base=env.publicAppUrl.replace(/\/$/,'');
  return {generated_at:new Date().toISOString(),audience:'INTERNAL_PRODUCTION_ONLY',official_urls:{home:base,seller:base+'/seller/',empresa:base+'/empresa/',customer:base+'/customer/',plans:base+'/paquetes/',catalog:base+'/api/public/subscription-plans'},plans:plans(user.id).map(({url,...p})=>p),free_programs:require('./freeProgramPolicy').programs,commission_policy_internal_only:require('./sellerCommissionPolicy').publicPolicy(),production_assets:productionAssets,guides,link_instructions:'Los enlaces personales se copian desde Seller > Materiales para vender. Si el contacto existe en Mi CRM, usa Compartir suscripción > Presentación y materiales. Nunca inventes identificadores, enlaces personales ni tokens. Los archivos para clientes se acompañan del enlace personal; descargar un PDF no personaliza sus enlaces. Una cuenta creada no equivale a pago confirmado ni a cierre validado ni a comisión pagada.'};
 }
 function prompt(user){requireSuperadmin(user);return fs.readFileSync(path.resolve(__dirname,'../../../docs/PROMPT_COLECCION_DIGITAL_QORI.txt'),'utf8');}
-module.exports={list,save,publicContext,download,brief,prompt,fileData,safeUrl};
+module.exports={list,save,publicContext,download,brief,prompt,fileData,safeUrl,opportunity,opportunityDownload};

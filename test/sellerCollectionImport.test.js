@@ -1,0 +1,24 @@
+const {test,after}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{randomUUID,createHash}=require('node:crypto');
+process.env.DATABASE_URL='postgresql://postgres@127.0.0.1:55441/qori_customer_qa';process.env.DB_SSL='false';process.env.NODE_ENV='test';
+const {query,pool}=require('../backend/src/config/db'),{importCollection}=require('../scripts/import-seller-collection');
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'qori-import-')),email=randomUUID()+'@example.test';let actor;
+after(async()=>{if(actor){await query('delete from qori_commercial_audit where actor_id=$1',[actor]);await query('delete from qori_seller_resources where created_by=$1',[actor]);await query('delete from app_users where id=$1',[actor]);}await pool.end();fs.rmSync(tmp,{recursive:true,force:true});});
+test('reviewed import is atomic, idempotent, audited and preserves Admin changes',async()=>{
+ assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
+ actor=(await query("insert into app_users(email,password_hash,role,full_name) values($1,'qa','ADMIN_MARKET_GAMES','QA import operator') returning id",[email])).rows[0].id;
+ const pdf=Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF');fs.writeFileSync(path.join(tmp,'guide.pdf'),pdf);
+ const sha=createHash('sha256').update(pdf).digest('hex'),prefix='qa_'+randomUUID().replaceAll('-','');
+ const manifest={status:'VERIFIED',version:'qa',resources:Array.from({length:48},(_,i)=>({resource_key:prefix+'_'+i,title:'QA resource',description:'Reviewed',usage:'QA only',audience:['SELLER','PROSPECT','CANDIDATE'][i%3],stage:'START',version_label:'1',file:'guide.pdf',sha256:sha}))};
+ const file=path.join(tmp,'manifest.json'),save=()=>fs.writeFileSync(file,JSON.stringify(manifest)),args={manifestPath:file,operatorEmail:email,expectedDatabase:'qori_customer_qa'};save();
+ await assert.rejects(importCollection({...args,expectedDatabase:'wrong'}),/Wrong database/);
+ assert.equal((await importCollection(args)).new_resources,48);
+ assert.equal((await importCollection({...args,apply:true})).inserted,48);
+ assert.equal((await importCollection({...args,apply:true})).unchanged,48);
+ assert.equal((await query("select count(*)::int n from qori_commercial_audit where actor_id=$1 and action='SELLER_LIBRARY_IMPORTED'",[actor])).rows[0].n,48);
+ await query("update qori_seller_resources set state='ARCHIVED',title='Admin edit',revision=revision+1 where resource_key=$1",[manifest.resources[0].resource_key]);
+ await importCollection({...args,apply:true});assert.deepEqual((await query('select title,state,revision from qori_seller_resources where resource_key=$1',[manifest.resources[0].resource_key])).rows[0],{title:'Admin edit',state:'ARCHIVED',revision:2});
+ manifest.resources[0].sha256='0'.repeat(64);save();await assert.rejects(importCollection({...args,apply:true}),/changed after review/);
+ manifest.resources[0].sha256=sha;manifest.resources[0].file='../outside.pdf';save();await assert.rejects(importCollection({...args,apply:true}),/leaves collection/);
+ manifest.resources[0].file='guide.pdf';save();await query("update qori_seller_resources set sha256=$2 where resource_key=$1",[manifest.resources[0].resource_key,'1'.repeat(64)]);await assert.rejects(importCollection({...args,apply:true}),/edited or imported differently/);
+ assert.equal((await query('select count(*)::int n from qori_seller_resources where created_by=$1',[actor])).rows[0].n,48);
+});

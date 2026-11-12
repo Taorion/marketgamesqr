@@ -11,6 +11,8 @@ const uploadLimit=rateLimit({keyPrefix:'seller-resource-write',max:60,windowMs:3
 router.post('/',uploadLimit,run(async(req,res)=>res.status(201).json(await s.save(req.user,null,req.body))));
 router.patch('/:id',uploadLimit,run(async(req,res)=>res.json(await s.save(req.user,req.params.id,req.body))));
 publicRouter.use(rateLimit({keyPrefix:'seller-kit-read',max:180,windowMs:60000}));
+publicRouter.get('/opportunity',run(async(_req,res)=>res.json(await s.opportunity())));
+publicRouter.get('/opportunity/resources/:id/download',run(async(req,res)=>{const f=await s.opportunityDownload(req.params.id);attachment(res,f.filename,f.mime,f.content);}));
 publicRouter.get('/',run(async(req,res)=>res.json(await s.publicContext(req.query))));
 publicRouter.get('/resources/:id/download',run(async(req,res)=>{const f=await s.download(null,req.params.id,req.query);attachment(res,f.filename,f.mime,f.content);}));
 module.exports={router,publicRouter};

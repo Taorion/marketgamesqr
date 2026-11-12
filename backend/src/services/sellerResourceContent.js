@@ -82,6 +82,9 @@ const guides=[
  ]}
 ].map(g=>({...g,kind:'GUIDE',state:'PUBLISHED',version_label:'2026-11-12',builtin:true}));
 const productionAssets=[
+ ['b01_oportunidad','CANDIDATE','START','Tu oportunidad con Qori','PDF','Producto, plataforma, formas de participar y condiciones para empezar.'],
+ ['b02_rutas','CANDIDATE','START','Elige cómo desarrollar tu actividad','PDF','Recomendar, desarrollar una cartera y especializarte por sector.'],
+ ['b03_primeros_negocios','CANDIDATE','START','Tu recorrido hacia los primeros negocios','PDF','Preparación, aprendizaje y seguimiento sin plazo ni ingreso prometido.'],
  ['a00_guia_maestra','SELLER','START','Guía líder de todos los activos','PDF + DOCX','Mapa de archivos, destinatario, cuándo usar, contenido y siguiente acción.'],
  ['a01_bienvenida','SELLER','START','Bienvenida al embajador','PDF + DOCX','Primeros pasos, preparación, enlaces, Demo, CRM y resultados.'],
  ['a02_manual_venta','SELLER','PRESENT','Manual de venta con escenarios','PDF + DOCX','Diagnóstico, demostración, encaje y cierre con ejemplos.'],
@@ -101,4 +104,10 @@ const productionAssets=[
  ['c09_escenarios','PROSPECT','PRESENT','Fichas por tipo de negocio','PDF','Cafetería, veterinaria, comercio, servicios y eventos; ejemplos ilustrativos.'],
  ['c10_preguntas','PROSPECT','CLOSE','Preguntas frecuentes del cliente','PDF','Condiciones claras, objeciones informativas y ruta de decisión.']
 ].map(([key,audience,stage,title,formats,purpose])=>({key,audience,stage,title,formats,purpose}));
+guides.find(g=>g.id==='bienvenida').sections.unshift(
+ ['Construye tu oportunidad','Qori aporta producto, plataforma, demostraciones y materiales. Tú identificas necesidades, presentas soluciones y acompañas decisiones de negocios. Puedes recomendar ocasionalmente, desarrollar una cartera o especializarte en un sector. Las rutas no cambian la política económica ni conceden servicios adicionales.'],
+ ['Tu espacio para empezar','Abre Mi oportunidad para explorar las rutas y una calculadora de referencia con la política vigente. Después consulta esta biblioteca, practica en Demo y registra tu primera conversación autorizada en Mi CRM.']
+);
+guides.find(g=>g.id==='empieza-aqui').sections.unshift(['Tres destinatarios','Para mí: formación y operación interna. Para mis clientes: herramientas para que un negocio elija su programa. Para futuros embajadores: explicación pública de la oportunidad Qori Seller. Compartir esta oportunidad no genera comisión por incorporar embajadores. La remuneración corresponde a compras elegibles de negocios.']);
+guides.find(g=>g.id==='bienvenida').sections.push(['Tus primeros tres negocios','Trabaja con un objetivo orientativo, sin plazo ni ingreso prometido. Primer negocio: comprender una necesidad y practicar una demostración. Segundo: repetir el proceso con un contacto autorizado y corregir lo que no fue claro. Tercero: comprobar que sabes conservar atribución, distinguir inscripción de pago y acompañar una primera acción. Registra el aprendizaje de cada conversación aunque no termine en compra.']);
 module.exports={guides,productionAssets};

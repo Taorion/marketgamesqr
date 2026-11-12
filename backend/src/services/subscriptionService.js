@@ -87,7 +87,7 @@ const PLAN_PRICING_NOTES = {
   STARTER: {
     recommended_start_package: null,
     portal_access_fee_cop: STARTED_PORTAL_COP,
-    pricing_note: "Crece activa la operacion inicial de Qori con graficas, leads recientes, campanas y maquina.",
+    pricing_note: "Crece permite organizar productos, contactos y una vitrina, con las capacidades indicadas en este plan. No incluye campañas, comunicaciones ni agenda.",
   },
   GROWTH: {
     recommended_start_package: null,
@@ -97,7 +97,7 @@ const PLAN_PRICING_NOTES = {
   PRO: {
     recommended_start_package: null,
     portal_access_fee_cop: PREMIUM_PORTAL_COP,
-    pricing_note: "Expande habilita operacion completa con analitica predictiva, afiliados, premios y asistencia de marketing.",
+    pricing_note: "Expande amplía la capacidad de productos, contactos, usuarios y sedes, con las herramientas de análisis, fidelización y gestión indicadas en el plan.",
   },
 };
 
@@ -313,7 +313,7 @@ const PLAN_CATALOG = {
     portal_value_cop: PLAN_PRICING_NOTES.DESPEGA.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.DESPEGA.recommended_start_package,
     best_for: "Negocios que quieren comenzar con activaciones interactivas y validacion de tickets.",
-    access_summary: "Cuenta, seguridad, activaciones interactivas y validador QR con 25 tickets iniciales.",
+    access_summary: "Cuenta, seguridad, activaciones interactivas y validador QR con 25 tickets incluidos por periodo de suscripción pagado.",
     pricing_note: PLAN_PRICING_NOTES.DESPEGA.pricing_note,
     included: [
       "25 tickets de bienvenida",

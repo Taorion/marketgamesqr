@@ -5,7 +5,7 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.onclose?.();};
  w.sessionStorage.setItem('qori-seller-token','qa-only');w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});let d={ok:true};
  if(path.endsWith('/resources'))d={resources:[],presentation_url:'https://example.test/conoce-qori/?seller=seller-1',admin:false};
- if(path.endsWith('/terms'))d={clauses:[{title:'Condiciones',text:'10% sobre compras confirmadas'}]};
+ if(path.endsWith('/terms'))d={commission_policy:require('../backend/src/services/sellerCommissionPolicy').publicPolicy(),clauses:[{title:'Condiciones',text:'10% sobre compras confirmadas'}]};
  if(path.endsWith('/demo/session'))d={token:'demo-only-token',user:{id:'demo-actor',business_id:'demo-business',demo_mode:true}};
  if(path.endsWith('/application'))d={user:{id:'seller-1',full_name:'Embajador <img src=x>',email:'qa@example.test',role},legacy:status===null,application:status===null?null:{status,approval_mode:override?'ADMIN_OVERRIDE':'DOCUMENTS'},documents:[],documentation:override?{attention:true,override:true,missing:['IDENTITY','RUT','BANK','CONTRACT']}:undefined};
  if(path.endsWith('/dashboard')&&status==='SUSPENDED')return {ok:false,json:async()=>({error:{message:'Acceso bloqueado',details:{code:'SELLER_APPROVAL_REQUIRED'}}})};
@@ -14,7 +14,7 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  if(path.split('?')[0].endsWith('/accounts'))d={accounts:[{id:'b',lifecycle:{label:'Freemium · vence pronto',tone:'warning',trial:{status:'ACTIVE',ends_at:'2026-11-15T15:00:00Z',days_remaining:2}}}]};
  if(path.endsWith('/admin/queue'))d={applications:[{user_id:'applicant',full_name:'Ana',email:'ana@example.test',status:'SUBMITTED',documents:[]}],balances:[],payouts:[]};
  return {ok:true,json:async()=>d};
- };w.eval(fs.readFileSync('seller/accounts.js','utf8'));w.eval(fs.readFileSync('seller/history.js','utf8'));w.eval(fs.readFileSync('seller/referral-links.js','utf8'));w.eval(fs.readFileSync('seller/resources.js','utf8'));w.eval(fs.readFileSync('seller/app.js','utf8'));return {w,calls,setStatus:value=>{status=value;}};
+ };w.eval(fs.readFileSync('seller/accounts.js','utf8'));w.eval(fs.readFileSync('seller/history.js','utf8'));w.eval(fs.readFileSync('seller/referral-links.js','utf8'));w.eval(fs.readFileSync('seller/resources.js','utf8'));w.eval(fs.readFileSync('seller/opportunity.js','utf8'));w.eval(fs.readFileSync('seller/app.js','utf8'));return {w,calls,setStatus:value=>{status=value;}};
 }
 test('approved Seller hands off a separate demo session while pending Seller has no demo access',async()=>{
  const {w,calls}=setup({status:'APPROVED'});try{
@@ -67,3 +67,5 @@ test('authorized Seller keeps commercial access and red attention while completi
 test('Seller only sees a validated close after the administrator records it',async()=>{const {w}=setup({status:'APPROVED',linked:true,closed:true});try{await until(()=>w.document.querySelector('#referralLink'));w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('#prospectRows .card'));assert.match(w.document.querySelector('#prospectRows').textContent,/Cierre validado por Admin/);assert.equal(w.document.querySelector('[data-edit]'),null);}finally{w.close();}});
 
 test('approved Seller opens library from navigation; pending Seller cannot see it',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=resources]'));w.document.querySelector('[data-view=resources]').click();await until(()=>w.document.querySelector('[data-presentation]'));assert.match(w.document.querySelector('[data-presentation]').textContent,/Copiar/);}finally{w.close();}});
+
+test('approved Seller opens opportunity and continues to CRM',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=opportunity]'));w.document.querySelector('[data-view=opportunity]').click();await until(()=>w.document.querySelector('#panel [data-action=crm]'));w.document.querySelector('#panel [data-action=crm]').click();await until(()=>w.document.querySelector('#newProspect'));assert.ok(w.document.querySelector('#newProspect'));}finally{w.close();}});

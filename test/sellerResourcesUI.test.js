@@ -33,6 +33,17 @@ test('Admin resource editor uses explicit publication and optimistic revision; e
 test('stale library response cannot repaint after logout or a new view',async()=>{
  const s=setup();try{let resolve;const promise=new Promise(r=>resolve=r),work=s.w.QoriSellerResources.render(s.host,{...s.ctx,request:()=>promise});s.stop();s.host.innerHTML='Sesión cerrada';resolve(s.data);await work;assert.equal(s.host.textContent,'Sesión cerrada');}finally{s.w.close();}
 });
+
+test('candidate audience is selectable, filters by format and shares its separate opportunity route',async()=>{
+ const s=setup();try{
+  s.data.resources.push({id:'candidate-1',resource_key:'opportunity',kind:'FILE',state:'PUBLISHED',audience:'CANDIDATE',stage:'START',title:'Tu oportunidad',description:'Conoce Qori',usage:'Antes de solicitar acceso',version_label:'1',filename:'oportunidad.pdf',mime:'application/pdf',byte_size:100,revision:1});
+  await s.w.QoriSellerResources.render(s.host,s.ctx);
+  const a=s.host.querySelector('[data-audience]');a.value='CANDIDATE';a.onchange({target:a});assert.equal(a.value,'CANDIDATE');assert.equal(s.host.querySelectorAll('[data-resource]').length,1);
+  const f=s.host.querySelector('[data-format]');f.value='PPTX';f.onchange({target:f});assert.equal(s.host.querySelectorAll('[data-resource]').length,0);f.value='PDF';f.onchange({target:f});
+  s.host.querySelector('[data-share]').click();await until(()=>s.copied.length);const u=new URL(s.copied[0]);assert.equal(u.pathname,'/seller/');assert.equal(u.hash,'#sellerOpportunity');assert.equal(u.searchParams.get('recurso'),'candidate-1');assert.equal(u.searchParams.has('seller'),false);
+ }finally{s.w.close();}
+ const admin=setup({admin:true});try{await admin.w.QoriSellerResources.render(admin.host,admin.ctx);admin.host.querySelector('[data-new]').click();assert.ok(admin.host.querySelector('select[name="audience"] option[value="CANDIDATE"]'));}finally{admin.w.close();}
+});
 test('client presentation renders seven current plans and preserves prospect context at every signup CTA',async()=>{
  const w=new JSDOM(fs.readFileSync('conoce-qori/index.html','utf8'),{url:'https://gosqori.com/conoce-qori/?seller=abc&prospect_ref=signed&recurso=registro-y-pago',runScripts:'outside-only'}).window;
  try{const codes=['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS','DESPEGA','STARTER','GROWTH','PRO'];const plans=codes.map((code,i)=>({code,name:code,monthly_price_cop:i<3?0:75000,included:['Incluido de prueba'],not_included:['No incluido de prueba'],url:'https://gosqori.com/'+(i<3?'pense-en-ti/?seller=abc&program=':'paquetes/?advisor=abc&plan=')+code+'&prospect_ref=signed'}));let requested;w.fetch=async path=>{requested=path;return {ok:true,json:async()=>({advisor:{name:'Ana <img src=x>'},plans,resources:guides.filter(g=>g.audience==='PROSPECT')})};};w.eval(fs.readFileSync('conoce-qori/app.js','utf8'));await until(()=>w.document.querySelectorAll('.plan-card').length===7);assert.match(requested,/prospect_ref=signed/);assert.equal(w.document.querySelector('img'),null);assert.equal(w.document.querySelectorAll('.plan-card .cta').length,7);

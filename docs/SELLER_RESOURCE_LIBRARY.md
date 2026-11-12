@@ -1,6 +1,6 @@
 # Biblioteca comercial Qori Seller
 
-Seller → **Materiales para vender** reúne 11 guías web: siete internas y cuatro para el negocio. La guía **Empieza aquí** explica qué compartir, cuándo y cómo conservar la atribución. Los archivos aparecen solo después de que el superadmin los carga y publica.
+Seller → **Materiales para vender** reúne 11 guías web: siete internas y cuatro para el negocio. La guía **Empieza aquí** explica qué compartir, cuándo y cómo conservar la atribución. La colección revisada aporta 48 archivos: 16 internos, 29 para negocios y tres para futuros embajadores. El superadmin puede mantener su publicación desde Admin.
 
 Admin → Cuentas Qori → **Materiales Seller** permite descargar el prompt y la fuente vigente, cargar archivos o enlaces HTTPS, editar sus instrucciones y versión, publicar o retirar recursos. Las ediciones requieren la revisión actual del registro para evitar sobrescribir cambios de otro administrador. Los cambios se registran en la auditoría comercial.
 
@@ -12,6 +12,14 @@ Cuando el prospecto ya existe en Mi CRM, **Compartir suscripción → Copiar pre
 
 Los PDF e imágenes descargados no contienen automáticamente la identidad del embajador: se acompañan del enlace personal. Las guías web y el checkout muestran la información vigente; los documentos deben incluir versión y fecha. La fuente descargable contiene comisiones para producción interna, por lo que no debe compartirse con prospectos. El campo técnico `public_signup_available` del catálogo se refiere al checkout de suscripciones; los tres gratuitos tienen su ruta separada `/pense-en-ti/?program=...`.
 
-El inventario solicitado a ChatGPT contiene 18 familias de activos y sus originales/exportaciones. `PROMPT_COLECCION_DIGITAL_QORI.txt` pide archivos reales, revisión visual y un manifiesto. La biblioteca no afirma que esos archivos existan mientras están pendientes de producción.
+El inventario solicitado a ChatGPT contiene 21 familias de activos y sus originales/exportaciones. `PROMPT_COLECCION_DIGITAL_QORI.txt` pide archivos reales, revisión visual y un manifiesto. La importación inicial se realiza con un manifiesto verificado y huellas SHA-256; cada alta queda auditada con la identidad real del operador de mantenimiento.
 
 Validación: `sellerResources.integration.test.js`, `sellerResourcesUI.test.js`, `qoriSellerUI.test.js`, `prospectReferral.integration.test.js`, `adminAccountsUI.test.js`, `prospectReferralUI.test.js` y `sellerPlanLinksUI.test.js`. Usan exclusivamente la base local QA. La prueba de pagos usa un proveedor simulado; no ejecuta cobros reales. La revisión visual mediante navegador requiere una sesión de navegador disponible.
+
+## Oportunidad y colección integrada
+
+Mi oportunidad ofrece tres rutas de aprendizaje y un simulador que utiliza la política VF1 canónica. La misma explicación está disponible en la entrada pública de Seller. No concede territorios, certificaciones ni comisiones por incorporar embajadores.
+
+La audiencia CANDIDATE se comparte mediante `/seller/?recurso=...#sellerOpportunity`; solo sus recursos publicados se descargan desde `/api/public/seller-kit/opportunity`. Los recursos SELLER y PROSPECT no se exponen en esa ruta. La biblioteca filtra por destinatario, etapa y formato.
+
+`scripts/prepare-seller-collection.py` conserva los originales y prepara copias revisadas. `scripts/export-seller-office.ps1` exporta las copias de Office. Tras revisar los PDF, el manifiesto VERIFIED registra cada hash. `scripts/import-seller-collection.js <manifiesto>` previsualiza y `--apply` importa en una transacción, sin duplicar ni sobreescribir recursos modificados en Admin. El importador es de mantenimiento, no una ruta web ni una suplantación de sesión.
