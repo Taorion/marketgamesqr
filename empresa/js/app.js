@@ -6014,6 +6014,7 @@ function hasPlanFeature(feature) {
   if (feature === "leads_view" && isPrepaidValidatorOnly()) return true;
   const plan = currentPlan();
   const planCode = normalizePlanTierCode(plan.code || plan.plan_code || "");
+  if (plan.free_program) return plan.portal_access_allowed !== false && Boolean(plan.features?.[feature]);
   if (!state.accountWorkspaceLoaded) {
     return true;
   }

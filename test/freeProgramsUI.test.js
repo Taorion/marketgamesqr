@@ -1,6 +1,16 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{JSDOM}=require('jsdom');
 const read=p=>fs.readFileSync(p,'utf8'),tick=()=>new Promise(r=>setImmediate(r));
 const {programs}=require('../backend/src/services/freeProgramPolicy');
+test('free plan tools are restricted before the account screen has ever been opened',()=>{
+ const app=read('empresa/js/app.js'),source=app.slice(app.indexOf('function hasPlanFeature(feature)'),app.indexOf('function currentPlan()'));
+ const {PLAN_CATALOG}=require('../backend/src/services/subscriptionService');
+ const w=new JSDOM('',{runScripts:'outside-only'}).window;
+ try{w.state={accountWorkspaceLoaded:false};w.isAdmin=()=>false;w.isPrepaidValidatorOnly=()=>false;w.normalizePlanTierCode=x=>x;w.eval(source);
+  for(const code of Object.keys(programs)){const plan=PLAN_CATALOG[code];w.currentPlan=()=>plan;
+   assert.equal(w.hasPlanFeature('qr_validator'),true);assert.equal(w.hasPlanFeature('rms_core'),false);assert.equal(w.hasPlanFeature('gift_cards'),false);assert.equal(w.hasPlanFeature('stamp_cards'),code==='SELLOS_GRATIS');assert.equal(w.hasPlanFeature('interactive_activations'),code==='ACTIVACIONES_GRATIS');
+  }
+ }finally{w.close();}
+});
 test('each personal free link preselects its program and submits exact seller and CRM attribution',async()=>{
  for(const code of Object.keys(programs)){
   const w=new JSDOM(read('pense-en-ti/index.html'),{url:'https://example.test/pense-en-ti/?program='+code+'&seller=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa&prospect_ref=exact-token',runScripts:'outside-only'}).window,calls=[];
