@@ -421,12 +421,14 @@ async function applyDeal(user,id) {
 }
 async function updateCustomer(user,id,payload) {
   requirePermission(user,'customers.manage');
-  const body=validate(z.object({ seller_id:uuid.nullable().optional(),is_active:z.boolean().optional(),revoke_benefits:z.boolean().optional(),reason:reasonSchema }).strict(),payload);
+  const body=validate(z.object({ seller_id:uuid.nullable().optional(),expected_seller_id:uuid.nullable().optional(),is_active:z.boolean().optional(),revoke_benefits:z.boolean().optional(),reason:reasonSchema }).strict(),payload);
+  if(body.seller_id!==undefined) requireSuperadmin(user);
   return withTransaction(async client=>{
     // Match applyDeal lock order (deal -> business) to avoid deadlocks during reassignment.
     await client.query("select id from qori_commercial_deals where business_id=$1 and status in ('PENDING','APPROVED') order by id for update",[validate(uuid,id)]);
     const business=await locked(client,"businesses",id);
     const owner=(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[id])).rows[0];
+    if(body.expected_seller_id!==undefined && body.expected_seller_id!==(owner?.seller_id||null)) throw badRequest('El responsable cambió. Actualiza la cartera antes de reasignar.');
     requireOwner(user,owner?.seller_id);
     if(body.seller_id) await sellerExists(client,body.seller_id);
     if(body.seller_id!==undefined) {

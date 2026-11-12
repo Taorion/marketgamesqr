@@ -22,6 +22,8 @@ let salesAdvisorRequest = 0;
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
+const linkedAdvisorId = window.QoriReferral?.get() ?? urlParams.get('advisor') ?? urlParams.get('seller');
+let linkedAdvisorLoading = false;
 
 const DESPEGA_PLAN = {
   code: "DESPEGA",
@@ -264,7 +266,16 @@ function signupPayload() {
   };
 }
 
-function syncSalesAdvisorChoice() {
+function syncSalesAdvisorChoice(event) {
+  if (event) {
+    ++salesAdvisorRequest;
+    window.clearTimeout(salesAdvisorTimer);
+    if (salesAdvisorSelf?.checked) window.QoriReferral?.clear();
+    if (salesAdvisorSeller?.checked && linkedAdvisorId !== null && linkedAdvisorId !== undefined) {
+      loadLinkedCommercialAdvisor();
+      return;
+    }
+  }
   const sellerSelected = Boolean(salesAdvisorSeller?.checked);
   salesAdvisorCombobox?.classList.toggle("hidden", !sellerSelected);
   salesAdvisorSearch?.setAttribute("aria-expanded", "false");
@@ -295,6 +306,7 @@ function renderSalesAdvisorMatches(message = "") {
 }
 
 async function searchSalesAdvisors() {
+  if (salesAdvisorSearch?.readOnly || !salesAdvisorSeller?.checked) return;
   const term = String(salesAdvisorSearch?.value || "").trim();
   selectedSalesAdvisor = null;
   salesAdvisorMatches = [];
@@ -307,7 +319,7 @@ async function searchSalesAdvisors() {
   if (salesAdvisorStatus) salesAdvisorStatus.textContent = "Buscando asesores…";
   try {
     const data = await fetchJson(`/api/public/sales-advisors?q=${encodeURIComponent(term)}`);
-    if (request !== salesAdvisorRequest) return;
+    if (request !== salesAdvisorRequest || !salesAdvisorSeller?.checked) return;
     salesAdvisorMatches = Array.isArray(data.advisors) ? data.advisors : [];
     renderSalesAdvisorMatches();
   } catch (error) {
@@ -327,13 +339,16 @@ function chooseSalesAdvisor(code) {
 }
 
 function scheduleSalesAdvisorSearch() {
+  if (salesAdvisorSearch?.readOnly) return;
   window.clearTimeout(salesAdvisorTimer);
+  ++salesAdvisorRequest;
   selectedSalesAdvisor = null;
   salesAdvisorTimer = window.setTimeout(searchSalesAdvisors, 280);
 }
 
 async function submitSignup(event) {
   event.preventDefault();
+  if (linkedAdvisorLoading || submitButton.disabled) return;
   if (!selectedPlan?.code) {
     setMessage("Selecciona un plan antes de continuar.", "error");
     document.getElementById("planes")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -363,6 +378,7 @@ async function submitSignup(event) {
     if (!checkoutUrl) {
       throw new Error("El plan fue registrado, pero no se recibió enlace de Mercado Pago.");
     }
+    window.QoriReferral?.clear();
     setMessage("Plan registrado. Elige tarjeta, saldo Mercado Pago o PSE para completar el pago.", "success");
     window.location.href = checkoutUrl;
   } catch (error) {
@@ -388,8 +404,11 @@ async function loadPlans() {
 }
 
 async function loadLinkedCommercialAdvisor() {
-  const id=urlParams.get("advisor");
-  if(!id) return;
+  const id=linkedAdvisorId;
+  if(id === null || id === undefined) return;
+  linkedAdvisorLoading=true;
+  submitButton.disabled=true;
+  if(salesAdvisorSearch) salesAdvisorSearch.readOnly=true;
   if(salesAdvisorSeller) salesAdvisorSeller.checked=true;
   if(salesAdvisorSelf) salesAdvisorSelf.checked=false;
   syncSalesAdvisorChoice();
@@ -398,8 +417,9 @@ async function loadLinkedCommercialAdvisor() {
     if(!salesAdvisorSeller?.checked) return;
     selectedSalesAdvisor={name:result.advisor.name,commercial_id:result.advisor.id};
     if(salesAdvisorSearch) salesAdvisorSearch.value=result.advisor.name;
-    if(salesAdvisorStatus) salesAdvisorStatus.textContent=`Te acompaña ${result.advisor.name}, asesor de Qori.`;
-  } catch(error) { setMessage(error.message || "No se pudo validar el asesor del enlace.","error"); }
+    if(salesAdvisorStatus) salesAdvisorStatus.textContent=`Te acompaña ${result.advisor.name}, Embajador Qori. Tu suscripción quedará atribuida automáticamente a esta persona.`;
+  } catch(error) { setMessage((error.message || "No se pudo validar el embajador del enlace.")+" Solicita un enlace vigente o elige Llegué por mi cuenta.","error"); }
+  finally { linkedAdvisorLoading=false;submitButton.disabled=false; }
 }
 document.addEventListener("DOMContentLoaded", () => {
   signupForm?.addEventListener("submit", submitSignup);

@@ -9,7 +9,7 @@ const {
   createPortalSignupCheckout,
 } = require("../services/mercadoPagoService");
 const { createSignupAttribution } = require("../services/sellerService");
-const { advisorById, assignPaidSignup } = require("../services/commercialAdvisorService");
+const { advisorById, assignPaidSignup, assertNotSelfReferral, recordPaidSignup } = require("../services/commercialAdvisorService");
 
 const packageRequestPatchSchema = z.object({
   payment_confirmed: z.boolean().optional(),
@@ -116,6 +116,7 @@ async function createPrepaidSignup(req, res, next) {
 async function createPortalSignup(req, res, next) {
   try {
     const body = validate(portalSignupSchema, req.body);
+    body.email = body.email.toLowerCase();
     if (body.sales_advisor_code && body.commercial_advisor_id) throw badRequest("Selecciona un solo asesor para la inscripción.");
     const planCode = normalizePlanCode(body.plan_code);
     const plan = listPlans().find((item) => item.code === planCode && item.category === "subscription" && item.monthly_price_cop && item.public_signup_available !== false);
@@ -125,6 +126,7 @@ async function createPortalSignup(req, res, next) {
 
     const result = await withTransaction(async (client) => {
       const commercialAdvisor = body.commercial_advisor_id ? await advisorById(body.commercial_advisor_id, client) : null;
+      await assertNotSelfReferral(client, commercialAdvisor, body);
       await assertUniqueSignupIdentity(client, body);
 
       const companyName = body.company_name || body.contact_name;
@@ -145,7 +147,7 @@ async function createPortalSignup(req, res, next) {
       );
 
       const user = userResult.rows[0];
-      if(commercialAdvisor)await assignPaidSignup(client,commercialAdvisor,business.id,null);
+      if(commercialAdvisor)await assignPaidSignup(client,commercialAdvisor,business.id);
       const order = await createPortalSignupCheckout(client, {
         business_id: business.id,
         user_id: user.id,
@@ -155,6 +157,8 @@ async function createPortalSignup(req, res, next) {
         billing_cycle: body.billing_cycle,
         sales_advisor_code: body.sales_advisor_code || null,
       });
+
+      if (commercialAdvisor) await recordPaidSignup(client, commercialAdvisor, business.id, order.id);
 
       if (!commercialAdvisor) await createSignupAttribution(client, {
         purchase_order_id: order.id,

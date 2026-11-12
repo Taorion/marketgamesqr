@@ -4,7 +4,7 @@ const {validate}=require('../utils/validators');
 const {badRequest}=require('../utils/http');
 const {publicSignupBaseSchema,assertUniqueSignupIdentity,uniqueBusinessSlug,signupSettings,normalizeDocument}=require('./signupIdentityService');
 const {ensureBaseBusinessRecords,assignInitialAgreementTickets}=require('./adminProvisioningService');
-const {advisorById}=require('./commercialAdvisorService');
+const {advisorById,assertNotSelfReferral}=require('./commercialAdvisorService');
 async function signup(payload){
  const d=validate(publicSignupBaseSchema,payload);d.email=d.email.toLowerCase();
  if(d.sales_advisor_code)throw badRequest('Usa el enlace de tu Embajador Qori.');
@@ -14,7 +14,7 @@ async function signup(payload){
   const document=normalizeDocument(d.nit);
   if((await db.query('select 1 from qori_free_enrollments where document_key=$1',[document])).rowCount)throw badRequest('Este documento ya recibió el saldo inicial de Pensé en ti.');
   const advisor=d.commercial_advisor_id?await advisorById(d.commercial_advisor_id,db):null;
-  if(advisor&&(await db.query('select 1 from app_users u left join qori_seller_applications a on a.user_id=u.id where u.id=$1 and (lower(u.email)=lower($2) or a.document_key=$3)',[advisor.id,d.email,document])).rowCount)throw badRequest('No se permite atribuir a tu perfil Seller una cuenta propia.');
+  await assertNotSelfReferral(db,advisor,d);
   const name=d.company_name||d.contact_name,slug=await uniqueBusinessSlug(db,name);
   const settings={...signupSettings({...d,legal_version:'2026-11-07'},'pense_en_ti'),subscription:{plan_code:'PENSE_EN_TI',status:'ACTIVE'},access:{source:'pense_en_ti'}};
   const b=(await db.query("insert into businesses(name,slug,settings,plan_code,plan_type,portal_status,subscription_status,portal_activated_at,is_active) values($1,$2,$3::jsonb,'PENSE_EN_TI','premium_monthly','ACTIVE','ACTIVE',now(),true) returning id",[name,slug,JSON.stringify(settings)])).rows[0];
