@@ -10,6 +10,8 @@ const PLAN_CODES = {
   DESPEGA: "DESPEGA",
   DESCUBRE: "DESCUBRE",
   PENSE_EN_TI: "PENSE_EN_TI",
+  SELLOS_GRATIS: "SELLOS_GRATIS",
+  ACTIVACIONES_GRATIS: "ACTIVACIONES_GRATIS",
   STARTER: "STARTER",
   GROWTH: "GROWTH",
   PRO: "PRO",
@@ -946,20 +948,28 @@ PLAN_CATALOG[PLAN_CODES.DESCUBRE] = {
   },
 };
 
-// A permanent free account, with a one-time operating allowance.
-PLAN_CATALOG[PLAN_CODES.PENSE_EN_TI] = {
- ...PLAN_CATALOG[PLAN_CODES.DESPEGA], code:'PENSE_EN_TI', name:'Pensé en ti',
- monthly_price_cop:0, price_label:'Gratis, sin mensualidad', billing_period:'free', public_signup_available:false,
- access_summary:'Regala un café, una comida o un postre. 20 tickets iniciales, 5 productos, 1 programa de sellos y 20 Gift Cards.',
- pricing_note:'Entrega inicial única, sin recarga automática. Compra paquetes al agotar tus saldos.',
- included:['20 tickets iniciales','Hasta 5 productos','20 emisiones iniciales de Gift Card','1 programa de sellos','Cortesías propias o compradas','Validador','Entrega a Qori Customer'],
- not_included:['Módulos de planes pagos','Recarga automática de saldos'],
- features:{...PLAN_CATALOG[PLAN_CODES.DESPEGA].features,qr_simple_generator:false,qr_batch_generator:false,
- interactive_activations:false,template_games:false,products:true,gift_inventory:true,gift_cards:true,product_gifts:true},
- limits:{...PLAN_CATALOG[PLAN_CODES.DESPEGA].limits,welcome_courtesy_tickets:20,gift_inventory_products:5,
- gift_cards_month:null,gift_cards_total:null,stamp_programs:1,stamp_members:null,storage_bytes:50*1024*1024,active_interactive_activations:0,activation_types_month:0}
-};
+// Three separate free programs. Shared tools are sufficient to operate each
+// program, not a subscription to the rest of the portal.
+const {programs:FREE_PROGRAMS,isFreeProgram}=require('./freeProgramPolicy');
+for(const program of Object.values(FREE_PROGRAMS)) {
+ const stamps=program.code==='SELLOS_GRATIS',activations=program.code==='ACTIVACIONES_GRATIS',gifts=program.code==='PENSE_EN_TI';
+ PLAN_CATALOG[program.code]={...PLAN_CATALOG[PLAN_CODES.DESPEGA],code:program.code,name:program.name,
+  monthly_price_cop:0,price_label:'Gratis, sin mensualidad',billing_period:'free',public_signup_available:false,
+  access_summary:program.summary,pricing_note:program.summary,free_program:true,default_view:program.view,
+  included:[stamps?'1 programa de sellos':activations?'2 activaciones activas a la vez':'20 tickets iniciales de entrega única','Hasta 5 productos registrados','Validador gratis','Compra de tickets para emisiones'],
+  not_included:['Otros programas gratuitos','Módulos de las suscripciones','Gift Cards','Recargas automáticas de tickets'],
+  features:{...Object.fromEntries(Object.keys(PLAN_CATALOG[PLAN_CODES.DESPEGA].features).map(k=>[k,false])),
+   portal_access:true,account_profile:true,account_security:true,plan_management:true,qr_validator:true,qr_prepaid_purchase:true,
+   products:true,gift_inventory:true,product_gifts:gifts,stamp_cards:stamps,interactive_activations:activations,customer_network:false,quotes:false},
+  limits:{...Object.fromEntries(Object.keys(PLAN_CATALOG[PLAN_CODES.DESPEGA].limits).map(k=>[k,0])),
+   users:1,validators:1,branches:1,welcome_courtesy_tickets:program.tickets,gift_inventory_products:5,storage_bytes:50*1024*1024,
+   stamp_programs:stamps?1:0,stamp_members:stamps?null:0,active_interactive_activations:activations?2:0,
+   activation_types_month:activations?null:0,allowed_interactive_activation_types:activations?null:[],history_days:30,
+   gift_cards_month:0,gift_cards_total:0}
+ };
+}
 for(const plan of Object.values(PLAN_CATALOG)) {
+ if(!isFreeProgram(plan.code)){plan.features.stamp_cards=Boolean(plan.features.portal_access);plan.features.customer_network=Boolean(plan.features.portal_access);plan.features.quotes=Boolean(plan.features.products);}
  if(plan.features.qr_batch_generator) plan.features.product_gifts=true;
  if(['DESPEGA','STARTER','GROWTH','PRO'].includes(plan.code)) {
   plan.pricing_note += ' Los tickets incluidos se restablecen en cada periodo pagado; no acumulan sobrantes. Los paquetes comprados se conservan.';
@@ -1002,6 +1012,7 @@ function hasLifetimeAccess(row = {}) {
 }
 
 function effectivePlanCode(row = {}) {
+  if (isFreeProgram(row.plan_code)) return row.plan_code;
   const now = new Date();
   const planType = row.plan_type || row.settings?.access?.plan_type;
   if (hasLifetimeAccess(row)) {
@@ -1164,7 +1175,7 @@ function completeGlobalPlan(plan = PLAN_CATALOG[PLAN_CODES.GLOBAL]) {
 
 function planFromBusiness(row = {}) {
   const code = effectivePlanCode(row);
-  let plan = applyCommercialEntitlements(internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code])), row);
+  let plan = isFreeProgram(code) ? PLAN_CATALOG[code] : applyCommercialEntitlements(internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code])), row);
   if(row.is_seller_demo){
     const features=Object.fromEntries(Object.values(PLAN_CATALOG).flatMap(p=>Object.keys(p.features||{})).map(key=>[key,true]));
     const limits=Object.fromEntries(Object.keys(plan.limits||{}).map(key=>[key,null]));
@@ -1196,7 +1207,7 @@ function planFromBusiness(row = {}) {
     days_until_lock: lifecycle.days_until_lock,
     auto_renew: lifecycle.auto_renew,
     lifetime_access: hasLifetimeAccess(row),
-    monthly_payment_required: code !== PLAN_CODES.DESCUBRE && row.settings?.subscription?.monthly_payment_required !== false,
+    monthly_payment_required: !isFreeProgram(code) && code !== PLAN_CODES.DESCUBRE && row.settings?.subscription?.monthly_payment_required !== false,
   };
 }
 

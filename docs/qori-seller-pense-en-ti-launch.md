@@ -5,7 +5,7 @@
 La cuenta gratuita abre la conversación: un comercio vende un café, una comida o un postre para regalar; confirma el pago; el comprador obtiene comprobante y enlace para compartir; la persona destinataria crea o inicia su Customer gratuito, acepta y visita el negocio. El comercio ve una venta y una visita verificables. El Embajador gana cuando ese comercio compra tickets o paga su plan.
 
 Mensajes listos:
-- Comercio: «Pensé en tu negocio. ¿Y si tus clientes pudieran regalar uno de tus productos a alguien especial? Qori te deja empezar gratis con 20 tickets, hasta 5 productos y 5 emisiones de Gift Card».
+- Comercio: «Pensé en tu negocio. ¿Y si tus clientes pudieran regalar uno de tus productos a alguien especial? Qori te deja empezar gratis con 20 tickets y hasta 5 productos, con validador gratis».
 - Comprador: «Elige el detalle y el correo de quien lo recibe. Después del pago te entregamos el comprobante y tu enlace para compartir».
 - Destinatario: «Alguien pensó en ti. Entra o crea Qori Customer gratis con este correo, descubre tu regalo y acéptalo. También puedes organizar tus ingresos y gastos».
 - Embajador: «Presenta Qori a negocios interesados. Recibe el 10% de cada pago confirmado de plan y cada compra de paquetes de tickets atribuida a ti. Sin comisión por abrir una cuenta gratuita ni por reclutar vendedores».

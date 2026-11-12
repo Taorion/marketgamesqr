@@ -22,7 +22,7 @@ const router = express.Router();
 router.use(authRequired);
 router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 router.use(requirePortalAccess);
-router.use(requireBusinessFeature("qr_batch_generator"));
+router.use(requireBusinessFeature("interactive_activations"));
 router.use(invalidateBusinessResponseCache());
 
 const activationCache = cacheBusinessResponse({ keyPrefix: "interactive-activations", ttlMs: 180_000 });

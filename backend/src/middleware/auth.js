@@ -23,7 +23,7 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
   const result = await query(
       `select u.id, u.business_id, u.email, u.full_name, u.role, u.platform_role, u.admin_permissions, u.is_active, u.password_version, u.password_setup_required,
               u.can_redeem_cross_business, u.branch_id,
-              b.is_active as business_is_active
+              b.is_active as business_is_active, b.plan_code as business_plan_code, b.is_seller_demo as business_is_demo
        from app_users u
        left join businesses b on b.id = u.business_id
        where u.id = $1`,
@@ -45,6 +45,8 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
     throw forbidden("El negocio asignado a este usuario no esta activo.");
   }
 
+  if(!user.business_is_demo&&require('../services/freeProgramPolicy').isFreeProgram(user.business_plan_code))user.free_program_code=user.business_plan_code;
+  delete user.business_plan_code;delete user.business_is_demo;
   delete user.business_is_active;
   return user;
 }
@@ -82,6 +84,7 @@ async function authRequired(req, _res, next) {
     if (req.user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
       throw forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal.");
     }
+    require('../services/freeProgramPolicy').enforceRequest(req);
     next();
   } catch (error) {
     next(error.status ? error : unauthorized("Invalid or expired token."));

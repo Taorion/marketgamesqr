@@ -81,7 +81,7 @@ async function catalog(req, res, next) {
 async function create(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const subscription = await assertFeatureForRequest(req, businessId, "qr_batch_generator");
+    const subscription = await assertFeatureForRequest(req, businessId, "interactive_activations");
     const body = validate(interactiveActivationCreateSchema, req.body);
     await assertInteractiveActivationTypeForBusiness(businessId, body.activation_type);
     await assertMonthlyUsageLimit(

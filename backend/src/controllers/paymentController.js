@@ -44,7 +44,7 @@ async function listQrCreditOffers(req, res, next) {
       throw badRequest("Para comprar tickets internos primero debes activar un plan de suscripcion.");
     }
     res.json({
-      packages: subscriberPackageOffers(),
+      packages: subscriberPackageOffers().filter(offer=>offer.kind!=='GIFTCARDS'),
       pricing: {
         display_currency: "COP",
         payment_currency: "COP",

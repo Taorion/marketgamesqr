@@ -5907,10 +5907,10 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 }
 
 const viewFeatureMap = {
-  quotes: "products",
+  quotes: "quotes",
   "courtesies": "product_gifts",
-  "customer-network": "portal_access",
-  "stamp-cards": "portal_access",
+  "customer-network": "customer_network",
+  "stamp-cards": "stamp_cards",
   dashboard: "revenue_center",
   "rms-machine": "rms_core",
   sellers: "sellers",
@@ -6032,6 +6032,7 @@ function currentPlan() {
 }
 
 function portalDefaultViewForPlan() {
+  if (currentPlan().free_program) return currentPlan().default_view || "account";
   const features = currentPlan().features || {};
   if (currentPlan().code === "DESCUBRE" && currentPlan().portal_access_allowed) return "stamp-cards";
   if (features.rms_core) return PORTAL_DEFAULT_VIEW;
@@ -7307,7 +7308,9 @@ function applyPlanNavigation() {
   navButtons.forEach((button) => {
     const feature = featureForNavigationButton(button);
     const adminOnly = button.dataset.view === "admin";
-    button.classList.toggle("hidden", adminOnly && !isAdmin());
+    const hide = (adminOnly && !isAdmin()) || (currentPlan().free_program && !isAdmin() && !hasPlanFeature(feature));
+    button.classList.toggle("hidden", hide);
+    button.dataset.freeProgramHidden = hide ? "true" : "false";
     const requiredCode = requiredPlanForFeature(feature);
     applyFeatureTierBadge(button, requiredCode, { short: true });
     const locked = !hasPlanFeature(feature);
@@ -7324,7 +7327,11 @@ function applyPlanNavigation() {
       button.removeAttribute("aria-disabled");
     }
   });
-  requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("portal_access"));
+  document.querySelectorAll(".sidebar-nav-section").forEach(group => {
+    const items = [...group.querySelectorAll(".nav-item[data-view]")];
+    group.style.display = currentPlan().free_program && items.length && items.every(item=>item.dataset.freeProgramHidden === "true") ? "none" : "";
+  });
+  requestCampaignButton?.classList.toggle("hidden", !hasPlanFeature("campaigns"));
   forceSidebarMenuLeftAlignment();
 }
 
@@ -7378,7 +7385,7 @@ function forceSidebarMenuLeftAlignment() {
   const rows = document.querySelectorAll(".sidebar .nav-item[data-view]");
   const isNarrowSidebar = window.matchMedia("(max-width: 620px)").matches && !isDesktopCollapsed;
   rows.forEach((row) => {
-    setImportantStyle(row, "display", "grid");
+    setImportantStyle(row, "display", row.dataset.freeProgramHidden === "true" ? "none" : "grid");
     setImportantStyle(row, "grid-template-columns", isDesktopCollapsed ? "1fr" : "28px minmax(0, 1fr) 34px");
     setImportantStyle(row, "grid-auto-flow", isDesktopCollapsed ? "row" : "column");
     setImportantStyle(row, "align-items", "center");

@@ -73,8 +73,9 @@ async function assertStampCapacity(client,businessId,key) {
   if(!business) throw notFound('Negocio no encontrado.');
   const plan=planFromBusiness(business);
   const limit=plan.limits[key];
-  if(!Number.isFinite(limit)) return;
+  if(!plan.features.stamp_cards) throw forbidden('Tu programa no incluye tarjetas de sellos.');
   if(!plan.portal_access_allowed) throw forbidden('Tu muestra ha terminado. Elige una suscripción para continuar.');
+  if(!Number.isFinite(limit)) return;
   const sql=key==='stamp_programs'
     ? 'select count(*)::int as total from stamp_programs where business_id=$1 and deleted_at is null'
     : 'select count(*)::int as total from stamp_members where business_id=$1';
@@ -285,6 +286,9 @@ async function claim(token,cycleId) {
 async function renew(token) {
   return withTransaction(async client=>{
     const m=await memberByToken(client,token,true);
+    const business=(await client.query('select * from businesses where id=$1 and is_active=true',[m.business_id])).rows[0];
+    const plan=business&&planFromBusiness(business);
+    if(!plan?.portal_access_allowed||!plan.features.stamp_cards) throw forbidden('Las nuevas tarjetas no están disponibles para este negocio.');
     const p=(await client.query('select * from stamp_programs where id=$1 for share',[m.program_id])).rows[0];
     if (p.status!=='ACTIVE') throw badRequest('El negocio ha pausado las nuevas tarjetas.');
     const c=(await client.query('select * from stamp_cycles where member_id=$1 order by cycle_number desc limit 1',[m.id])).rows[0];

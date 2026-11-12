@@ -1279,7 +1279,7 @@ async function recordCommunicationEvent(client, activation, attribution, eventTy
 
 async function getPublicInteractiveActivation(slug, trackingToken = null, trackingSource = null) {
   const activationResult = await query(
-    `select a.*, b.name as business_name, b.slug as business_slug, b.settings as business_settings
+    `select a.*, b.name as business_name, b.slug as business_slug, b.settings as business_settings, b.plan_code as business_plan_code, b.is_seller_demo as business_is_demo
      from interactive_activations a
      join businesses b on b.id = a.company_id
      where a.public_slug = $1 and b.is_active = true`,
@@ -1588,7 +1588,7 @@ async function existingRewardResponseForIdentity(client, activation, body, allow
 
 async function lockActivationBySlug(client, slug) {
   const result = await client.query(
-    `select a.*, b.name as business_name, b.settings as business_settings,
+    `select a.*, b.name as business_name, b.settings as business_settings, b.plan_code as business_plan_code, b.is_seller_demo as business_is_demo,
             ac.name as acquisition_channel_name
      from interactive_activations a
      join businesses b on b.id = a.company_id
@@ -1603,6 +1603,7 @@ async function lockActivationBySlug(client, slug) {
 }
 
 function assertActivationOpen(activation) {
+  if (!activation.business_is_demo && require('./freeProgramPolicy').isFreeProgram(activation.business_plan_code) && activation.business_plan_code !== 'ACTIVACIONES_GRATIS') throw badRequest('Esta activación no está disponible en el programa actual del negocio.');
   if (activation.status !== "active") throw badRequest("Esta activacion no esta activa.");
   const now = new Date();
   if (activation.starts_at && new Date(activation.starts_at) > now) throw badRequest("Esta activacion aun no ha iniciado.");

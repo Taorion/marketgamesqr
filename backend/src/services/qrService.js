@@ -48,10 +48,13 @@ async function generateQr(data, actor) {
   const validatorUrl = buildValidatorUrl(token);
 
   const result = await withTransaction(async (client) => {
-    const business = await client.query("select id from businesses where id = $1 and is_active = true", [data.business_id]);
+      const business = await client.query("select id,plan_code,is_seller_demo from businesses where id = $1 and is_active = true", [data.business_id]);
     if (!business.rowCount) {
       throw badRequest("Business does not exist or is inactive.");
     }
+      if (!business.rows[0].is_seller_demo && require('./freeProgramPolicy').isFreeProgram(business.rows[0].plan_code)) {
+        throw forbidden('Emite los beneficios desde la herramienta de tu programa gratuito.');
+      }
 
     const game = await client.query(
       "select id from games where id = $1 and business_id = $2 and is_active = true",

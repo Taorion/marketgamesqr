@@ -28,8 +28,8 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
  admin=await person('QORI_SUPERADMIN');seller=await person('QORI_SELLER');other=await person('QORI_SELLER');
  await t.test('dashboard and CRM expose every public plan; checkout preserves plan, seller and exact prospect',async()=>{
   const dashboard=await api('/api/seller/dashboard',seller);assert.equal(dashboard.status,200);
-  assert.deepEqual(dashboard.data.plan_referral_links.map(p=>p.code),['PENSE_EN_TI','DESPEGA','STARTER','GROWTH','PRO']);
-  for(const entry of dashboard.data.plan_referral_links){const url=new URL(entry.url);assert.equal(url.searchParams.get(entry.code==='PENSE_EN_TI'?'seller':'advisor'),seller.id);assert.equal(url.searchParams.has('prospect_ref'),false);if(entry.code!=='PENSE_EN_TI')assert.equal(url.searchParams.get('plan'),entry.code);}
+  assert.deepEqual(dashboard.data.plan_referral_links.map(p=>p.code),['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS','DESPEGA','STARTER','GROWTH','PRO']);
+  for(const entry of dashboard.data.plan_referral_links){const url=new URL(entry.url);assert.equal(url.searchParams.get(entry.monthly_price_cop===0?'seller':'advisor'),seller.id);assert.equal(url.searchParams.has('prospect_ref'),false);if(entry.monthly_price_cop!==0)assert.equal(url.searchParams.get('plan'),entry.code);else assert.equal(url.searchParams.get('program'),entry.code);}
   for(const code of ['DESPEGA','STARTER','GROWTH','PRO']){
    const p=await prospect(),links=await api(path(p.id)+'/referral',seller),url=new URL(links.data.plan_referral_links.find(l=>l.code===code).url);
    assert.equal(url.searchParams.get('advisor'),seller.id);assert.equal(url.searchParams.get('plan'),code);
@@ -54,8 +54,8 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
   assert.equal((await current(p.id)).closed_by,admin.id);assert.equal((await query('select id from qori_seller_commissions where order_id=$1',[r.data.order.id])).rowCount,1);
  });
  await t.test('free signup reuses prospect without creating a duplicate or a paid closure',async()=>{
-  const p=await prospect(),token=await link(p),r=await api('/api/pense-en-ti/signup',null,signup(p,token));assert.equal(r.status,200,JSON.stringify(r));
-  assert.equal((await current(p.id)).business_id,r.data.business_id);assert.equal((await query('select id from qori_sales_prospects where business_id=$1',[r.data.business_id])).rowCount,1);assert.equal((await api(path(p.id)+'/closure',admin)).data.can_close,false);
+  for(const code of ['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS']){const p=await prospect(),token=await link(p),r=await api('/api/pense-en-ti/signup',null,{...signup(p,token),free_program:code});assert.equal(r.status,200,JSON.stringify(r));
+  assert.equal((await current(p.id)).business_id,r.data.business_id);assert.equal((await query('select id from qori_sales_prospects where business_id=$1',[r.data.business_id])).rowCount,1);assert.equal((await api(path(p.id)+'/closure',admin)).data.can_close,false);}
  });
  await t.test('forged, expired, stale, other-seller, wrong-email and orphan tokens fail without provisioning',async()=>{
   const p=await prospect(),token=await link(p),original=signup(p,token),claims=jwt.decode(token);

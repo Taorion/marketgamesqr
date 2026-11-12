@@ -1,7 +1,7 @@
 const express=require('express');
 const {z}=require('zod');
 const {authRequired,requireRoles}=require('../middleware/auth');
-const {requirePortalAccess}=require('../middleware/subscription');
+const {requirePortalAccess,requireBusinessFeature}=require('../middleware/subscription');
 const {rateLimit}=require('../middleware/rateLimit');
 const {badRequest}=require('../utils/http');
 const service=require('../services/stampCardService');
@@ -38,7 +38,7 @@ function filters(req) {
   return data;
 }
 const handle=fn=>async(req,res,next)=>{try {res.set('Cache-Control','private, no-store');res.json(await fn(req));}catch(error){next(error);}};
-router.use(authRequired,requirePortalAccess);
+router.use(authRequired,requirePortalAccess,requireBusinessFeature('stamp_cards'));
 const validatorRoles=requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','VALIDATOR','ADMIN','ADMIN_MARKET_GAMES');
 router.get('/validator/:id',validatorRoles,handle(req=>service.validatorCard(req.user.business_id,parse(uuid,req.params.id))));
 router.post('/validator/:id/stamp',validatorRoles,handle(req=>service.stampFromQr(req.user.business_id,req.user.id,parse(uuid,req.params.id),

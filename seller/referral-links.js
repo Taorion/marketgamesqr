@@ -14,7 +14,7 @@
   });
  }
  function bindProspectPlan(dialog,referral){
-  const plans=(referral.plan_referral_links||[]).filter(p=>p.code!=='PENSE_EN_TI');if(!plans.length)return;
+  const plans=(referral.plan_referral_links||[]);if(!plans.length)return;
   const label=document.createElement('label');label.textContent='Elige el plan para este cliente';
   const select=document.createElement('select');select.dataset.referralPlan='';
   for(const p of [{code:'',name:'Ver todos los planes'},...plans]){const option=document.createElement('option');option.value=p.code;option.textContent=p.name;select.append(option);}

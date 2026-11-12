@@ -24,8 +24,8 @@ const media=value=>typeof value==='string'&&(/^(https:\/\/|\/(?!\/))/.test(value
 function eligibility(row){
  const plan=planFromBusiness(row.business),now=Date.now();
  if(row.business.is_seller_demo||!row.business.is_active||!plan.portal_access_allowed||plan.raw_status!=='ACTIVE')return false;
- if(row.kind==='ACTIVITY')return !!plan.features.qr_batch_generator&&row.activation_status==='active'&&(!row.starts_at||new Date(row.starts_at)<=now)&&(!row.ends_at||new Date(row.ends_at)>now);
- if(row.kind==='STAMP')return row.stamp_status==='ACTIVE'&&!row.stamp_deleted;
+ if(row.kind==='ACTIVITY')return !!plan.features.interactive_activations&&row.activation_status==='active'&&(!row.starts_at||new Date(row.starts_at)<=now)&&(!row.ends_at||new Date(row.ends_at)>now);
+ if(row.kind==='STAMP')return !!plan.features.stamp_cards&&row.stamp_status==='ACTIVE'&&!row.stamp_deleted;
  if(row.kind==='AFFILIATION')return !!plan.features.affiliates&&String(row.points_terms||'').trim().length>=10;
  if(row.kind==='PRODUCT')return !!plan.features.product_gifts&&row.product_status==='ACTIVE'&&row.product_currency==='COP'&&Number(row.stock_quantity)>=1&&Number(row.product_price)>0;
  return !!plan.features.gift_cards&&row.gift_enabled&&String(row.gift_terms||'').trim().length>=10&&String(row.gift_payment_instructions||'').trim().length>=10;
@@ -110,6 +110,8 @@ async function publish(user,data){
  return withTransaction(async db=>{
   const b=(await db.query('select * from businesses where id=$1 and is_active',[user.business_id])).rows[0];
   if(!b||!planFromBusiness(b).portal_access_allowed)throw forbidden('Activa tu cuenta Qori Empresa para publicar.');
+  const plan=planFromBusiness(b);
+  if(plan.free_program&&data.kind!==require('./freeProgramPolicy').publicationKind(plan.code))throw forbidden('Publica únicamente beneficios de tu programa gratuito.');
   if(data.kind==='ACTIVITY'&&!(await db.query('select 1 from interactive_activations where id=$1 and company_id=$2',[data.resource_id,user.business_id])).rowCount)throw notFound('Actividad no encontrada.');
   if(data.kind==='STAMP'&&!(await db.query('select 1 from stamp_programs where id=$1 and business_id=$2',[data.resource_id,user.business_id])).rowCount)throw notFound('Programa no encontrado.');
   if(data.kind==='PRODUCT'&&!(await db.query("select 1 from business_inventory_products where id=$1 and business_id=$2 and status='ACTIVE' and currency='COP'",[data.resource_id,user.business_id])).rowCount)throw notFound('Producto no encontrado.');
@@ -155,6 +157,7 @@ async function decideRequest(user,id,data){
   if(!r)throw notFound();if(r.state==='INVITED'&&data.action==='INVITE')return {ok:true,existing:true};if(r.state!=='PENDING')throw badRequest('La solicitud ya fue atendida.');
   let invitation=null;
   if(data.action==='INVITE'){
+     if(user.free_program_code&&r.kind!==require('./freeProgramPolicy').publicationKind(user.free_program_code))throw forbidden('Esta solicitud no corresponde a tu programa gratuito.');
    if(!data.identity_checked)throw badRequest('Verifica la identidad y el documento antes de vincular registros.');
    invitation=(await network.send(user,{request_id:r.id,public_id:r.public_id,kind:r.kind,resource_id:r.resource_id,document_id:r.document_id,identity_checked:true,message:data.message||'Confirmamos tu solicitud. Acepta la invitación para incorporar tu tarjeta.',terms:''},{client:db})).invitation;
   }

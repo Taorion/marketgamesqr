@@ -77,6 +77,7 @@ async function listPublicSubscriptionPlans(_req, res, next) {
     const publicPlanCodes = [PLAN_CODES.DESPEGA, PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO];
     res.json({
       free_plan: plans.find(plan=>plan.code===PLAN_CODES.PENSE_EN_TI),
+      free_plans: plans.filter(plan=>plan.free_program),
       prepaid_plan: null,
       portal_base_plan: null,
       plans: plans.filter((plan) => publicPlanCodes.includes(plan.code) && plan.public_signup_available !== false && !plan.testing_plan),

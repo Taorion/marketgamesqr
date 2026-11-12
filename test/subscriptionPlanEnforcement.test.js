@@ -80,7 +80,7 @@ test("las activaciones respetan tipo, cupo mensual y cupo activo", () => {
   const routes = read("backend/src/routes/interactiveActivationRoutes.js");
   const controller = read("backend/src/controllers/interactiveActivationController.js");
   assert.match(routes, /router\.use\(requirePortalAccess\)/);
-  assert.match(routes, /requireBusinessFeature\("qr_batch_generator"\)/);
+  assert.match(routes, /requireBusinessFeature\("interactive_activations"\)/);
   assert.match(controller, /assertInteractiveActivationTypeForBusiness/);
   assert.match(controller, /activation_types_month/);
   assert.match(controller, /active_interactive_activations/);

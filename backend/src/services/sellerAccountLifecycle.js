@@ -30,7 +30,7 @@ function accountLifecycle(b,now=new Date()){
  }else if(plan.raw_status==='PENDING_PAYMENT'){phase='PAYMENT_PENDING';label='Pago pendiente';tone='warning';next='Confirma con el negocio que complete el pago de su plan.';}
  else if(plan.access_status==='GRACE'){phase='RENEWAL_DUE';label='Renovación pendiente · en gracia';tone='warning';next='Gestiona la renovación antes de que termine el periodo de gracia.';}
  else if(!plan.portal_access_allowed&&plan.category==='subscription'){phase='EXPIRED';label='Suscripción vencida o bloqueada';tone='danger';next='Revisa la renovación y el estado de acceso.';}
- else if(plan.code==='PENSE_EN_TI'){phase='FREE';label='Cuenta gratuita permanente';next='Acompaña el uso de la cuenta; no tiene vencimiento de prueba.';}
+ else if(plan.free_program){phase='FREE';label='Cuenta gratuita permanente';next='Acompaña el uso de la cuenta; no tiene vencimiento de prueba.';}
  else if(payment&&plan.category==='subscription'&&Number(plan.monthly_price_cop)>0){phase='PAID_ACTIVE';label='Plan pago activo';tone='success';}
  else if(plan.category==='subscription'&&Number(plan.monthly_price_cop)>0){phase='ACTIVE_UNVERIFIED';label='Plan activo · sin pago registrado';next='El acceso activo no acredita un pago; revisa el acuerdo comercial.';}
  else if(plan.category!=='subscription'){phase='TICKETS';label='Acceso por tickets';}

@@ -422,7 +422,7 @@ async function createCreditCheckout(user, body) {
     throw badRequest("Paquete QR no disponible.");
   }
   const access=await assertActiveSubscriptionForTicketPurchase(user);
-  if(offer.kind==='GIFTCARDS'&&access.plan.code!=='PENSE_EN_TI')throw badRequest('Este paquete de emisiones corresponde a Pensé en ti.');
+  if(offer.kind==='GIFTCARDS')throw badRequest('Este paquete de emisiones ya no está disponible. Consulta las herramientas incluidas en tu plan.');
   if (!offer.subscriber_allowed) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
   }
@@ -1298,7 +1298,7 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     created_by_user_id: order.created_by_user_id,
   });
 
-  if (isBaseAccessPackage(order.package_size) && (await client.query('select plan_code from businesses where id=$1',[order.business_id])).rows[0]?.plan_code !== 'PENSE_EN_TI') {
+  if (isBaseAccessPackage(order.package_size) && !require('./freeProgramPolicy').isFreeProgram((await client.query('select plan_code from businesses where id=$1',[order.business_id])).rows[0]?.plan_code)) {
     await activateTicketBaseAccess(client, order.business_id, order.created_by_user_id, {
       source: signup?.type || "ticket_purchase",
     });

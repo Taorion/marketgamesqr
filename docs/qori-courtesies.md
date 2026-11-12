@@ -12,7 +12,7 @@ La entrega exige confirmación explícita del destinatario. El beneficiario entr
 
 ## Pensé en ti
 
-- 20 tickets y 20 emisiones de Gift Card iniciales, una sola vez.
+- 20 tickets iniciales, una sola vez. Sin emisiones de Gift Card ni programa de sellos incluido; sellos y activaciones son programas gratuitos separados.
 - Hasta cinco productos y un programa de sellos; el programa conserva las reglas de emisión y canje existentes.
 - Recargas de Gift Card a COP 2.500 por emisión: 50 (125.000), 200 (500.000), 600 (1.500.000), 2.000 (5.000.000) y 6.000 (15.000.000).
 - El precio compra capacidad de emisión, no saldo para consumir en el comercio.
