@@ -128,6 +128,8 @@ async function createPortalSignup(req, res, next) {
       const commercialAdvisor = body.commercial_advisor_id ? await advisorById(body.commercial_advisor_id, client) : null;
       await assertNotSelfReferral(client, commercialAdvisor, body);
       await assertUniqueSignupIdentity(client, body);
+      const prospectReferrals = require('../services/prospectReferralService');
+      const signupProspect = await prospectReferrals.resolveSignupProspect(client, commercialAdvisor, body);
 
       const companyName = body.company_name || body.contact_name;
       const slug = await uniqueBusinessSlug(client, companyName);
@@ -148,6 +150,7 @@ async function createPortalSignup(req, res, next) {
 
       const user = userResult.rows[0];
       if(commercialAdvisor)await assignPaidSignup(client,commercialAdvisor,business.id);
+      await prospectReferrals.linkSignupProspect(client,commercialAdvisor,body,business.id,signupProspect);
       const order = await createPortalSignupCheckout(client, {
         business_id: business.id,
         user_id: user.id,

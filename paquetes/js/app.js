@@ -263,6 +263,7 @@ function signupPayload() {
     legal_version: "2026-07-23",
     sales_advisor_code: salesAdvisorSeller?.checked ? selectedSalesAdvisor?.code || null : null,
     commercial_advisor_id: salesAdvisorSeller?.checked ? selectedSalesAdvisor?.commercial_id || null : null,
+    commercial_prospect_token: salesAdvisorSeller?.checked && selectedSalesAdvisor?.commercial_id === window.QoriReferral?.get() ? window.QoriReferral?.prospect?.() || null : null,
   };
 }
 

@@ -11,7 +11,7 @@
   const explicit = params.get('advisor') ?? params.get('seller');
   if (explicit !== null) {
     // Keep even an invalid explicit link: never silently fall back to a different seller.
-    current = { id: explicit, expires_at: Date.now() + lifetime };
+    current = { id: explicit, prospect_token: params.get('prospect_ref') || null, expires_at: Date.now() + lifetime };
     try { localStorage.setItem(key, JSON.stringify(current)); } catch {}
   }
   function decorate() {
@@ -23,6 +23,8 @@
       if (url.origin !== location.origin || !/^\/(?:(?:paquetes|pense-en-ti)(?:\/(?:index\.html)?)?|index\.html)?$/.test(url.pathname)) return;
       if (!a.dataset.qoriReferral && (url.searchParams.has('advisor') || url.searchParams.has('seller'))) return;
       url.searchParams.delete('advisor'); url.searchParams.delete('seller');
+      url.searchParams.delete('prospect_ref');
+      if (current.prospect_token) url.searchParams.set('prospect_ref', current.prospect_token);
       url.searchParams.set(url.pathname.startsWith('/pense-en-ti') ? 'seller' : 'advisor', current.id);
       a.href = url.href;
       a.dataset.qoriReferral = 'true';
@@ -30,13 +32,15 @@
   }
   window.QoriReferral = {
     get: () => current ? current.id : null,
+    prospect: () => current?.prospect_token || null,
     clear() {
       current = null;
       try { localStorage.removeItem(key); } catch {}
       const url = new URL(location.href); url.searchParams.delete('advisor'); url.searchParams.delete('seller');
+      url.searchParams.delete('prospect_ref');
       history.replaceState(history.state, '', url);
       document.querySelectorAll('a[data-qori-referral]').forEach(a => {
-        const link = new URL(a.href); link.searchParams.delete('advisor'); link.searchParams.delete('seller'); a.href = link.href; delete a.dataset.qoriReferral;
+        const link = new URL(a.href); link.searchParams.delete('advisor'); link.searchParams.delete('seller'); link.searchParams.delete('prospect_ref'); a.href = link.href; delete a.dataset.qoriReferral;
       });
     },
     decorate

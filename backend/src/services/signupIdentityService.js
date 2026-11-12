@@ -18,6 +18,7 @@ const publicSignupBaseSchema = z.object({
   legal_version: z.string().trim().max(40).default("2026-06-16"),
   sales_advisor_code: z.string().trim().max(40).optional().nullable(),
   commercial_advisor_id: z.string().uuid().optional().nullable(),
+  commercial_prospect_token: z.string().trim().min(1).max(2048).optional().nullable(),
 }).refine((body) => body.password === body.password_confirm, {
   message: "La confirmacion de clave no coincide.",
   path: ["password_confirm"],

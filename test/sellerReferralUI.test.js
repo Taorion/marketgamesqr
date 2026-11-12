@@ -11,8 +11,8 @@ test('referral survives navigation, decorates internal links, expires and explic
   w.localStorage.setItem(key,JSON.stringify({id,expires_at:Date.now()-1}));w.eval(source('qori-web/js/seller-referral.js'));assert.equal(w.QoriReferral.get(),null);
  } finally{w.close();}
 });
-async function checkout({invalid=false}={}){
- const w=new JSDOM(source('paquetes/index.html'),{url:'https://example.test/paquetes/?advisor='+id+'&plan=STARTER',runScripts:'outside-only'}).window;
+async function checkout({invalid=false,prospectToken=''}={}){
+ const w=new JSDOM(source('paquetes/index.html'),{url:'https://example.test/paquetes/?advisor='+id+'&plan=STARTER'+(prospectToken?'&prospect_ref='+prospectToken:''),runScripts:'outside-only'}).window;
  await new Promise(r=>w.document.addEventListener('DOMContentLoaded',r,{once:true}));
  w.HTMLElement.prototype.scrollIntoView=function(){};const calls=[];
  w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});
@@ -32,6 +32,19 @@ test('checkout automatically sends linked seller; typing cannot lose it, XSS is 
 });
 test('invalid referral cannot silently submit as an unattributed signup',async()=>{
  const {w,calls}=await checkout({invalid:true});try{w.document.querySelector('#signupForm').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.equal(calls.some(c=>c.body),false);assert.equal(w.document.querySelector('#salesAdvisorSeller').checked,true);}finally{w.close();}
+});
+test('prospect context survives navigation and checkout; explicit new link and opt-out clear it',async()=>{
+ const {w,calls}=await checkout({prospectToken:'signed-contact-token'});try{
+  assert.equal(w.QoriReferral.prospect(),'signed-contact-token');w.document.querySelector('#signupForm').dispatchEvent(new w.Event('submit',{cancelable:true}));await until(()=>calls.some(c=>c.body));assert.equal(calls[ calls.findIndex(c=>c.body) ].body.commercial_prospect_token,'signed-contact-token');
+  w.history.replaceState(null,'','/');w.eval(source('qori-web/js/seller-referral.js'));assert.equal(w.QoriReferral.prospect(),'signed-contact-token');
+  w.history.replaceState(null,'','/?advisor='+id);w.eval(source('qori-web/js/seller-referral.js'));assert.equal(w.QoriReferral.prospect(),null);
+  w.history.replaceState(null,'','/?advisor='+id+'&prospect_ref=another');w.eval(source('qori-web/js/seller-referral.js'));w.QoriReferral.decorate();assert.ok([...w.document.querySelectorAll('a[data-qori-referral]')].every(a=>new URL(a.href).searchParams.get('prospect_ref')==='another'));
+  w.QoriReferral.clear();assert.equal(w.QoriReferral.prospect(),null);assert.equal(new URL(w.location.href).searchParams.has('prospect_ref'),false);assert.equal([...w.document.querySelectorAll('a')].some(a=>a.href.includes('prospect_ref')),false);
+ }finally{w.close();}
+});
+test('free form sends the same prospect context as paid checkout',async()=>{
+ const w=new JSDOM(source('pense-en-ti/index.html'),{url:'https://example.test/pense-en-ti/?seller='+id+'&prospect_ref=signed-free-token',runScripts:'outside-only'}).window,calls=[];
+ try{w.fetch=async(path,opts={})=>{calls.push({path,body:opts.body&&JSON.parse(opts.body)});return {ok:!opts.body,json:async()=>opts.body?{error:{message:'QA stop'}}:{name:'Embajador'}};};w.eval(source('qori-web/js/seller-referral.js'));w.eval(source('pense-en-ti/app.js'));await until(()=>!w.document.querySelector('button[type=submit]').disabled);await w.document.querySelector('#freeForm').onsubmit({preventDefault(){}});assert.equal(calls.find(c=>c.body).body.commercial_prospect_token,'signed-free-token');assert.equal(calls.find(c=>c.body).body.commercial_advisor_id,id);}finally{w.close();}
 });
 test('referral still works when browser storage is unavailable',()=>{
  const w=new JSDOM('',{url:'https://example.test/paquetes/?advisor='+id,runScripts:'outside-only'}).window;

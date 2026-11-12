@@ -15,6 +15,8 @@ async function signup(payload){
   if((await db.query('select 1 from qori_free_enrollments where document_key=$1',[document])).rowCount)throw badRequest('Este documento ya recibió el saldo inicial de Pensé en ti.');
   const advisor=d.commercial_advisor_id?await advisorById(d.commercial_advisor_id,db):null;
   await assertNotSelfReferral(db,advisor,d);
+  const prospectReferrals=require('./prospectReferralService');
+  const signupProspect=await prospectReferrals.resolveSignupProspect(db,advisor,d);
   const name=d.company_name||d.contact_name,slug=await uniqueBusinessSlug(db,name);
   const settings={...signupSettings({...d,legal_version:'2026-11-07'},'pense_en_ti'),subscription:{plan_code:'PENSE_EN_TI',status:'ACTIVE'},access:{source:'pense_en_ti'}};
   const b=(await db.query("insert into businesses(name,slug,settings,plan_code,plan_type,portal_status,subscription_status,portal_activated_at,is_active) values($1,$2,$3::jsonb,'PENSE_EN_TI','premium_monthly','ACTIVE','ACTIVE',now(),true) returning id",[name,slug,JSON.stringify(settings)])).rows[0];
@@ -26,7 +28,7 @@ async function signup(payload){
   await db.query('insert into qori_free_enrollments(document_key,business_id) values($1,$2)',[document,b.id]);
   if(advisor){
    await db.query('insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$2)',[b.id,advisor.id]);
-   await db.query("insert into qori_sales_prospects(seller_id,business_id,business_name,contact_name,email,phone,stage) values($1,$2,$3,$4,$5,$6,'WON')",[advisor.id,b.id,name,d.contact_name,d.email,d.phone]);
+   await prospectReferrals.linkSignupProspect(db,advisor,d,b.id,signupProspect);
   }
   await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'PENSE_EN_TI_ENROLLED','business',$2,$3::jsonb)",[u.id,b.id,JSON.stringify({seller_id:advisor?.id||null,initial_tickets:20,initial_giftcards:20})]);
   return {ok:true,business_id:b.id,email:d.email,portal_url:'/empresa/?view=customer-network',message:'Tu cuenta está lista: 20 tickets, hasta 5 productos y 20 emisiones de Gift Card y un programa de sellos.'};
