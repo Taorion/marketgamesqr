@@ -1,6 +1,17 @@
 (() => {
   const form=document.getElementById('signupRecoveryForm');if(!form)return;
   const details=document.getElementById('signupRecovery'),status=form.querySelector('[data-recovery-status]'),result=form.querySelector('[data-recovery-result]');
+  const forgot=document.getElementById('signupForgotForm');
+  if(forgot)forgot.addEventListener('submit',async event=>{
+    event.preventDefault();const button=forgot.querySelector('[type=submit]'),message=forgot.querySelector('[role=status]');
+    if(button.disabled)return;button.disabled=true;message.textContent='Enviando instrucciones…';
+    try{
+      const response=await fetch('/api/auth/password/request-reset',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({email:forgot.elements.email.value.trim()})});
+      const data=await response.json();if(!response.ok)throw Error(data.error?.message||'No pudimos enviar las instrucciones. Intenta de nuevo más tarde.');
+      message.textContent=data.message;
+    }catch(error){message.textContent=error.message;}finally{button.disabled=false;}
+  });
+  if(location.hash==='#retomar')details.open=true;
   const returned=new URLSearchParams(location.search).get('signup');
   if(['success','pending','failure'].includes(returned)){
     details.open=true;

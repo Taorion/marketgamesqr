@@ -169,7 +169,14 @@
           <p class="message full" data-recovery-status role="status"></p>
           <div class="full" data-recovery-result></div>
         </form>
-        <p>Si olvidaste tu contraseña y aún no has pagado, <a href="mailto:contacto@gosqori.com">solicita ayuda a Qori</a>. No crees otra cuenta.</p>
+        <details><summary>Olvidé mi contraseña</summary>
+          <form id="signupForgotForm" class="request-form">
+            <label><span>Correo de tu cuenta</span><input name="email" type="email" autocomplete="username" maxlength="180" required></label>
+            <button type="submit" class="primary-button">Enviar enlace de recuperación</button>
+            <p role="status" class="message full"></p>
+          </form>
+          <p>Revisa tu correo, incluida la carpeta de spam. El enlace dura 30 minutos y se usa una sola vez. Conservaremos tu cuenta y su embajador.</p>
+        </details>
       </details>
     </section>
 
@@ -338,7 +345,7 @@
   </main>
 
   <script src="/js/seller-referral.js?v=20261112-crm1" defer></script>
-  <script src="js/signup-recovery.js?v=20261112-audit1" defer></script>
+  <script src="js/signup-recovery.js?v=ecosystem-20261112" defer></script>
   <script src="js/app.js?referral=20261112-crm1&v=qori-plan-matrix-v1-20260928&prices=20261009&limits=20261009&amp;descubre=v2-20261016" defer></script>
 </body>
 </html>

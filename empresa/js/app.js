@@ -8268,6 +8268,10 @@ async function submitPasswordReset(event) {
     });
     setInlineMessage(passwordResetMessage, data.message || "Password actualizado.", "success");
     passwordResetForm.reset();
+    if (data.next_url === '/paquetes/#retomar') {
+      window.location.replace('/paquetes/#retomar');
+      return;
+    }
     passwordResetForm.classList.add("hidden");
     window.history.replaceState({}, document.title, window.location.pathname);
   } catch (error) {

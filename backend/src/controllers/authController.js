@@ -9,10 +9,12 @@ const { validate, loginSchema } = require("../utils/validators");
 const { getBusinessSubscription } = require("../services/subscriptionService");
 const { sendPasswordResetEmail } = require("../services/passwordResetMailService");
 
+const { eligibility: resetEligibility } = require('../services/passwordResetEligibility');
+
 const passwordSchema = z.string().min(8).max(120);
 
 const requestPasswordResetSchema = z.object({
-  email: z.string().email().max(180),
+  email: z.string().trim().email().max(180),
 });
 
 const resetPasswordSchema = z.object({
@@ -143,7 +145,7 @@ async function requestPasswordReset(req, res, next) {
     const body = validate(requestPasswordResetSchema, req.body);
     const genericResponse = {
       ok: true,
-      message: "Si el correo existe y esta activo, enviaremos instrucciones para restablecer la contrasena.",
+      message: "Si la cuenta permite recuperación, enviaremos instrucciones a tu correo para restablecer la contraseña.",
     };
 
     const userResult = await query(
@@ -154,12 +156,14 @@ async function requestPasswordReset(req, res, next) {
       [body.email]
     );
     const user = userResult.rows[0];
-    if (!user || !user.is_active) {
+    if (!user || !(await resetEligibility({query}, user.id))) {
       return res.json(genericResponse);
     }
 
     const rawToken = crypto.randomBytes(32).toString("base64url");
-    await withTransaction(async (client) => {
+    const issued = await withTransaction(async (client) => {
+      await client.query("select id from app_users where id=$1 for update", [user.id]);
+      if (!(await resetEligibility(client, user.id))) return false;
       await client.query(
         `update password_reset_tokens
          set used_at = coalesce(used_at, now())
@@ -178,7 +182,9 @@ async function requestPasswordReset(req, res, next) {
           }),
         ]
       );
+      return true;
     });
+    if (!issued) return res.json(genericResponse);
 
     try {
       await sendPasswordResetEmail({ to: user.email, resetUrl: passwordResetUrl(rawToken) });
@@ -205,45 +211,23 @@ async function resetPassword(req, res, next) {
   try {
     const body = validate(resetPasswordSchema, req.body);
     const tokenHash = hashResetToken(body.token);
-    const tokenResult = await query(
-      `select t.id, t.user_id, u.email, u.is_active
-       from password_reset_tokens t
-       join app_users u on u.id = t.user_id
-       where t.token_hash = $1
-         and t.used_at is null
-         and t.expires_at > now()
-       limit 1`,
-      [tokenHash]
-    );
-    const resetToken = tokenResult.rows[0];
-    if (!resetToken || !resetToken.is_active) {
-      throw badRequest("Token de recuperacion invalido o vencido.");
-    }
-
+    const candidate = (await query('select user_id from password_reset_tokens where token_hash=$1 and used_at is null and expires_at>now()', [tokenHash])).rows[0];
+    if (!candidate) throw badRequest('Enlace de recuperación inválido o vencido.');
     const passwordHash = await bcrypt.hash(body.password, 12);
-    await withTransaction(async (client) => {
-      await client.query(
-        `update app_users
-         set password_hash = $2,
-             updated_at = now()
-         where id = $1`,
-        [resetToken.user_id, passwordHash]
-      );
-      await client.query(
-        `update password_reset_tokens
-         set used_at = now()
-         where id = $1`,
-        [resetToken.id]
-      );
-      await client.query(
-        `update password_reset_tokens
-         set used_at = coalesce(used_at, now())
-         where user_id = $1 and id <> $2 and used_at is null`,
-        [resetToken.user_id, resetToken.id]
-      );
+    const result = await withTransaction(async client => {
+      // Serialize issuance and consumption per user, then recheck the token.
+      await client.query('select id from app_users where id=$1 for update', [candidate.user_id]);
+      const token = (await client.query('select id from password_reset_tokens where token_hash=$1 and user_id=$2 and used_at is null and expires_at>now() for update', [tokenHash, candidate.user_id])).rows[0];
+      const allowed = await resetEligibility(client, candidate.user_id);
+      if (!token || !allowed) throw badRequest('Enlace de recuperación inválido o vencido.');
+      await client.query('update app_users set password_hash=$2,updated_at=now() where id=$1', [candidate.user_id, passwordHash]);
+      await client.query('update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null', [candidate.user_id]);
+      return allowed;
     });
+    res.set('Cache-Control', 'no-store').json({ok:true,
+      next_url:result.pending ? '/paquetes/#retomar' : '/empresa/',
+      message:result.pending ? 'Contraseña actualizada. Retoma tu inscripción con el mismo correo para continuar el pago pendiente.' : 'Contraseña actualizada. Ya puedes iniciar sesión.'});
 
-    res.json({ ok: true, message: "Password actualizado. Ya puedes iniciar sesion." });
   } catch (error) {
     next(error);
   }

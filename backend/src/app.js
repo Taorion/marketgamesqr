@@ -183,6 +183,13 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, database_configured: env.databaseConfigured });
 });
 
+app.get('/api/ready', async (_req,res,next) => {
+  try {
+    const result=await require('./services/readinessService').check();
+    res.set('Cache-Control','no-store').status(result.ok?200:503).json(result);
+  } catch(error) { next(error); }
+});
+
 app.get("/api/version", (_req, res) => {
   res.json({
     ok: true,

@@ -177,6 +177,36 @@ function nextThursday(now=new Date()){
  const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
  const d=new Date(date+'T12:00:00Z'),day=d.getUTCDay();d.setUTCDate(d.getUTCDate()+((4-day+7)%7||7));return d.toISOString().slice(0,10);
 }
+const historySchema=z.object({view:z.enum(['accounts','commissions','payouts']).default('accounts'),
+ offset:z.coerce.number().int().min(0).max(10000000).default(0),search:z.string().trim().max(160).default(''),
+ phase:z.enum(['ALL','TRIAL','TRIAL_ENDING','TRIAL_EXPIRED','CONVERTED','PAID_ACTIVE','PAYMENT','SUSPENDED']).default('ALL'),
+ business_ids:z.string().optional().transform(v=>v?v.split(','):[]).pipe(z.array(z.string().uuid()).max(50))});
+function historyPage(rows,offset){return {rows:rows.slice(0,50),pagination:{has_more:rows.length>50,next_offset:offset+Math.min(rows.length,50)}};}
+function matchesPhase(row,phase){const l=row.lifecycle;return phase==='ALL'||l.phase===phase||
+ phase==='TRIAL'&&['TRIAL_ACTIVE','TRIAL_ENDING'].includes(l.phase)||phase==='CONVERTED'&&l.converted_to_paid||
+ phase==='PAYMENT'&&['PAYMENT_PENDING','RENEWAL_DUE','EXPIRED'].includes(l.phase);}
+async function historyRows(user,d){
+ if(d.view==='accounts'){
+  if(d.phase==='ALL')return historyPage(await accountRows(user,d),d.offset);
+  // Use the canonical lifecycle projection, not a second SQL definition of payment/trial.
+  // Bound each scan; the continuation offset preserves access to older matches.
+  const candidates=await accountRows(user,{...d,limit:501}),rows=[];
+  for(let i=0;i<Math.min(candidates.length,500);i++)if(matchesPhase(candidates[i],d.phase)){
+   if(rows.length===50)return {rows,pagination:{has_more:true,next_offset:d.offset+i}};
+   rows.push(candidates[i]);
+  }
+  return {rows,pagination:{has_more:candidates.length>500,next_offset:d.offset+Math.min(candidates.length,500)}};
+ }
+ const rows=d.view==='commissions' ? await query(`select c.*,b.name business_name,o.package_title
+   from qori_seller_commissions c join businesses b on b.id=c.business_id join qr_credit_purchase_orders o on o.id=c.order_id
+   where c.seller_id=$1 and ($2='' or position(lower($2) in lower(b.name||' '||o.package_title||' '||c.status))>0)
+   order by c.created_at desc,c.id limit 51 offset $3`,[user.id,d.search,d.offset])
+ : await query(`select * from qori_seller_payouts where seller_id=$1
+   and ($2='' or position(lower($2) in lower(transfer_reference))>0)
+   order by created_at desc,id limit 51 offset $3`,[user.id,d.search,d.offset]);
+ return historyPage(rows.rows,d.offset);
+}
+async function history(user,options={}){await requireApproved(user);return historyRows(user,validate(historySchema,options));}
 async function dashboard(user){
  await requireApproved(user);
  const [totals,ledger,payouts,accounts]=await Promise.all([
@@ -184,16 +214,16 @@ async function dashboard(user){
    coalesce(sum(amount_cop) filter(where status='PAID'),0) paid_cop,
    coalesce(sum(amount_cop) filter(where status='SCHEDULED'),0) scheduled_cop,
    coalesce(sum(amount_cop) filter(where status='PENDING' and due_on<=(now() at time zone 'America/Bogota')::date),0) due_cop,
-   count(distinct business_id)::int paying_businesses from qori_seller_commissions where seller_id=$1`,[user.id]),
-  query(`select c.*,b.name business_name,o.package_title from qori_seller_commissions c join businesses b on b.id=c.business_id join qr_credit_purchase_orders o on o.id=c.order_id where seller_id=$1 order by c.created_at desc,c.id limit 200`,[user.id]),
-  query('select * from qori_seller_payouts where seller_id=$1 order by created_at desc limit 100',[user.id]),
-  accountRows(user)
+   count(distinct business_id)::int paying_businesses, (select count(*)::int from qori_sales_accounts where seller_id=$1) accounts_count from qori_seller_commissions where seller_id=$1`,[user.id]),
+  historyRows(user,validate(historySchema,{view:'commissions'})),
+  historyRows(user,validate(historySchema,{view:'payouts'})),
+  historyRows(user,validate(historySchema,{view:'accounts'}))
  ]);
  const policy=require('./sellerCommissionPolicy').publicPolicy();
  const rollout=(await query("select effective_at,base_mode,scope from qori_seller_commission_policy where version='QORI_2026_VF1'")).rows[0];
- return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts,next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,commission_policy:{...policy,...rollout},tickets_rate:0.10};
+ return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts:accounts.rows,pagination:{accounts:accounts.pagination,commissions:ledger.pagination,payouts:payouts.pagination},next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,commission_policy:{...policy,...rollout},tickets_rate:0.10};
 }
-async function accountRows(user){
+async function accountRows(user,d=validate(historySchema,{})){
  const rows=(await query(`select b.*,a.created_at assigned_at,p.last_subscription_paid_at,cp.starts_on commission_starts_on,
   coalesce(cp.policy_version,case when b.created_at>=policy.effective_at then 'QORI_2026_VF1' else 'LEGACY_10' end) commission_policy,
   case when cp.policy_version='QORI_2026_VF1' then public.qori_seller_commission_month(cp.starts_on,(now() at time zone 'America/Bogota')::date) else null end commission_month,
@@ -204,12 +234,15 @@ async function accountRows(user){
   left join lateral (select max(o.credited_at) last_subscription_paid_at from qr_credit_purchase_orders o
    where o.business_id=b.id and o.status='APPROVED' and o.credited_at is not null and o.price_cop>0
    and o.metadata->'signup'->>'type' in ('portal_monthly_subscription','portal_annual_subscription','portal_monthly_subscription_auto_renewal')) p on true
-  where a.seller_id=$1 and policy.version='QORI_2026_VF1' order by a.created_at desc,b.id limit 200`,[user.id])).rows;
+  where a.seller_id=$1 and policy.version='QORI_2026_VF1'
+  and ($2='' or position(lower($2) in lower(b.name||' '||coalesce(b.plan_code,'')))>0)
+  and (cardinality($4::uuid[])=0 or b.id=any($4::uuid[]))
+  order by a.created_at desc,b.id limit $5 offset $3`,[user.id,d.search,d.offset,d.business_ids,d.limit||51])).rows;
  const now=new Date(),{accountLifecycle}=require('./sellerAccountLifecycle');
  return rows.map(b=>({id:b.id,name:b.name,plan_code:b.plan_code,subscription_status:b.subscription_status,
   created_at:b.assigned_at,lifecycle:accountLifecycle(b,now),commission:{policy_version:b.commission_policy,starts_on:b.commission_starts_on,ends_on:b.commission_ends_on,month:b.commission_month}}));
 }
-async function accounts(user){await requireApproved(user);return {accounts:await accountRows(user)};}
+async function accounts(user,options={}){const page=await history(user,{...options,view:'accounts'});return {accounts:page.rows,pagination:page.pagination};}
 async function adminQueue(user){
  superadmin(user);
  const [applications,balances,payouts]=await Promise.all([
@@ -240,4 +273,4 @@ async function pay(user,payload){
   return {payout:p};
  });
 }
-module.exports={VERSION,register,openApplication,application,upload,adminUpload,adminSubmit,document,submit,review,authorizeAccess,documentation,requireApproved,dashboard,accounts,adminQueue,pay,nextThursday};
+module.exports={VERSION,register,openApplication,application,upload,adminUpload,adminSubmit,document,submit,review,authorizeAccess,documentation,requireApproved,dashboard,accounts,history,adminQueue,pay,nextThursday};

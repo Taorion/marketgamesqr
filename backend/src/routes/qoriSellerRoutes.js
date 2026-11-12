@@ -18,7 +18,8 @@ router.get('/documents/:id',async(req,res,next)=>{try{const d=await s.document(r
 router.post('/application/submit',handle(req=>s.submit(req.user,req.body,req.ip)));
 router.get('/dashboard',handle(req=>s.dashboard(req.user)));
 router.post('/demo/session',handle(req=>require('../services/sellerDemoService').createSession(req.user)));
-router.get('/accounts',handle(req=>s.accounts(req.user)));
+router.get('/accounts',handle(req=>s.accounts(req.user,req.query)));
+router.get('/history',handle(req=>s.history(req.user,req.query)));
 router.get('/admin/queue',handle(req=>s.adminQueue(req.user)));
 router.get('/admin/supervision/bootstrap',handle(req=>require('../services/sellerSupervisionService').bootstrap(req.user)));
 router.get('/admin/supervision',handle(req=>require('../services/sellerSupervisionService').list(req.user,req.query)));

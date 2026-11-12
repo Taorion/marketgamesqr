@@ -27,5 +27,5 @@
   host.querySelector('[data-account-search]').oninput=draw;host.querySelector('[data-account-phase]').onchange=draw;
   host.querySelector('[data-refresh-accounts]').onclick=()=>refresh?.();draw();
  }
- window.QoriSellerAccounts={render,summary};
+ window.QoriSellerAccounts={render,summary,card};
 })();

@@ -17,7 +17,8 @@ function accountLifecycle(b,now=new Date()){
  const converted=Boolean(hadTrial&&!currentTrial&&payment&&trialStart&&new Date(payment)>=new Date(trialStart)&&plan.category==='subscription'&&plan.monthly_payment_required&&Number(plan.monthly_price_cop)>0);
  const remaining=trialEnd?Math.max(0,Math.ceil((new Date(trialEnd)-now)/day)):null;
  let phase='ACTIVE',label='Plan activo',tone='neutral',next='Revisa el uso del negocio y su próxima renovación.';
- if(b.is_active===false){phase='SUSPENDED';label='Negocio suspendido';tone='danger';next='Coordina con administración la reactivación.';}
+ if(b.is_active===false&&b.settings?.signup_type==='portal_subscription'&&plan.raw_status==='PENDING_PAYMENT'&&b.portal_status!=='SUSPENDED'){phase='PAYMENT_PENDING';label='Pago de inscripción pendiente';tone='warning';next='El propietario puede retomar su inscripción en la página de planes con el mismo correo y contraseña.';}
+ else if(b.is_active===false){phase='SUSPENDED';label='Negocio suspendido';tone='danger';next='Coordina con administración la reactivación.';}
  else if(['SUSPENDED','CANCELLED','CANCELED','INACTIVE'].includes(plan.raw_status)){phase='SUSPENDED';label=plan.raw_status.startsWith('CANCEL')?'Suscripción cancelada':'Suscripción suspendida';tone='danger';next='Revisa el estado de la cuenta con administración.';}
  else if(plan.lifetime_access){phase='LIFETIME';label='Convenio sin vencimiento';}
  else if(currentTrial){
