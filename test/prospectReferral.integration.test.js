@@ -26,6 +26,19 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
  env.mercadoPagoAccessToken='TEST-local-only';env.mercadoPagoWebhookSecret='local-only';
  global.fetch=async(input,options)=>{if(String(input).startsWith('https://api.mercadopago.com/')){assert.ok(String(input).endsWith('/checkout/preferences'));return new Response(JSON.stringify(failProvider?{message:'QA provider failure'}:{id:uid(),init_point:'https://example.test/checkout'}),{status:failProvider?500:201});}assert.ok(String(input).startsWith(base),'No external requests in QA');return actualFetch(input,options);};
  admin=await person('QORI_SUPERADMIN');seller=await person('QORI_SELLER');other=await person('QORI_SELLER');
+ await t.test('dashboard and CRM expose every public plan; checkout preserves plan, seller and exact prospect',async()=>{
+  const dashboard=await api('/api/seller/dashboard',seller);assert.equal(dashboard.status,200);
+  assert.deepEqual(dashboard.data.plan_referral_links.map(p=>p.code),['PENSE_EN_TI','DESPEGA','STARTER','GROWTH','PRO']);
+  for(const entry of dashboard.data.plan_referral_links){const url=new URL(entry.url);assert.equal(url.searchParams.get(entry.code==='PENSE_EN_TI'?'seller':'advisor'),seller.id);assert.equal(url.searchParams.has('prospect_ref'),false);if(entry.code!=='PENSE_EN_TI')assert.equal(url.searchParams.get('plan'),entry.code);}
+  for(const code of ['DESPEGA','STARTER','GROWTH','PRO']){
+   const p=await prospect(),links=await api(path(p.id)+'/referral',seller),url=new URL(links.data.plan_referral_links.find(l=>l.code===code).url);
+   assert.equal(url.searchParams.get('advisor'),seller.id);assert.equal(url.searchParams.get('plan'),code);
+   const free=new URL(links.data.plan_referral_links[0].url);assert.equal(free.searchParams.get('prospect_ref'),url.searchParams.get('prospect_ref'));
+   const result=await api('/api/public/signup/portal',null,{...signup(p,url.searchParams.get('prospect_ref')),plan_code:code});assert.equal(result.status,201,JSON.stringify(result));
+   const order=(await query('select metadata,commission_seller_id from qr_credit_purchase_orders where id=$1',[result.data.order.id])).rows[0];
+   assert.equal(order.commission_seller_id,seller.id);assert.equal(order.metadata.signup.plan_code,code);assert.equal((await current(p.id)).business_id,result.data.business.id);
+  }
+ });
  await t.test('signed link reuses exact contact and history; paid closure remains Admin-only and payment-driven',async()=>{
   const p=await prospect(),token=await link(p),payload=signup(p,token);
   assert.equal((await api(path(p.id)+'/referral',other)).status,403);assert.equal((await api(path(p.id)+'/referral',null)).status,401);

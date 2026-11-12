@@ -25,8 +25,9 @@ async function referral(user, id) {
   await advisorById(p.seller_id);
   const token = jwt.sign({prospect_id:p.id,seller_id:p.seller_id,contact_key:contactKey(p.email)},signingKey(),{algorithm:'HS256',audience,expiresIn:'30d'});
   const base = env.publicAppUrl.replace(/\/$/,'');
-  return {plan_referral_url:base+'/paquetes/?'+new URLSearchParams({advisor:p.seller_id,prospect_ref:token}),
-    referral_url:base+'/pense-en-ti/?'+new URLSearchParams({seller:p.seller_id,prospect_ref:token}),email:p.email,expires_in_days:30};
+  const plan_referral_url=base+'/paquetes/?'+new URLSearchParams({advisor:p.seller_id,prospect_ref:token});
+  const referral_url=base+'/pense-en-ti/?'+new URLSearchParams({seller:p.seller_id,prospect_ref:token});
+  return {plan_referral_url,referral_url,plan_referral_links:require('./sellerPlanReferralLinks').planReferralLinks(referral_url,plan_referral_url),email:p.email,expires_in_days:30};
 }
 // Run before provisioning, in the same transaction. A shared/expired/reassigned
 // prospect link fails explicitly instead of silently becoming a generic signup.

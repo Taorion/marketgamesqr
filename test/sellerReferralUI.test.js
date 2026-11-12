@@ -11,8 +11,8 @@ test('referral survives navigation, decorates internal links, expires and explic
   w.localStorage.setItem(key,JSON.stringify({id,expires_at:Date.now()-1}));w.eval(source('qori-web/js/seller-referral.js'));assert.equal(w.QoriReferral.get(),null);
  } finally{w.close();}
 });
-async function checkout({invalid=false,prospectToken=''}={}){
- const w=new JSDOM(source('paquetes/index.html'),{url:'https://example.test/paquetes/?advisor='+id+'&plan=STARTER'+(prospectToken?'&prospect_ref='+prospectToken:''),runScripts:'outside-only'}).window;
+async function checkout({invalid=false,prospectToken='',planCode='STARTER'}={}){
+ const w=new JSDOM(source('paquetes/index.html'),{url:'https://example.test/paquetes/?advisor='+id+'&plan='+planCode+(prospectToken?'&prospect_ref='+prospectToken:''),runScripts:'outside-only'}).window;
  await new Promise(r=>w.document.addEventListener('DOMContentLoaded',r,{once:true}));
  w.HTMLElement.prototype.scrollIntoView=function(){};const calls=[];
  w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});
@@ -32,6 +32,14 @@ test('checkout automatically sends linked seller; typing cannot lose it, XSS is 
 });
 test('invalid referral cannot silently submit as an unattributed signup',async()=>{
  const {w,calls}=await checkout({invalid:true});try{w.document.querySelector('#signupForm').dispatchEvent(new w.Event('submit',{cancelable:true}));assert.equal(calls.some(c=>c.body),false);assert.equal(w.document.querySelector('#salesAdvisorSeller').checked,true);}finally{w.close();}
+});
+test('each paid plan link preselects the requested plan and submits the same advisor and CRM context',async()=>{
+ for(const planCode of ['DESPEGA','STARTER','GROWTH','PRO']){
+  const {w,calls}=await checkout({planCode,prospectToken:'exact-prospect-token'});
+  try{w.document.querySelector('#signupForm').dispatchEvent(new w.Event('submit',{cancelable:true}));await until(()=>calls.some(c=>c.body));
+   const body=calls.find(c=>c.body).body;assert.equal(body.plan_code,planCode);assert.equal(body.commercial_advisor_id,id);assert.equal(body.commercial_prospect_token,'exact-prospect-token');
+  }finally{w.close();}
+ }
 });
 test('prospect context survives navigation and checkout; explicit new link and opt-out clear it',async()=>{
  const {w,calls}=await checkout({prospectToken:'signed-contact-token'});try{

@@ -13,7 +13,7 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  if(path.split('?')[0].endsWith('/accounts'))d={accounts:[{id:'b',lifecycle:{label:'Freemium · vence pronto',tone:'warning',trial:{status:'ACTIVE',ends_at:'2026-11-15T15:00:00Z',days_remaining:2}}}]};
  if(path.endsWith('/admin/queue'))d={applications:[{user_id:'applicant',full_name:'Ana',email:'ana@example.test',status:'SUBMITTED',documents:[]}],balances:[],payouts:[]};
  return {ok:true,json:async()=>d};
- };w.eval(fs.readFileSync('seller/accounts.js','utf8'));w.eval(fs.readFileSync('seller/history.js','utf8'));w.eval(fs.readFileSync('seller/app.js','utf8'));return {w,calls,setStatus:value=>{status=value;}};
+ };w.eval(fs.readFileSync('seller/accounts.js','utf8'));w.eval(fs.readFileSync('seller/history.js','utf8'));w.eval(fs.readFileSync('seller/referral-links.js','utf8'));w.eval(fs.readFileSync('seller/app.js','utf8'));return {w,calls,setStatus:value=>{status=value;}};
 }
 test('approved Seller hands off a separate demo session while pending Seller has no demo access',async()=>{
  const {w,calls}=setup({status:'APPROVED'});try{

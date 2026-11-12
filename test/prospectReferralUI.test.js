@@ -15,7 +15,7 @@ test('Seller shares the prospect-specific paid link, has a free option and no re
    else if(path.endsWith('/referral'))d=referral;else throw Error(path);
    return {ok:true,json:async()=>d};
   };
-  w.eval(source('seller/accounts.js'));w.eval(source('seller/history.js'));w.eval(source('seller/app.js'));await until(()=>w.document.querySelector('#referralLink'));w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('[data-prospect-referral]'));
+  w.eval(source('seller/accounts.js'));w.eval(source('seller/history.js'));w.eval(source('seller/referral-links.js'));w.eval(source('seller/app.js'));await until(()=>w.document.querySelector('#referralLink'));w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('[data-prospect-referral]'));
   assert.equal(w.document.querySelector('#prospectRows img'),null);w.document.querySelector('[data-prospect-referral]').click();await until(()=>w.document.querySelector('dialog [data-link]'));
   const d=w.document.querySelector('dialog:has([data-link])');assert.equal(d.querySelector('[data-link]').value,referral.plan_referral_url);assert.equal(d.querySelector('[data-free]').value,referral.referral_url);
   assert.match(d.textContent,/cliente@example.test/);assert.match(new URL(d.querySelector('[data-whatsapp]').href).searchParams.get('text'),/prospect_ref=signed/);d.querySelector('[data-copy]').click();await until(()=>copied);assert.equal(copied,referral.plan_referral_url);assert.equal(w.document.querySelector('[data-action=link-prospect]'),null);assert.equal(w.document.querySelector('[data-action=close-prospect]'),null);

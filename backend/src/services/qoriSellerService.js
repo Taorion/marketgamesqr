@@ -221,7 +221,10 @@ async function dashboard(user){
  ]);
  const policy=require('./sellerCommissionPolicy').publicPolicy();
  const rollout=(await query("select effective_at,base_mode,scope from qori_seller_commission_policy where version='QORI_2026_VF1'")).rows[0];
- return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts:accounts.rows,pagination:{accounts:accounts.pagination,commissions:ledger.pagination,payouts:payouts.pagination},next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,commission_policy:{...policy,...rollout},tickets_rate:0.10};
+ const base=env.publicAppUrl.replace(/\/$/,'');
+ const referral_url=base+'/pense-en-ti/?seller='+user.id,plan_referral_url=base+'/paquetes/?advisor='+user.id;
+ const plan_referral_links=require('./sellerPlanReferralLinks').planReferralLinks(referral_url,plan_referral_url);
+ return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts:accounts.rows,pagination:{accounts:accounts.pagination,commissions:ledger.pagination,payouts:payouts.pagination},next_payment_date:nextThursday(),referral_url,plan_referral_url,plan_referral_links,commission_policy:{...policy,...rollout},tickets_rate:0.10};
 }
 async function accountRows(user,d=validate(historySchema,{})){
  const rows=(await query(`select b.*,a.created_at assigned_at,p.last_subscription_paid_at,cp.starts_on commission_starts_on,
