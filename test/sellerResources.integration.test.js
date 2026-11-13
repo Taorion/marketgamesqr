@@ -9,10 +9,10 @@ async function api(path,user,body,method=body?'POST':'GET'){
 }
 async function person(role,status='APPROVED',platformRole=null){const u=(await query("insert into app_users(email,password_hash,full_name,role,platform_role) values($1,'qa','Embajador de prueba',$2,$3) returning *",[randomUUID()+'@example.test',role,platformRole])).rows[0];users.push(u.id);if(role==='QORI_SELLER'||platformRole==='QORI_SELLER')await query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version,status,approval_mode) values($1,$2,'3100000000','Bogotá','4610','2026-11-11-comisiones-vf1',$3,'DOCUMENTS')",[u.id,randomUUID(),status]);return u;}
 const payload=(extra={})=>({resource_key:'qa_'+randomUUID(),title:'Guía de prueba',description:'Descripción de prueba',usage:'Después de presentar el programa',audience:'PROSPECT',stage:'PRESENT',kind:'LINK',state:'DRAFT',version_label:'1',url:'https://gosqori.com/paquetes/',...extra});
-after(async()=>{if(server)await new Promise(r=>server.close(r));for(const id of resources){await query('delete from qori_commercial_audit where entity_id=$1',[id]);await query('delete from qori_seller_resources where id=$1',[id]);}for(const id of users){await query('delete from qori_commercial_audit where actor_id=$1',[id]);await query('delete from qori_sales_prospects where seller_id=$1',[id]);await query('delete from qori_seller_applications where user_id=$1',[id]);await query('delete from app_users where id=$1',[id]);}await pool.end();});
+after(async()=>{if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}for(const id of resources){await query('delete from qori_commercial_audit where entity_id=$1',[id]);await query('delete from qori_seller_resources where id=$1',[id]);}for(const id of users){await query('delete from qori_commercial_audit where actor_id=$1',[id]);await query('delete from qori_sales_prospects where seller_id=$1',[id]);await query('delete from qori_seller_applications where user_id=$1',[id]);await query('delete from app_users where id=$1',[id]);}await pool.end();});
 test('Seller resource publication, private files and attributed public funnel',async t=>{
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
- const admin=await person('QORI_SUPERADMIN'),seller=await person('QORI_SELLER'),other=await person('QORI_SELLER'),pending=await person('QORI_SELLER','DRAFT'),generic=await person('ADMIN'),dual=await person('BUSINESS_OWNER','APPROVED','QORI_SELLER');
+ const admin=await require('./helpers/adminIdentity').admin(query),seller=await person('QORI_SELLER'),other=await person('QORI_SELLER'),pending=await person('QORI_SELLER','DRAFT'),generic=await person('ADMIN'),dual=await person('BUSINESS_OWNER','APPROVED','QORI_SELLER');
  const root='/api/seller/resources',context=s=>'/api/public/seller-kit?seller='+s.id;
  async function create(body){const r=await api(root,admin,body);assert.equal(r.status,201,JSON.stringify(r.data));resources.push(r.data.resource.id);return r.data.resource;}
  await t.test('approved-only reads and superadmin-only mutation/export',async()=>{
@@ -25,7 +25,7 @@ test('Seller resource publication, private files and attributed public funnel',a
  let draft,internal,published,fileBody,pdf;
  await t.test('drafts are hidden, client publication is explicit, bytes stay out of list',async()=>{
   draft=await create(payload());internal=await create(payload({audience:'SELLER',state:'PUBLISHED'}));published=await create(payload({state:'PUBLISHED'}));
-  const r=await api(root,seller);assert.equal(r.data.resources.some(x=>x.id===draft.id),false);assert.equal(r.data.resources.some(x=>x.id===internal.id),true);assert.equal(r.data.resources.some(x=>x.id===published.id),true);assert.equal(r.data.resources.some(x=>x.content||x.base64),false);assert.equal(r.data.production_assets,undefined);
+  const r=await api(root,seller);assert.equal(r.data.resources.some(x=>x.id===draft.id),false);assert.deepEqual(r.data.resources,[]);assert.equal(r.data.academy.status,'IN_DEVELOPMENT');assert.match(r.data.academy.message,/Qori Academy/);assert.equal(r.data.resources.some(x=>x.content||x.base64),false);assert.equal(r.data.production_assets,undefined);
   const pub=await api(context(seller));assert.equal(pub.status,200);assert.ok(pub.data.resources.every(x=>x.audience==='PROSPECT'));assert.equal(pub.data.resources.some(x=>[draft.id,internal.id].includes(x.id)),false);assert.equal(JSON.stringify(pub.data).includes('commission_policy'),false);assert.equal(pub.data.advisor.email,undefined);
  });
  await t.test('format validation accepts genuine Office/PDF/image and rejects executable/macro/invalid inputs',async()=>{
@@ -43,15 +43,15 @@ test('Seller resource publication, private files and attributed public funnel',a
   const f=await create(fileBody),privateFile=await create({...fileBody,resource_key:'qa_'+randomUUID(),audience:'SELLER'}),draftFile=await create({...fileBody,resource_key:'qa_'+randomUUID(),state:'DRAFT'});
   const privatePath=id=>root+'/'+id+'/download',publicPath=id=>'/api/public/seller-kit/resources/'+id+'/download?seller='+seller.id;
   assert.equal((await api(privatePath(f.id))).status,401);assert.equal((await api(privatePath(f.id),pending)).status,403);
-  const downloaded=await api(publicPath(f.id));assert.equal(downloaded.status,200);assert.deepEqual(downloaded.bytes,pdf);assert.equal(downloaded.headers.get('content-type'),'application/pdf');assert.match(downloaded.headers.get('cache-control'),/no-store/);assert.equal(downloaded.headers.get('x-content-type-options'),'nosniff');
-  assert.equal((await api(publicPath(privateFile.id))).status,404);assert.equal((await api(publicPath(draftFile.id))).status,404);assert.equal((await api(privatePath(draftFile.id),seller)).status,404);assert.equal((await api(privatePath(draftFile.id),admin)).status,200);
+  assert.equal((await api(publicPath(f.id))).status,403);assert.equal((await api(privatePath(f.id),seller)).status,403);const downloaded=await api(privatePath(f.id),admin);assert.equal(downloaded.status,200);assert.deepEqual(downloaded.bytes,pdf);assert.equal(downloaded.headers.get('content-type'),'application/pdf');assert.match(downloaded.headers.get('cache-control'),/no-store/);assert.equal(downloaded.headers.get('x-content-type-options'),'nosniff');
+  assert.equal((await api(publicPath(privateFile.id))).status,403);assert.equal((await api(publicPath(draftFile.id))).status,403);assert.equal((await api(privatePath(draftFile.id),seller)).status,403);assert.equal((await api(privatePath(draftFile.id),admin)).status,200);
   const update={...fileBody,resource_key:f.resource_key,base64:undefined,filename:undefined,state:'ARCHIVED',expected_revision:1};assert.equal((await api(root+'/'+f.id,seller,update,'PATCH')).status,403);
-  assert.equal((await api(root+'/'+f.id,admin,update,'PATCH')).status,200);assert.equal((await api(root+'/'+f.id,admin,update,'PATCH')).status,409);assert.equal((await api(publicPath(f.id))).status,404);assert.equal((await api(privatePath(f.id),seller)).status,404);
+  assert.equal((await api(root+'/'+f.id,admin,update,'PATCH')).status,200);assert.equal((await api(root+'/'+f.id,admin,update,'PATCH')).status,409);assert.equal((await api(publicPath(f.id))).status,403);assert.equal((await api(privatePath(f.id),seller)).status,403);
   const audits=(await query('select detail from qori_commercial_audit where entity_id=$1 order by created_at',[f.id])).rows;assert.equal(audits.length,2);assert.equal(audits[1].detail.previous_state,'PUBLISHED');assert.equal(audits[1].detail.state,'ARCHIVED');assert.ok(audits[1].detail.sha256);assert.equal(JSON.stringify(audits).includes('base64'),false);
  });
  await t.test('personal and CRM presentation retain seven plan selections without exposing or modifying prospect',async()=>{
   const p=(await query("insert into qori_sales_prospects(seller_id,business_name,contact_name,email,stage,phone) values($1,'Negocio prueba','Contacto QA',$2,'NEGOTIATING','3100000000') returning *",[seller.id,randomUUID()+'@example.test'])).rows[0];
-  const referral=await api('/api/admin/commercial/prospects/'+p.id+'/referral',seller);assert.equal(referral.status,200);const link=new URL(referral.data.presentation_url),token=link.searchParams.get('prospect_ref');assert.ok(token);assert.equal(link.searchParams.get('seller'),seller.id);
+  const referral=await api('/api/seller/commercial/prospects/'+p.id+'/referral',seller);assert.equal(referral.status,200);const link=new URL(referral.data.presentation_url),token=link.searchParams.get('prospect_ref');assert.ok(token);assert.equal(link.searchParams.get('seller'),seller.id);
   const pub=await api(context(seller)+'&prospect_ref='+token);assert.equal(pub.status,200,JSON.stringify(pub.data));assert.equal(pub.data.plans.length,7);assert.equal(JSON.stringify(pub.data).includes(p.email),false);
   for(const plan of pub.data.plans){const u=new URL(plan.url);assert.equal(u.searchParams.get('prospect_ref'),token);assert.equal(u.searchParams.get(plan.monthly_price_cop===0?'seller':'advisor'),seller.id);assert.equal(u.searchParams.get(plan.monthly_price_cop===0?'program':'plan'),plan.code);}
   assert.equal((await query('select business_id,stage from qori_sales_prospects where id=$1',[p.id])).rows[0].stage,'NEGOTIATING');
@@ -66,11 +66,11 @@ test('Seller resource publication, private files and attributed public funnel',a
  });
  await t.test('candidate resources have their own public gate; neither client nor private files cross audiences',async()=>{
   const candidate=await create({...fileBody,resource_key:'qa_'+randomUUID(),audience:'CANDIDATE'});
-  const url='/api/public/seller-kit/opportunity/resources/'+candidate.id+'/download';assert.equal((await api(url)).status,200);
-  const list=await api('/api/public/seller-kit/opportunity');assert.equal(list.status,200);assert.ok(list.data.resources.every(r=>r.audience==='CANDIDATE'));assert.ok(list.data.resources.some(r=>r.id===candidate.id));
-  assert.equal((await api('/api/public/seller-kit/opportunity/resources/'+internal.id+'/download')).status,404);
-  assert.equal((await api('/api/public/seller-kit/resources/'+candidate.id+'/download?seller='+seller.id)).status,404);
+  const url='/api/public/seller-kit/opportunity/resources/'+candidate.id+'/download';assert.equal((await api(url)).status,403);
+  const list=await api('/api/public/seller-kit/opportunity');assert.equal(list.status,200);assert.ok(list.data.resources.every(r=>r.audience==='CANDIDATE'));assert.deepEqual(list.data.resources,[]);assert.equal(list.data.academy.status,'IN_DEVELOPMENT');
+  assert.equal((await api('/api/public/seller-kit/opportunity/resources/'+internal.id+'/download')).status,403);
+  assert.equal((await api('/api/public/seller-kit/resources/'+candidate.id+'/download?seller='+seller.id)).status,403);
   assert.equal((await api(context(seller))).data.resources.some(r=>r.id===candidate.id),false);
-  const update={...fileBody,resource_key:candidate.resource_key,audience:'CANDIDATE',state:'ARCHIVED',base64:undefined,filename:undefined,expected_revision:1};assert.equal((await api(root+'/'+candidate.id,admin,update,'PATCH')).status,200);assert.equal((await api(url)).status,404);
+  const update={...fileBody,resource_key:candidate.resource_key,audience:'CANDIDATE',state:'ARCHIVED',base64:undefined,filename:undefined,expected_revision:1};assert.equal((await api(root+'/'+candidate.id,admin,update,'PATCH')).status,200);assert.equal((await api(url)).status,403);
  });
 });
