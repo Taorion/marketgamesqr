@@ -103,6 +103,10 @@ async function login(req, res, next, demoMode = false, adminMode = false) {
     if(user.password_setup_required)throw forbidden('Activa tu cuenta desde el enlace enviado por el administrador de Qori y crea tu contraseña.');
     require('../services/adminAccessPolicy').enforceAdministrativeIdentity(user);
     if(adminMode)require('../services/adminAccessPolicy').requireAdminAccess(user);
+    if(user.business_id && !['QORI_SELLER','QORI_SUPERADMIN'].includes(user.platform_role) && !['QORI_SELLER','QORI_SUPERADMIN','ADMIN','ADMIN_MARKET_GAMES'].includes(user.role)
+      && (await query('select 1 from businesses where id=$1 and archived_at is not null',[user.business_id])).rowCount){
+      throw forbidden('Este negocio fue eliminado por el administrador de Qori.');
+    }
 
     if(demoMode)return res.json(await require('../services/sellerDemoService').createSession(user));
     if(user.business_id && (await query('select 1 from businesses where id=$1 and is_seller_demo',[user.business_id])).rowCount){

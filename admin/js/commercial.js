@@ -295,7 +295,16 @@
     if(name==="edit-seller")return sellerEditor(seller);
     if(name==="edit-policy")return policyEditor(policy);
     if(name==="view-policy")return dialog(policy.name,`<div class="full"><p>Planes: ${esc(policy.plan_codes.map(planName).join(", "))}</p><p>Descuento hasta ${policy.max_discount_percent}% por ${policy.max_discount_months} meses.</p><p>Prueba hasta ${policy.max_trial_days} días. Tickets hasta ${policy.max_bonus_tickets}.</p><p>Módulos: ${esc(policy.allowed_modules.map(k=>data.modules[k]?.name||k).join(", ")||"Ninguno adicional")} por un máximo de ${policy.max_benefit_days} días.</p><p>Cupos: ${esc(Object.entries(policy.max_limits||{}).map(([k,v])=>`${data.limit_labels[k]}: ${v}`).join(", ")||"Sin cambios")}</p><p>Vence: ${date(policy.expires_at)}</p></div>`);
-    if(name==="archive-seller")return dialog("Dar de baja al vendedor",`<p class="full">Se retirará el acceso de ${esc(seller.full_name)}. Sus prospectos, clientes y decisiones permanecerán en el historial. Puedes reasignar su cartera desde Prospectos y Clientes.</p>`,()=>request(`/sellers/${id}`,undefined,"DELETE"),"Confirmar baja");
+    if(name==="archive-seller"){
+      const generation=sessionGeneration,p=await request(`/sellers/${id}/deletion-preview`,undefined,"GET");
+      if(generation!==sessionGeneration)return;
+      dialog("Reconfirmar eliminación",`<p class="full">Se eliminará el acceso de ${esc(p.name)} como embajador. Su historial, comisiones y documentos se conservan. El acceso independiente a una empresa se conserva.</p><p class="full">Escribe exactamente el correo: <strong>${esc(p.confirmation)}</strong></p>${field("confirmation","Correo para confirmar","text","",'required autocomplete="off"')}<label class="full"><span>Motivo de la eliminación</span><textarea name="reason" required minlength="10" maxlength="1000"></textarea></label><label class="full checkbox-row"><input type="checkbox" name="confirmed" required><span>Entiendo el efecto y confirmo la eliminación.</span></label>`,f=>{
+        if(f.get('confirmation').trim()!==p.confirmation||!f.has('confirmed')||f.get('reason').trim().length<10)throw Error('Completa la confirmación escrita, el motivo y la casilla.');
+        return request(`/sellers/${id}`,{token:p.token,confirmation:f.get('confirmation').trim(),confirmed:true,reason:f.get('reason').trim()},"DELETE");
+      },"Sí, eliminar embajador");
+      const form=modal.querySelector('form'),button=form.querySelector('[type=submit]');
+      const ready=()=>{button.disabled=form.elements.confirmation.value.trim()!==p.confirmation||!form.elements.confirmed.checked||form.elements.reason.value.trim().length<10;};form.addEventListener('input',ready);form.addEventListener('change',ready);ready();return;
+    }
     if(name==="view-deal")return dialog("Detalle de la oferta",offerDetails(item));
     if(name==="decide-deal")return dialog("Decidir excepción",`${offerDetails(item)}${select("decision","Decisión",[["APPROVED","Aprobar"],["REJECTED","Rechazar"]])}${field("valid_days","Vigencia para aplicar (días)","number",30,'min="1" max="90" required')}${note("reason","Motivo de la decisión")}`,form=>request(`/deals/${id}/decision`,{decision:form.get("decision"),valid_days:number(form,"valid_days"),reason:form.get("reason")}),"Guardar decisión");
     if(name==="cancel-deal")return dialog("Cancelar oferta",note("reason","Motivo de cancelación"),form=>request(`/deals/${id}/cancel`,{reason:form.get("reason")}),"Cancelar oferta");

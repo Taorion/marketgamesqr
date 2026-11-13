@@ -19,3 +19,16 @@ test('Clientes displays current remaining amounts, refreshes to zero and labels 
   assert.match(w.document.querySelector('dialog').textContent,/Le quedan 0 tickets/);assert.match(w.document.querySelector('dialog').textContent,/Límites del plan \(no son saldos restantes\)/);
  }finally{w.close();}
 });
+
+
+test('team removal uses the same written reconfirmation and explicit DELETE body',async()=>{
+ const w=new JSDOM('<div id="commercialWorkspace"></div>',{runScripts:'outside-only',url:'https://example.test/admin/'}).window,calls=[];
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
+ const context={api:async(path,opts={})=>{calls.push({path,...opts});if(path.includes('/bootstrap'))return {counts:{},user:{id:'admin',role:'QORI_SUPERADMIN',can_see_team:true,permissions:['team.remove','team.edit']},sellers:[{id:'s1',full_name:'Embajador QA',email:'qa@example.test',is_active:true,admin_role:'QORI_SELLER'}],plans:[],policies:[],modules:{},limit_labels:{},default_permissions:[],descubre:{}};if(path.endsWith('/deletion-preview')){assert.equal(opts.method,'GET');return {name:'Embajador QA',confirmation:'qa@example.test',token:'bound-token'};}return {ok:true,rows:[]};}};
+ try{
+  w.eval(fs.readFileSync('admin/js/commercial.js','utf8'));await w.QoriCommercial.load(context);w.document.querySelector('[data-action=tab][data-id=team]').click();await until(()=>w.document.querySelector('[data-action=archive-seller]'));
+  w.document.querySelector('[data-action=archive-seller]').click();await until(()=>w.document.querySelector('[name=confirmation]'));const f=w.document.querySelector('dialog form'),submit=f.querySelector('[type=submit]');assert.equal(submit.disabled,true);
+  f.elements.confirmation.value='qa@example.test';f.elements.reason.value='Eliminación confirmada por administrador';f.elements.confirmed.checked=true;f.dispatchEvent(new w.Event('input'));assert.equal(submit.disabled,false);f.dispatchEvent(new w.Event('submit',{cancelable:true}));await until(()=>calls.some(c=>c.method==='DELETE'));
+  assert.deepEqual(JSON.parse(calls.find(c=>c.method==='DELETE').body),{token:'bound-token',confirmation:'qa@example.test',confirmed:true,reason:'Eliminación confirmada por administrador'});
+ }finally{w.close();}
+});

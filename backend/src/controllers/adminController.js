@@ -762,6 +762,7 @@ async function listBusinesses(req, res, next) {
        left join campaigns c on c.business_id = b.id
        left join app_users u on u.business_id = b.id
        left join business_qr_credit_accounts qa on qa.business_id = b.id
+       where b.archived_at is null
        group by b.id
        , qa.current_package_size, qa.qr_balance, qa.qr_purchased_total, qa.qr_used_total, qa.internal_unit_price_cop, qa.public_label, qa.last_purchase_at
        order by b.created_at desc`

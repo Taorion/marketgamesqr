@@ -32,3 +32,20 @@ test('business balances are visible in list and detail; Customer has no business
 });
 
 test('Admin gives explicit high-level access without claiming document verification',async()=>{const {w,calls,ctx}=setup();try{const original=ctx.api;ctx.api=async(path,opts={})=>{if(!opts.body&&path.includes('/sellers/c1'))return {record:{id:'c1',name:'Embajador QA',email:'qa@example.test',is_active:true,application:{status:'DRAFT'},documents:[],documentation:{attention:true,missing:['IDENTITY','RUT','BANK','CONTRACT']},commissions:{}},history:[]};return original(path,opts);};await w.QoriAccounts.load(ctx);w.document.querySelector('[data-kind=sellers]').click();await until(()=>w.document.querySelector('[data-detail]'));w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('#sellerAuthorize'));assert.match(w.document.querySelector('.seller-document-attention').textContent,/Cédula/);w.document.querySelector('#sellerAuthorize').click();const f=w.document.querySelector('dialog form');assert.equal(f.elements.acknowledge_pending_documents.required,true);f.elements.note.value='Autorizo acceso mientras entrega sus documentos.';f.elements.acknowledge_pending_documents.checked=true;await f.onsubmit({preventDefault(){},target:f});const c=calls.find(c=>c.path.endsWith('/authorize-access'));assert.deepEqual(c.body,{note:'Autorizo acceso mientras entrega sus documentos.',acknowledge_pending_documents:true});assert.equal(w.document.querySelector('dialog'),null);}finally{w.close();}});
+
+
+test('business removal requires written reconfirmation and checkbox; cancel does not delete',async()=>{
+ const {w,ctx}=setup(),requests=[];const original=ctx.api;
+ ctx.api=async(path,opts={})=>{requests.push({path,...opts});if(path.endsWith('/deletion-preview'))return {name:'Empresa QA',confirmation:'Empresa QA',token:'confirmation-token'};return original(path,opts);};
+ try{
+  await w.QoriAccounts.load(ctx);w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('[data-delete-kind]'));
+  w.document.querySelector('[data-delete-kind]').click();await until(()=>w.document.querySelector('[name=confirmation]'));
+  let f=w.document.querySelector('dialog form'),submit=f.querySelector('[type=submit]');assert.equal(submit.disabled,true);
+  f.elements.confirmation.value='Empresa QA';f.elements.reason.value='Eliminación autorizada de prueba';f.dispatchEvent(new w.Event('input'));assert.equal(submit.disabled,true);
+  w.document.querySelector('[data-close]').click();assert.equal(requests.some(r=>r.method==='DELETE'),false);
+  w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('[data-delete-kind]'));w.document.querySelector('[data-delete-kind]').click();await until(()=>w.document.querySelector('[name=confirmation]'));
+  f=w.document.querySelector('dialog form');submit=f.querySelector('[type=submit]');f.elements.confirmation.value='Empresa QA';f.elements.reason.value='Eliminación autorizada de prueba';f.elements.confirmed.checked=true;f.dispatchEvent(new w.Event('input'));assert.equal(submit.disabled,false);
+  await f.onsubmit({preventDefault(){},target:f});const removed=requests.filter(r=>r.method==='DELETE');assert.equal(removed.length,1);assert.deepEqual(JSON.parse(removed[0].body),{token:'confirmation-token',confirmation:'Empresa QA',confirmed:true,reason:'Eliminación autorizada de prueba'});
+  assert.equal(w.document.querySelector('dialog'),null);
+ }finally{w.close();}
+});

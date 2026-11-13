@@ -7,13 +7,13 @@ async function api(path,user,body){const r=await fetch(base+path,{method:body?'P
 async function account(role){return (await query("insert into app_users(email,full_name,role,password_hash) values($1,'Admin QA',$2,'qa') returning *",[uuid()+'@example.test',role])).rows[0];}
 test('Account administration: authorization, all versions, sessions and audited updates',async t=>{
  assert.equal((await query('select current_database() db')).rows[0].db,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
- admin=await account('QORI_SUPERADMIN');seller=await account('QORI_SELLER');owner=await account('BUSINESS_OWNER');
+ admin=await require('./helpers/adminIdentity').admin(query);seller=await account('QORI_SELLER');owner=await account('BUSINESS_OWNER');
  business=(await query("insert into businesses(name,slug,plan_code,subscription_status,settings) values('Empresa admin QA',$1,'PENSE_EN_TI','ACTIVE','{}') returning *",['qa-admin-'+uuid()])).rows[0];await query('update app_users set business_id=$2 where id=$1',[owner.id,business.id]);
  customer=(await query("insert into customer_accounts(email,full_name,declared_document_key) values($1,'Customer admin QA',$2) returning *",[uuid()+'@example.test',uuid()])).rows[0];
  await t.test('only superadmin can list, view or change accounts',async()=>{
   for(const u of [null,seller,owner])for(const path of ['/bootstrap','/customers','/businesses','/sellers','/customers/'+customer.id])assert.equal((await api('/api/admin/accounts'+path,u)).status,u?403:401);
   assert.equal((await api('/api/admin/accounts/customers/'+customer.id,seller,{full_name:'Bad',is_active:false,expected_revision:0,reason:'Intento fuera de permiso'})).status,403);
-  const both={...owner};await query("update app_users set platform_role='QORI_SUPERADMIN' where id=$1",[both.id]);assert.equal((await api('/api/admin/accounts/bootstrap',both)).status,200);await query('update app_users set platform_role=null where id=$1',[both.id]);
+  const both={...owner};await query("update app_users set platform_role='QORI_SUPERADMIN' where id=$1",[both.id]);assert.equal((await api('/api/admin/accounts/bootstrap',both)).status,403);await query('update app_users set platform_role=null where id=$1',[both.id]);
  });
  await t.test('catalog, filters, pagination and minimal Customer detail',async()=>{
   const r=await api('/api/admin/accounts/bootstrap',admin);assert.equal(r.status,200,JSON.stringify(r));assert.ok(r.data.versions.businesses.some(p=>p.code==='PENSE_EN_TI'));assert.deepEqual(r.data.versions.customers.map(p=>p.code),['CUSTOMER_FREE']);

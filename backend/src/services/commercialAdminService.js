@@ -246,7 +246,7 @@ async function list(user, kind, params = {}) {
   else if (kind === "deals") sql = `select d.*,coalesce(p.business_name,b.name) as customer_name,u.full_name as seller_name from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id join app_users u on u.id=d.seller_id where ($1 or (d.seller_id=$2 and ${currentDealOwner})) and (coalesce(p.business_name,b.name,'') ilike $3 or p.email ilike $3 or b.settings->>'contact_email' ilike $3) and ($4='' or d.status=$4) order by d.created_at desc,d.id limit 51 offset $5`;
   else if (kind === "customers") sql = `select b.id,b.name,b.slug,b.is_active,b.plan_code,b.plan_type,b.portal_status,b.subscription_status,b.subscription_current_period_ends_at,b.settings,a.seller_id,u.full_name as seller_name
     from businesses b left join qori_sales_accounts a on a.business_id=b.id left join app_users u on u.id=a.seller_id
-    where ($1 or a.seller_id=$2)
+    where b.archived_at is null and ($1 or a.seller_id=$2)
       and (b.name ilike $3 or b.slug ilike $3 or b.settings->>'contact_email' ilike $3 or b.settings->>'nit' ilike $3 or b.settings->>'phone' ilike $3)
       and ($4='' or
         ($4='SUSPENDED' and (not b.is_active or b.subscription_status='SUSPENDED')) or
@@ -429,6 +429,7 @@ async function updateCustomer(user,id,payload) {
     // Match applyDeal lock order (deal -> business) to avoid deadlocks during reassignment.
     await client.query("select id from qori_commercial_deals where business_id=$1 and status in ('PENDING','APPROVED') order by id for update",[validate(uuid,id)]);
     const business=await locked(client,"businesses",id);
+    if(business.archived_at) throw badRequest("El negocio fue eliminado. No se puede reactivar desde esta ficha.");
     const owner=(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[id])).rows[0];
     if(body.expected_seller_id!==undefined && body.expected_seller_id!==(owner?.seller_id||null)) throw badRequest('El responsable cambió. Actualiza la cartera antes de reasignar.');
     requireOwner(user,owner?.seller_id);
