@@ -1,17 +1,18 @@
 (() => {
   'use strict';
-  const labels = { IDENTITY: 'Cédula', RUT: 'RUT actualizado', BANK: 'Certificado bancario', CONTRACT: 'Contrato firmado y autenticado' };
+  const labels = { IDENTITY: 'Cédula', RUT: 'RUT actualizado', BANK: 'Certificado bancario', POLICE: 'Antecedentes de Policía', PROCURADURIA: 'Antecedentes de Procuraduría', PHOTO: 'Foto del rostro', CONTRACT: 'Contrato firmado y autenticado' };
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function open({ record, dialog, request, download, isCurrent }) {
     let current = record;
-    const editable = a => a && (['DRAFT', 'CHANGES_REQUESTED', 'SUBMITTED'].includes(a.status) || (a.status === 'APPROVED' && a.approval_mode === 'ADMIN_OVERRIDE'));
-    const canSubmit = () => editable(current.application) && current.application.status !== 'SUBMITTED' && Object.keys(labels).every(kind => current.documents.some(doc => doc.kind === kind));
+    const editable = a => Boolean(a);
+    const submittable = () => current.application && current.application.status !== 'SUBMITTED' && !(current.application.status === 'APPROVED' && current.application.approval_mode === 'DOCUMENTS');
+    const canSubmit = () => submittable() && Object.keys(labels).every(kind => current.documents.some(doc => doc.kind === kind));
     const d = dialog('Documentos de ' + record.name, `
       <section class="full seller-document-intro"><p>Adjunta los documentos que el vendedor ya entregó al equipo de Qori. La carga queda registrada con tu usuario y requiere revisión antes de aprobar el expediente.</p><p><strong>${esc(record.name)}</strong><br>${esc(record.email)}</p></section>
       <div class="full seller-document-grid" data-documents></div>
       <section class="full seller-document-submit" data-submit-section>
-        <h3>Preparar la revisión</h3>${record.password_setup_required?'<p role="note">Puedes verificar y aprobar el expediente antes del primer ingreso. La aceptación electrónica queda pendiente hasta que el embajador active su cuenta; no se registrará en su nombre.</p>':''}<p>Confirma la recepción de los cuatro documentos, incluido el contrato firmado y autenticado.</p>
-        <label class="checkbox-row"><input name="documents_received" type="checkbox" required><span>Recibí del vendedor los cuatro documentos completos y legibles.</span></label>
+        <h3>Preparar la revisión</h3>${record.password_setup_required?'<p role="note">Puedes verificar y aprobar el expediente antes del primer ingreso. La aceptación electrónica queda pendiente hasta que el embajador active su cuenta; no se registrará en su nombre.</p>':''}<p>Confirma la recepción de los siete documentos, incluido el contrato firmado y autenticado.</p>
+        <label class="checkbox-row"><input name="documents_received" type="checkbox" required><span>Recibí del vendedor los siete documentos completos y legibles.</span></label>
         <label class="checkbox-row"><input name="signed_and_notarized" type="checkbox" required><span>El contrato adjunto está firmado y autenticado ante notaría.</span></label>
         <label><span>Nota para el historial del expediente</span><textarea name="note" minlength="15" maxlength="2000" required placeholder="Documentación recibida y adjuntada por el equipo de Qori."></textarea></label>
       </section>`, async form => {
@@ -28,12 +29,13 @@
       const allow = editable(current.application);
       d.querySelector('[data-documents]').innerHTML = Object.entries(labels).map(([kind, label]) => {
         const doc = current.documents.find(item => item.kind === kind);
-        return `<article class="seller-document-card"><h3>${label}</h3><p>${doc ? `${esc(doc.filename)} · ${Math.ceil(doc.byte_size / 1024)} KB` : 'Sin adjuntar'}</p>${doc ? `<button type="button" class="secondary-button" data-download="${doc.id}">Descargar ${label.toLowerCase()}</button>` : ''}${allow ? `<label><span>${doc ? 'Reemplazar' : 'Adjuntar'} ${label.toLowerCase()}</span><input type="file" data-upload="${kind}" accept="application/pdf,image/jpeg,image/png"></label>` : ''}<small>PDF, JPG o PNG · máximo 8 MB</small></article>`;
+        return `<article class="seller-document-card"><h3>${label}</h3><p>${doc ? `${esc(doc.filename)} · ${Math.ceil(doc.byte_size / 1024)} KB` : 'Sin adjuntar'}</p>${doc ? `<button type="button" class="secondary-button" data-download="${doc.id}">Descargar ${label.toLowerCase()}</button>` : ''}${allow ? `<label><span>${doc ? 'Reemplazar' : 'Adjuntar'} ${label.toLowerCase()}</span><input type="file" data-upload="${kind}" accept="${kind === 'PHOTO' ? 'image/jpeg,image/png' : 'application/pdf,image/jpeg,image/png'}"></label>` : ''}<small>PDF, JPG o PNG · máximo 8 MB</small></article>`;
       }).join('');
       save.disabled = !canSubmit();
-      d.querySelector('[data-submit-section]').hidden = !allow || current.application.status === 'SUBMITTED';
-      d.querySelectorAll('[data-submit-section] input,[data-submit-section] textarea').forEach(input => { input.disabled = !allow || current.application.status === 'SUBMITTED'; });
+      d.querySelector('[data-submit-section]').hidden = !submittable();
+      d.querySelectorAll('[data-submit-section] input,[data-submit-section] textarea').forEach(input => { input.disabled = !submittable(); });
       if (!allow) message.textContent = 'Este expediente no admite cambios. Para reemplazar documentos aprobados, solicita correcciones desde Revisar expediente.';
+      else if (current.application.status === 'APPROVED') message.textContent = 'Puedes reemplazar documentos. El acceso comercial se conserva, pero los pagos requieren una nueva aprobación documental.';
       else if (current.application.status === 'SUBMITTED') message.textContent = 'Expediente enviado. Puedes revisarlo desde Administrar → Revisar expediente. Si reemplazas un archivo, deberás enviarlo nuevamente.';
       d.querySelectorAll('[data-download]').forEach(button => button.onclick = async () => {
         const doc = current.documents.find(item => item.id === button.dataset.download);
@@ -44,7 +46,7 @@
         const file = input.files[0];
         if (!file || d.dataset.saving) return;
         if (!file.size || file.size > 8 * 1024 * 1024) { message.textContent = 'Selecciona un documento de hasta 8 MB con contenido.'; input.value = ''; return; }
-        if (!['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) { message.textContent = 'Selecciona un PDF, JPG o PNG.'; input.value = ''; return; }
+        if (!(input.dataset.upload === 'PHOTO' ? ['image/jpeg', 'image/png'] : ['application/pdf', 'image/jpeg', 'image/png']).includes(file.type)) { message.textContent = 'Selecciona un PDF, JPG o PNG.'; input.value = ''; return; }
         d.dataset.saving = 'true';
         d.querySelectorAll('button,input,textarea').forEach(control => { control.disabled = true; });
         message.textContent = 'Adjuntando documento…';

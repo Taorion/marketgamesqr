@@ -26,7 +26,7 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   }
   await query("update qori_seller_applications set status='DRAFT' where user_id=$1",[seller.id]);
   assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'4610');
-  const contract=await fetch(base+'/api/seller/contract',{headers:{Authorization:'Bearer '+seller.token}});assert.equal(contract.status,200);assert.match(await contract.text(),/4610 — Comercio al por mayor a cambio de una retribución o por contrata/);
+  const contract=await fetch(base+'/api/seller/contract',{headers:{Authorization:'Bearer '+seller.token}});assert.equal(contract.status,200);assert.match(contract.headers.get('content-type'),/application\/pdf/);assert.equal(Buffer.from(await contract.arrayBuffer()).subarray(0,5).toString(),'%PDF-');
   assert.equal((await api('/api/seller/application',seller.token)).application.status,'DRAFT');
   assert.equal((await api('/api/admin/commercial/bootstrap',seller.token)).status,403);
   assert.equal((await api('/api/seller/dashboard',seller.token)).status,403);
@@ -43,27 +43,27 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   const body={document_key:d.document_key,phone:d.phone,city:d.city,terms_accepted:true,privacy_accepted:true,adult_confirmed:true};
   assert.equal((await api('/api/seller/application',token,{...body,ciiu:'7310'})).status,400);
   assert.equal((await api('/api/seller/application',token,body)).status,200);
-  const a=(await api('/api/seller/application',token)).application;assert.equal(a.ciiu,'4610');assert.equal(a.status,'DRAFT');assert.equal(a.terms_version,'2026-11-11-comisiones-vf1');
+  const a=(await api('/api/seller/application',token)).application;assert.equal(a.ciiu,'4610');assert.equal(a.status,'DRAFT');assert.equal(a.terms_version,'2026-11-13-expediente');
  });
  await t.test('four encrypted documents, private downloads, explicit review, read audits',async()=>{
   const {PDFDocument}=require('pdf-lib'),pdf=await PDFDocument.create();pdf.addPage().drawText('LOCAL QA DOCUMENT');const bytes=Buffer.from(await pdf.save());
-  for(const k of ['IDENTITY','RUT','BANK','CONTRACT'])assert.equal((await api('/api/seller/documents/'+k,seller.token,{filename:k+'.pdf',content_base64:bytes.toString('base64')},'PUT')).status,200);
-  const doc=(await query('select * from qori_seller_documents where user_id=$1 limit 1',[seller.id])).rows[0];assert.notEqual(doc.encrypted_content.subarray(0,5).toString(),'%PDF-');
+  for(const k of ['IDENTITY','RUT','BANK','POLICE','PROCURADURIA','PHOTO','CONTRACT'])assert.equal((await api('/api/seller/documents/'+k,seller.token,await require('./helpers/sellerDossier').file(k,bytes),'PUT')).status,200);
+  const doc=(await query("select * from qori_seller_documents where user_id=$1 and kind='IDENTITY' limit 1",[seller.id])).rows[0];assert.notEqual(doc.encrypted_content.subarray(0,5).toString(),'%PDF-');
   const outsider=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Otro vendedor','QORI_SELLER') returning *",[unique()+'@example.test'])).rows[0];
   assert.equal((await api('/api/seller/documents/'+doc.id,sign(outsider))).status,403);assert.equal((await api('/api/seller/documents/'+doc.id)).status,401);
   const downloaded=await fetch(base+'/api/seller/documents/'+doc.id,{headers:{Authorization:'Bearer '+admin.token}});assert.equal(downloaded.status,200);assert.ok(Buffer.from(await downloaded.arrayBuffer()).equals(bytes));assert.match(downloaded.headers.get('content-disposition'),/attachment/);
   assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true})).status,400);
   await query("update qori_seller_applications set ciiu='7310',terms_version='2026-11-07',status='SUBMITTED' where user_id=$1",[seller.id]);
-  const oldApproval={status:'APPROVED',note:'Revisión de expediente anterior para prueba.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true};
+  const oldApproval={status:'APPROVED',note:'Revisión de expediente anterior para prueba.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,police_checked:true,procuraduria_checked:true,photo_checked:true,legal_terms_checked:true};
   assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,oldApproval)).status,400);
   assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7310','Reading must preserve historical declarations');
   assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{status:'CHANGES_REQUESTED',note:'Adjunta RUT con 4610 y contrato actualizado.'})).status,200);
   assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,200);
-  const accepted=(await api('/api/seller/application',seller.token)).application;assert.equal(accepted.ciiu,'4610');assert.equal(accepted.terms_version,'2026-11-11-comisiones-vf1');
+  const accepted=(await api('/api/seller/application',seller.token)).application;assert.equal(accepted.ciiu,'4610');assert.equal(accepted.terms_version,'2026-11-13-expediente');
   const audit=(await query("select detail from qori_commercial_audit where entity_id=$1 and action='SELLER_APPLICATION_SUBMITTED' order by created_at desc limit 1",[seller.id])).rows[0];assert.equal(audit.detail.previous_ciiu,'7310');
   assert.equal((await api('/api/seller/documents/CONTRACT',seller.token,{filename:'x.pdf',content_base64:bytes.toString('base64')},'PUT')).status,403);
   const review={status:'APPROVED',note:'Documentos y condiciones revisados en QA.'};assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,review)).status,400);
-  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{...review,identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true})).status,200);
+  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{...review,identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,police_checked:true,procuraduria_checked:true,photo_checked:true,legal_terms_checked:true})).status,200);
   assert.equal((await api('/api/admin/commercial/bootstrap',seller.token)).status,200);
   assert.ok((await query("select 1 from qori_commercial_audit where entity_id=$1 and action='SELLER_DOCUMENT_DOWNLOADED'",[seller.id])).rowCount);
  });

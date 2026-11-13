@@ -8,10 +8,12 @@ Admin muestra un enlace personal para copiar y compartir con el embajador. Vence
 
 Al abrir el enlace, Seller solicita crear y confirmar una contraseña de al menos doce caracteres, leer las condiciones y confirmar su aceptación, el tratamiento de datos y la mayoría de edad. El servidor registra la aceptación con la versión vigente. Después puede iniciar sesión con sus credenciales. El mismo acceso sirve para Demo Qori cuando el embajador esté aprobado.
 
-El alta manual no aprueba documentos ni habilita comisiones pagables. El administrador conserva **Dar de alta** y la revisión documental. Aunque autorice el acceso comercial antes, la cuenta permanece bloqueada hasta completar la activación. Se permite cargar, enviar a revisión y aprobar los cuatro documentos antes de activar la cuenta manual, incluido el contrato firmado y autenticado. Esto no registra aceptación electrónica: el embajador debe completarla al activar su acceso. Los pagos siguen bloqueados hasta ese momento.
+El alta manual no aprueba documentos ni habilita comisiones pagables. El administrador conserva **Dar de alta** y la revisión documental. Aunque autorice el acceso comercial antes, la cuenta permanece bloqueada hasta completar la activación. Se permite cargar, enviar a revisión y aprobar los siete documentos antes de activar la cuenta manual, incluido el contrato firmado y autenticado. Esto no registra aceptación electrónica: el embajador debe completarla al activar su acceso. Los pagos siguen bloqueados hasta ese momento.
 
 Los correos y documentos duplicados no reemplazan cuentas existentes. El servidor almacena solo el hash del enlace y no registra contraseñas ni enlaces en el historial. Las renovaciones y activaciones son atómicas, auditadas y verifican que la cuenta continúe habilitada. Los enlaces viajan en el fragmento de la URL y se retiran de la barra al abrir la pantalla.
 
 Aplicar `20261111223448_qori_seller_manual_activation.sql` antes de iniciar el backend actualizado. Las copias de `database/migrations` y `supabase/migrations` son idénticas; se aplica una sola copia mediante el mecanismo habitual. Las pruebas usan exclusivamente `qori_customer_qa` en PostgreSQL local, puerto 55441. No se han creado embajadores reales ni enviado invitaciones.
 
 Pruebas: `sellerActivation.integration.test.js`, `sellerActivationUI.test.js` y regresiones de documentación, aprobación, Seller y Demo. La revisión visual está pendiente porque el host de navegador no estuvo disponible.
+
+Consulta [Expediente de embajadores](SELLER_EXPEDIENTE.md) para los requisitos vigentes, el bloqueo de reemplazos del embajador y la revisión tras cambios de Admin.

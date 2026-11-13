@@ -16,7 +16,7 @@ async function account(db,id,lock=false){
  const a=(await db.query('select status,approval_mode from qori_seller_applications where user_id=$1'+(lock?' for update':''),[id])).rows[0];
  const docs=(await db.query('select kind from qori_seller_documents where user_id=$1',[id])).rows;
  const activation=(await db.query('select token_hash,completed_at,expires_at from qori_seller_activations where user_id=$1',[id])).rows[0];
- const reason=!u.is_active?'La cuenta está suspendida.':a?.status!=='APPROVED'||a.approval_mode!=='DOCUMENTS'?'Primero verifica los documentos y aprueba el expediente. El alta con documentación pendiente no permite enviar esta bienvenida.':docs.length!==4?'El expediente debe conservar los cuatro documentos verificados.':u.password_setup_required&&(!activation||activation.completed_at)?'No hay una activación pendiente válida para esta cuenta.':'';
+ const reason=!u.is_active?'La cuenta está suspendida.':a?.status!=='APPROVED'||a.approval_mode!=='DOCUMENTS'?'Primero verifica los documentos y aprueba el expediente. El alta con documentación pendiente no permite enviar esta bienvenida.':require('./sellerDocumentPolicy').kinds.some(kind=>!docs.some(doc=>doc.kind===kind))?'El expediente debe conservar los siete documentos verificados.':u.password_setup_required&&(!activation||activation.completed_at)?'No hay una activación pendiente válida para esta cuenta.':'';
  return {...u,activation,reason};
 }
 async function preview(user,id){

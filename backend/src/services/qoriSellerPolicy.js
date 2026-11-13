@@ -1,5 +1,5 @@
 // Code selected explicitly by Qori; this is not a taxpayer-specific DIAN ruling.
-const VERSION='2026-11-11-comisiones-vf1';
+const VERSION='2026-11-13-expediente';
 const CIIU=Object.freeze({
  code:'4610',name:'Comercio al por mayor a cambio de una retribución o por contrata',status:'DEFINED_BY_QORI',
  scope:'Comercialización de suscripciones SaaS de Qori por comisión; Qori contrata, factura y cobra al negocio.',
