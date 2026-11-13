@@ -1,6 +1,6 @@
 # Qori Seller — comisiones VF1
 
-Implementación local de `Qori_Comisiones_2026_VF1.pdf` (páginas 2–5) y decisiones del propietario: tickets 10%, bases fijas y únicamente clientes nuevos. Sin despliegue productivo.
+Implementación de `Qori_Comisiones_2026_VF1.pdf` (páginas 2–5) y decisiones del propietario: tickets 10%, bases fijas y únicamente clientes nuevos. El 13 de noviembre de 2026 se verificó que producción sirve el commit `9b4aa0274da9818d90ce6de557015500fcf7f065`, que incluye esta implementación. La comprobación de versión no equivale a validar un cobro real.
 
 | Plan | Código de cobro | Base mensual COP | Mes 1 | Mes 2 | Mes 3 | Mes 4 | Mes 5 | Mes 6 | Total COP |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -34,4 +34,4 @@ Para iniciar el portal normal desde PowerShell, con la configuración `.env` exi
 & "D:\Documentos\Orbital Innovation SAS\Orbital_Innovation\GOSQori\Portal GOS Qori\.local-tools\INICIAR-PORTAL.cmd"
 ```
 
-El lanzador normal usa la base configurada en `.env`. Las validaciones de este cambio usan exclusivamente la base local de pruebas; no se ha aplicado esta migración a producción.
+El lanzador normal usa la base configurada en `.env`. Las pruebas automatizadas usan exclusivamente la base local de pruebas y pagos simulados. Esta guía no debe utilizarse para volver a aplicar una migración ya instalada; comprobar primero el registro de migraciones del entorno.

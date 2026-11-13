@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('jsdom');
 const until=async fn=>{for(let i=0;i<120;i++){if(fn())return;await new Promise(r=>setImmediate(r));}throw Error('UI did not settle');};
-function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=false,closed=false}={}){
+function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=false,closed=false,prospects=null}={}){
  const w=new JSDOM(fs.readFileSync('seller/index.html','utf8'),{url:'https://example.test/seller/'+hash,runScripts:'outside-only'}).window,calls=[];
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.onclose?.();};
  w.sessionStorage.setItem('qori-seller-token','qa-only');w.fetch=async(path,options={})=>{calls.push({path,body:options.body&&JSON.parse(options.body)});let d={ok:true};
@@ -10,7 +10,7 @@ function setup({status='DRAFT',role='QORI_SELLER',hash='',linked=false,override=
  if(path.endsWith('/application'))d={user:{id:'seller-1',full_name:'Embajador <img src=x>',email:'qa@example.test',role},legacy:status===null,application:status===null?null:{status,approval_mode:override?'ADMIN_OVERRIDE':'DOCUMENTS'},documents:[],documentation:override?{attention:true,override:true,missing:['IDENTITY','RUT','BANK','CONTRACT']}:undefined};
  if(path.endsWith('/dashboard')&&status==='SUSPENDED')return {ok:false,json:async()=>({error:{message:'Acceso bloqueado',details:{code:'SELLER_APPROVAL_REQUIRED'}}})};
  if(path.endsWith('/dashboard'))d={totals:{pending_cop:15000,paid_cop:0,paying_businesses:1},accounts:[{id:'b',name:'Café',plan_code:'PENSE_EN_TI',subscription_status:'ACTIVE'}],commissions:[],payouts:[],next_payment_date:'2026-11-12',referral_url:'https://example.test/pense-en-ti/?seller=seller-1',plan_referral_url:'https://example.test/paquetes/?advisor=seller-1'};
- if(path.endsWith('/prospects'))d={rows:linked?[{id:'prospect',business_id:'b',business_name:'Cliente Freemium',stage:'WON',closed_at:closed?'2026-11-09T12:00:00Z':null}]:[],has_more:false,next_offset:0};
+ if(path.endsWith('/prospects'))d={rows:prospects||(linked?[{id:'prospect',business_id:'b',business_name:'Cliente Freemium',stage:'WON',closed_at:closed?'2026-11-09T12:00:00Z':null}]:[]),has_more:false,next_offset:0};
  if(path.split('?')[0].endsWith('/accounts'))d={accounts:[{id:'b',lifecycle:{label:'Freemium · vence pronto',tone:'warning',trial:{status:'ACTIVE',ends_at:'2026-11-15T15:00:00Z',days_remaining:2}}}]};
  if(path.endsWith('/admin/queue'))d={applications:[{user_id:'applicant',full_name:'Ana',email:'ana@example.test',status:'SUBMITTED',documents:[]}],balances:[],payouts:[]};
  return {ok:true,json:async()=>d};
@@ -69,3 +69,51 @@ test('Seller only sees a validated close after the administrator records it',asy
 test('approved Seller opens library from navigation; pending Seller cannot see it',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=resources]'));w.document.querySelector('[data-view=resources]').click();await until(()=>w.document.querySelector('[data-presentation]'));assert.match(w.document.querySelector('[data-presentation]').textContent,/Copiar/);}finally{w.close();}});
 
 test('approved Seller opens opportunity and continues to CRM',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=opportunity]'));w.document.querySelector('[data-view=opportunity]').click();await until(()=>w.document.querySelector('#panel [data-action=crm]'));w.document.querySelector('#panel [data-action=crm]').click();await until(()=>w.document.querySelector('#newProspect'));assert.ok(w.document.querySelector('#newProspect'));}finally{w.close();}});
+
+test('daily actions open a new contact and preserve keyboard access to result sections',async()=>{
+ const {w,calls}=setup({status:'APPROVED'});try{
+  await until(()=>w.document.querySelector('[data-start=new]'));
+  for(const link of w.document.querySelectorAll('.seller-shortcuts a')){link.click();assert.equal(w.document.activeElement.id,link.getAttribute('href').slice(1));}
+  w.document.querySelector('[data-start=new]').click();await until(()=>w.document.querySelector('dialog [name=business_name]'));
+  assert.equal(w.document.querySelector('[data-view=crm]').getAttribute('aria-current'),'page');
+  assert.equal(calls.some(c=>c.body?.business_name),false);
+  w.document.querySelector('dialog [data-close]').click();w.document.querySelector('[data-view=dashboard]').click();await until(()=>w.document.querySelector('[data-start=resources]'));
+  w.document.querySelector('[data-start=resources]').click();await until(()=>w.document.querySelector('[data-presentation]'));
+ }finally{w.close();}
+});
+
+test('CRM preserves an existing reminder on edit and supports rescheduling or clearing it',async()=>{
+ const original='2026-11-16T15:30:00.000Z';
+ for(const mode of ['preserve','change','clear']){
+  const {w,calls}=setup({status:'APPROVED',prospects:[{id:'p',business_name:'Café',contact_name:'Ana',email:'ana@example.test',phone:'3105550000',stage:'CONTACTED',next_contact_at:original}]});
+  try{
+   await until(()=>w.document.querySelector('#referralLink'));w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('[data-edit]'));
+   assert.match(w.document.querySelector('.follow-up').textContent,/Colombia/);
+   w.document.querySelector('[data-edit]').click();const f=w.document.querySelector('dialog [name=business_name]').form,input=f.elements.next_contact_at;
+   assert.equal(new Date(input.value).toISOString(),original);
+   if(mode==='clear')input.value='';if(mode==='change')input.value='2026-11-18T10:45';
+   const expected=mode==='clear'?null:new Date(input.value).toISOString();
+   f.onsubmit({preventDefault(){},currentTarget:f});await until(()=>calls.some(c=>c.path.endsWith('/prospects/p')));
+   assert.equal(calls.find(c=>c.path.endsWith('/prospects/p')).body.next_contact_at,expected);
+   await until(()=>!w.document.querySelector('dialog[data-seller-dialog]'));
+  }finally{w.close();}
+ }
+});
+
+test('logout removes private dialogs and prevents a retained form from saving with a later session',async()=>{
+ const {w,calls}=setup({status:'APPROVED'});try{
+  await until(()=>w.document.querySelector('[data-start=new]'));w.document.querySelector('[data-start=new]').click();await until(()=>w.document.querySelector('dialog [name=business_name]'));
+  const f=w.document.querySelector('dialog [name=business_name]').form;f.elements.business_name.value='Private draft';
+  w.document.querySelector('#loginOpen').click();assert.equal(w.document.querySelector('[data-seller-dialog]'),null);
+  f.onsubmit({preventDefault(){},currentTarget:f});await new Promise(r=>setImmediate(r));assert.equal(calls.some(c=>c.body?.business_name==='Private draft'),false);
+ }finally{w.close();}
+});
+
+test('expired authentication clears the workspace and offers login without a broken retry screen',async()=>{
+ const {w}=setup({status:'APPROVED'});try{
+  await until(()=>w.document.querySelector('#referralLink'));w.fetch=async()=>({ok:false,status:401,json:async()=>({error:{message:'Expired token'}})});
+  w.document.querySelector('[data-view=dashboard]').click();await until(()=>w.document.querySelector('#loginDialog').open);
+  assert.equal(w.sessionStorage.getItem('qori-seller-token'),null);assert.equal(w.document.querySelector('#workspace').innerHTML,'');assert.match(w.document.querySelector('#loginForm .status').textContent,/sesión terminó/);
+  await new Promise(r=>setImmediate(r));assert.equal(w.document.querySelector('#retry'),null);
+ }finally{w.close();}
+});
