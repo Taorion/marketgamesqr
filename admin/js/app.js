@@ -1,5 +1,5 @@
 const SESSION_KEY = "market_games_admin_session_v1";
-const APP_VERSION = "admin-descubre-20261016";
+const APP_VERSION = "admin-exclusive-20261113";
 const APP_VERSION_KEY = "market_games_admin_app_version";
 const APP_UPDATE_NOTICE_KEY = "market_games_admin_update_notice";
 
@@ -194,7 +194,7 @@ async function api(path, options = {}) {
   const data = await response.json().catch(() => ({}));
   if(requestSession!==session)throw new Error("La sesión cambió; se descartó la respuesta anterior.");
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 || (response.status === 403 && path === "/api/admin/session")) {
       clearSession(data.error?.message || "Tu sesion expiro o el panel fue actualizado. Inicia sesion de nuevo.");
       renderShell();
     }
@@ -204,6 +204,7 @@ async function api(path, options = {}) {
 }
 
 function renderShell() {
+  if(session?.token && !session.user?.admin_access) clearSession("Tu cuenta no tiene acceso a Admin. Ingresa al Portal de embajadores.");
   const logged = Boolean(session?.token);
   const cachedRole=session?.user?.platform_role || session?.user?.role;
   document.getElementById('accountsNav').classList.toggle('hidden',!logged||cachedRole!=='QORI_SUPERADMIN');
@@ -245,14 +246,14 @@ async function login(event) {
   event.preventDefault();
   loginMessage.textContent = "";
   try {
-    const data = await api("/api/auth/login", {
+    const data = await api("/api/auth/admin/login", {
       method: "POST",
       body: JSON.stringify({
         email: document.getElementById("emailInput").value,
         password: document.getElementById("passwordInput").value,
       }),
     });
-    if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN", "QORI_SELLER"].includes(data.user?.platform_role || data.user?.role)) throw new Error("Esta cuenta no tiene acceso al admin de Qori. Usa el portal de empresas.");
+    if(data.user?.admin_access !== true) throw new Error("Esta cuenta no tiene acceso a Admin. Ingresa al Portal de embajadores.");
     session = data;
     localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
@@ -455,8 +456,9 @@ async function updateSubscription(event) {
 
 async function loadWorkspace() {
   const currentSession=session;
-  const identity = await api("/api/auth/me");
+  const identity = await api("/api/admin/session");
   if(!session||session!==currentSession)return;
+  if(identity.user?.admin_access !== true){clearSession("Tu cuenta no tiene acceso a Admin. Ingresa al Portal de embajadores.");renderShell();return;}
   session.user = identity.user;
   document.getElementById('accountsNav').classList.toggle('hidden',(identity.user?.platform_role||identity.user?.role)!=='QORI_SUPERADMIN');
   const commercial = ["QORI_SUPERADMIN", "QORI_SELLER"].includes(identity.user?.platform_role || identity.user?.role);

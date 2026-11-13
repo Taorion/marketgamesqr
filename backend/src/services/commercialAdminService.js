@@ -194,9 +194,11 @@ async function updateAdminAccess(user,id,payload) {
     // Serialize role changes and recheck the actor after acquiring the lock.
     // Two admins cannot concurrently demote each other and leave no active admin.
     await client.query("select pg_advisory_xact_lock(hashtext('qori-admin-access'))");
-    const actor=(await client.query('select role,platform_role,is_active from app_users where id=$1 for share',[user.id])).rows[0];
+    const actor=(await client.query('select email,role,platform_role,is_active from app_users where id=$1 for share',[user.id])).rows[0];
     if(!actor?.is_active || (actor.platform_role||actor.role)!==SUPERADMIN) throw forbidden('Tu acceso de superadministrador ya no está vigente.');
+    require('./adminAccessPolicy').requireAdminAccess(actor);
     const current=await locked(client,'app_users',id);
+    if(body.role===SUPERADMIN&&!require('./adminAccessPolicy').isAdminEmail(current.email))throw forbidden('Solo cbotero@gosqori.com y scasallas@gosqori.com pueden tener acceso a Admin.');
     const shared=businessRoles.includes(current.role)&&Boolean(current.business_id);
     if(!shared && ![SELLER,SUPERADMIN].includes(current.role)) throw badRequest('Esta cuenta no admite permisos comerciales.');
     if(shared&&!current.is_active&&body.role!=='NONE') throw badRequest('Reactiva la cuenta del portal antes de habilitar su acceso al admin.');

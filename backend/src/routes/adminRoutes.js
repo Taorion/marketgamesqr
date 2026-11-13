@@ -26,6 +26,8 @@ const {
 const router = express.Router();
 
 router.use(authRequired);
+router.use((req,_res,next)=>{try{require('../services/adminAccessPolicy').requireAdminAccess(req.user);next();}catch(error){next(error);}});
+router.get('/session',require('../controllers/authController').me);
 router.use('/accounts', require('./adminAccountsRoutes'));
 router.use("/commercial", require("./commercialAdminRoutes"));
 router.use(requireRoles("ADMIN", "ADMIN_MARKET_GAMES"));

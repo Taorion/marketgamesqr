@@ -136,7 +136,7 @@
       updateQuote();
     }
   }
-  function showCredentials(credentials){dialog("Acceso listo para entregar",`<p class="full">Copia estas credenciales y entrégalas a su titular. La contraseña se muestra solo en esta respuesta.</p>${field("email","Correo","text",credentials.email,"readonly")}${field("password","Contraseña inicial","text",credentials.password,"readonly")}${credentials.shared_login?'<p class="full"><strong>Esta contraseña sirve para Admin y Portal empresa.</strong> La cuenta conserva su negocio y rol original.</p>':""}<p class="full">Puedes configurar su acceso desde Equipo de ventas → Roles y permisos. El titular puede cambiar su contraseña desde su cuenta. No se ha enviado ningún correo automáticamente.</p>`);}
+  function showCredentials(credentials){dialog("Acceso listo para entregar",`<p class="full">Copia estas credenciales y entrégalas a su titular. La contraseña se muestra solo en esta respuesta.</p>${field("email","Correo","text",credentials.email,"readonly")}${field("password","Contraseña inicial","text",credentials.password,"readonly")}${credentials.shared_login?'<p class="full"><strong>Esta contraseña sirve para Seller y Portal empresa.</strong> La cuenta conserva su negocio y rol original.</p>':""}<p class="full">Puedes configurar su acceso desde Equipo de ventas → Roles y permisos. El titular puede cambiar su contraseña desde su cuenta. No se ha enviado ningún correo automáticamente.</p>`);}
   function enrollmentEditor(p={}) {
     const requestId=crypto.randomUUID();
     dialog("Inscribir negocio · Descubre",`<div class="full commercial-offer"><h3>30 días gratis para descubrir Qori</h3><p>Todos los módulos · 25 tickets iniciales · 10 afiliados · 10 Gift Cards · 100 MB.</p><p>Hasta 10 programas de sellos, con tarjetas ilimitadas en cada programa. No requiere tarjeta bancaria ni pago.</p><p><strong>Descubre se otorga una sola vez por NIT o cédula.</strong> Al terminar, el negocio debe elegir un plan de pago para continuar.</p></div>
@@ -191,8 +191,8 @@
   function accessEditor(s) {
     const selected=s.admin_permissions||data.default_permissions;
     const currentRole=s.is_active?s.admin_role:"NONE";
-    dialog(`Roles y permisos · ${s.full_name}`,`<p class="full">${esc(s.email)}. Estos permisos corresponden al admin de Qori; su negocio y rol en el portal empresa se conservan.</p>
-      ${select("admin_role","Rol en Admin Qori",[["QORI_SELLER","Vendedor con permisos configurables"],["QORI_SUPERADMIN","Superadministrador · acceso completo"],["NONE","Sin acceso al admin"]],currentRole)}
+    dialog(`Roles y permisos · ${s.full_name}`,`<p class="full">${esc(s.email)}. Los embajadores acceden únicamente al Portal Seller. El acceso a Admin está reservado a las dos cuentas autorizadas; su negocio y rol en el portal empresa se conservan.</p>
+      ${select("admin_role","Acceso a Qori",[["QORI_SELLER","Embajador · solo Portal Seller"],...(["cbotero@gosqori.com","scasallas@gosqori.com"].includes(String(s.email||"").toLowerCase())?[["QORI_SUPERADMIN","Superadministrador · acceso completo"]]:[]),["NONE","Sin acceso comercial"]],currentRole)}
       <p class="full commercial-help" data-role-description></p>
       <fieldset class="full commercial-options" data-permissions><legend>Acciones permitidas</legend>${Object.entries(data.permission_catalog).filter(([key])=>data.default_permissions.includes(key)).map(([key,label])=>`<label class="checkbox-row"><input type="checkbox" name="permissions" value="${esc(key)}" ${selected.includes(key)?"checked":""}><span>${esc(label)}</span></label>`).join("")}</fieldset>
       <p class="full commercial-help" data-scope-help>El vendedor siempre ve únicamente sus prospectos, ofertas, clientes e historial. La consulta y administración de todo el equipo requiere el rol de superadministrador.</p>
@@ -203,7 +203,7 @@
       modal.querySelector('[data-permissions]').hidden=!seller;
       modal.querySelector('[data-permissions]').disabled=!seller;
       modal.querySelector('[data-scope-help]').hidden=!seller;
-      modal.querySelector('[data-role-description]').textContent=seller?"Marca únicamente las acciones que deseas autorizar. Desmarca una acción para retirarla.":selector.value==="QORI_SUPERADMIN"?"Tendrá control completo: podrá nombrar otros superadministradores, cambiar permisos y administrar toda la plataforma.":"Se retirará su acceso al admin. Si tiene una cuenta del portal empresa, la conservará.";
+      modal.querySelector('[data-role-description]').textContent=seller?"Marca únicamente las acciones que deseas autorizar. Desmarca una acción para retirarla.":selector.value==="QORI_SUPERADMIN"?"Acceso reservado a cbotero@gosqori.com y scasallas@gosqori.com.":"Se retirará su acceso comercial. Si tiene una cuenta del portal empresa, la conservará.";
     };
     selector.addEventListener('change',update);update();
   }

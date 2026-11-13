@@ -43,6 +43,7 @@ function publicUser(row = {}) {
     full_name: row.full_name,
     role: row.role,
     platform_role: row.platform_role || null,
+    admin_access: require('../services/adminAccessPolicy').canAccessAdmin(row),
     is_active: row.is_active,
     can_redeem_cross_business: row.can_redeem_cross_business,
     branch_id: row.branch_id || null,
@@ -80,7 +81,7 @@ function passwordResetUrl(token) {
   return `${env.publicAppUrl.replace(/\/$/, "")}/empresa/?reset_token=${encodeURIComponent(token)}`;
 }
 
-async function login(req, res, next, demoMode = false) {
+async function login(req, res, next, demoMode = false, adminMode = false) {
   try {
     const body = validate(loginSchema, req.body);
     const result = await query(
@@ -100,6 +101,8 @@ async function login(req, res, next, demoMode = false) {
       throw unauthorized("Invalid credentials.");
     }
     if(user.password_setup_required)throw forbidden('Activa tu cuenta desde el enlace enviado por el administrador de Qori y crea tu contraseña.');
+    require('../services/adminAccessPolicy').enforceAdministrativeIdentity(user);
+    if(adminMode)require('../services/adminAccessPolicy').requireAdminAccess(user);
 
     if(demoMode)return res.json(await require('../services/sellerDemoService').createSession(user));
     if(user.business_id && (await query('select 1 from businesses where id=$1 and is_seller_demo',[user.business_id])).rowCount){

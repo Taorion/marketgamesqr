@@ -406,6 +406,7 @@ async function createUser(req, res, next) {
   try {
     requireMarketAdmin(req.user);
     const body = validate(adminUserSchema, req.body);
+    if(require('../services/adminAccessPolicy').hasAdministrativeRole(body)&&!require('../services/adminAccessPolicy').isAdminEmail(body.email))throw forbidden('Solo las dos cuentas autorizadas pueden recibir acceso a Admin.');
 
     if (body.role === "ADMIN_MARKET_GAMES" && body.business_id) {
       throw badRequest("Un empleado interno no debe quedar amarrado a un cliente.");
@@ -483,6 +484,7 @@ async function patchUser(req, res, next) {
       const nextRole = body.role || current.role;
       const nextBusinessId = nextRole === "ADMIN_MARKET_GAMES" ? null : (body.business_id === undefined ? current.business_id : body.business_id);
       const nextActive = body.is_active === undefined ? current.is_active : body.is_active;
+      if(nextActive&&require('../services/adminAccessPolicy').hasAdministrativeRole({role:nextRole})&&!require('../services/adminAccessPolicy').isAdminEmail(current.email))throw forbidden('Esta cuenta no puede recibir acceso a Admin.');
 
       if (nextRole === "ADMIN_MARKET_GAMES" && nextBusinessId) {
         throw badRequest("Un empleado interno no debe quedar amarrado a un cliente.");

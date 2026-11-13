@@ -4,7 +4,7 @@ const {query,pool}=require('../backend/src/config/db'),{app}=require('../backend
 let server,base;
 const sign=u=>jwt.sign({sub:u.id,password_version:0},env.jwtSecret);
 async function api(path,user,body,method=body?'POST':'GET'){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(user?{Authorization:'Bearer '+sign(user)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};}
-async function user(role){return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Alta QA',$2) returning *",[crypto.randomUUID()+'@example.test',role])).rows[0];}
+async function user(role){if(role==='QORI_SUPERADMIN')return require('./helpers/adminIdentity').admin(query);return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Alta QA',$2) returning *",[crypto.randomUUID()+'@example.test',role])).rows[0];}
 test('superadmin grants access without documents; warning persists through uploads until verified; suspension revokes access',async()=>{
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
  server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
@@ -19,7 +19,7 @@ test('superadmin grants access without documents; warning persists through uploa
  const outcomes=await Promise.all([api(path,admin,body),api(path,admin,body)]);assert.deepEqual(outcomes.map(r=>r.status).sort(),[200,400]);
  let profile=(await api('/api/seller/application',seller)).data;
  assert.equal(profile.access.approved,true);assert.equal(profile.application.approval_mode,'ADMIN_OVERRIDE');assert.equal(profile.documentation.missing.length,7);assert.equal(profile.documentation.attention,true);
- for(const p of ['/api/seller/dashboard','/api/seller/accounts','/api/admin/commercial/bootstrap','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(p,seller)).status,200,p);
+ for(const p of ['/api/seller/dashboard','/api/seller/accounts','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(p,seller)).status,200,p);
  const audit=(await query("select actor_id,detail from qori_commercial_audit where entity_id=$1 and action='SELLER_ACCESS_AUTHORIZED'",[seller.id])).rows;assert.equal(audit.length,1);assert.equal(audit[0].actor_id,admin.id);assert.equal(audit[0].detail.missing_documents.length,7);
  const detail=(await api('/api/admin/accounts/sellers/'+seller.id,admin)).data.record;assert.equal(detail.documentation.attention,true);
  const list=(await api('/api/admin/accounts/sellers?search='+encodeURIComponent(seller.email),admin)).data.rows;assert.equal(list[0].documentation.missing.length,7);
@@ -34,7 +34,7 @@ test('superadmin grants access without documents; warning persists through uploa
  assert.equal((await api(review,admin,{status:'APPROVED',note:'Documentación verificada por administración.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,police_checked:true,procuraduria_checked:true,photo_checked:true,legal_terms_checked:true})).status,200);
  profile=(await api('/api/seller/application',seller)).data;assert.equal(profile.documentation.attention,false);assert.equal(profile.application.approval_mode,'DOCUMENTS');
  assert.equal((await api(review,admin,{status:'SUSPENDED',note:'Suspensión administrativa para prueba.'})).status,200);
- for(const p of ['/api/seller/dashboard','/api/seller/accounts','/api/admin/commercial/bootstrap','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(p,seller)).status,403,p);
+ for(const p of ['/api/seller/dashboard','/api/seller/accounts','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(p,seller)).status,403,p);
  assert.equal((await api(path,admin,body)).status,200);assert.equal((await api('/api/seller/dashboard',seller)).status,200);
 });
 after(async()=>{if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}await pool.end();});

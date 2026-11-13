@@ -18,7 +18,7 @@ async function api(path, user, body, method=body?'POST':'GET') {
   const type = response.headers.get('content-type');
   return { status:response.status, data:type?.includes('application/json') ? await response.json() : Buffer.from(await response.arrayBuffer()) };
 }
-async function user(role) { return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Documentos QA',$2) returning *",[crypto.randomUUID()+'@example.test',role])).rows[0]; }
+async function user(role) { if(role==='QORI_SUPERADMIN')return require('./helpers/adminIdentity').admin(query); return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Documentos QA',$2) returning *",[crypto.randomUUID()+'@example.test',role])).rows[0]; }
 before(async () => {
   assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
   server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));base='http://127.0.0.1:'+server.address().port;

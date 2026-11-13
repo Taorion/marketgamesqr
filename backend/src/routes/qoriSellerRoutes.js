@@ -10,6 +10,7 @@ router.get('/terms',(_req,res)=>res.json(require('../services/qoriSellerContract
 router.post('/activation/preview',rateLimit({keyPrefix:'seller-activation-preview',max:30,windowMs:60000}),handle(req=>require('../services/sellerActivationService').inspect(req.body)));
 router.post('/activation/complete',rateLimit({keyPrefix:'seller-activation-complete',max:10,windowMs:60000}),handle(req=>require('../services/sellerActivationService').complete(req.body,req.ip)));
 router.use(authRequired,requireRoles('QORI_SELLER','QORI_SUPERADMIN'));
+router.use('/commercial',require('./sellerCommercialRoutes'));
 router.use('/resources',require('./sellerResourceRoutes').router);
 router.get('/application',handle(req=>s.application(req.user)));
 router.post('/application',handle(req=>s.openApplication(req.user,req.body,req.ip)));

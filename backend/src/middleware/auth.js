@@ -38,6 +38,7 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
   if (Number(payload.password_version || 0) !== Number(user.password_version || 0)) {
     throw unauthorized("Tu contraseña cambió. Inicia sesión de nuevo en este dispositivo.");
   }
+  require('../services/adminAccessPolicy').enforceAdministrativeIdentity(user);
   if(payload.demo_business_id){
     return require('../services/sellerDemoService').effectiveUser(user,payload.demo_business_id);
   }
@@ -78,8 +79,7 @@ async function authRequired(req, _res, next) {
       req.user = { ...user, role: user.platform_role, business_role: user.role };
     }
     if (req.user.role === "QORI_SELLER") {
-      if (!requestPath.startsWith("/api/admin/commercial/") && !sellerRequest && !selfService) throw forbidden("Tu cuenta comercial solo puede gestionar su cartera en Qori Seller.");
-      if(adminRequest)await require('../services/qoriSellerService').requireApproved(req.user);
+      if (!sellerRequest && !selfService) throw forbidden("Tu cuenta de embajador solo puede acceder al Portal de embajadores. No tiene acceso a Admin.");
     }
     if (req.user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
       throw forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal.");
