@@ -22,5 +22,21 @@
     const d=dialog('Renovar activación',`<p class="full">El nuevo enlace reemplazará el anterior. La contraseña la crea únicamente el embajador al abrirlo.</p><button type="submit" class="primary-button full">Generar nuevo enlace</button>`);
     d.querySelector('form').onsubmit=async e=>{e.preventDefault();if(d.dataset.saving||!isCurrent())return;const b=e.currentTarget.querySelector('[type=submit]');d.dataset.saving='true';b.disabled=true;try{const r=await request('/api/admin/accounts/sellers/'+id+'/activation',{},'POST');if(isCurrent()&&d.isConnected)showLink(d,r.activation);}catch(error){if(isCurrent()&&d.isConnected)d.querySelector('[role=status]').textContent=error.message;}finally{delete d.dataset.saving;b.disabled=false;}};
   }
-  window.QoriSellerActivationAdmin={create,renew};
+  function recover({id,name,email,dialog,request,isCurrent}){
+    const d=dialog('Restablecer contraseña de Qori Seller',`<p class="full">Generarás un enlace personal para <strong>${esc(name)}</strong> (${esc(email)}). Reemplazará cualquier enlace de recuperación anterior y vencerá en 30 minutos. La contraseña actual seguirá funcionando hasta que el embajador la cambie.</p><p class="full">Solo cambia el acceso al portal y Demo Qori. No cambia la contraseña del correo ni los permisos o la aprobación del expediente.</p><label class="full">Motivo<textarea name="reason" required minlength="10" maxlength="1000" placeholder="El embajador solicitó recuperar su acceso."></textarea></label><button type="submit" class="primary-button full">Generar nuevo enlace de recuperación</button>`);
+    d.querySelector('form').onsubmit=async e=>{
+      e.preventDefault();if(d.dataset.saving||!isCurrent())return;
+      const form=e.currentTarget,b=form.querySelector('[type=submit]');
+      if(!form.reportValidity())return;
+      d.dataset.saving='true';b.disabled=true;
+      try{
+        const r=await request('/api/admin/accounts/sellers/'+id+'/password-reset',{reason:form.elements.reason.value.trim()},'POST');
+        if(!isCurrent()||!d.isConnected)return;
+        form.innerHTML=`<div class="full"><h3>Enlace de recuperación listo</h3><p>Compártelo únicamente con ${esc(name)} (${esc(email)}). No se ha enviado ningún correo automáticamente.</p><label>Enlace personal de recuperación<input id="sellerRecoveryLink" readonly value="${esc(r.recovery.url)}"></label><p>Vence: ${esc(new Date(r.recovery.expires_at).toLocaleString('es-CO'))}. Un solo uso. El enlace anterior ya no funciona.</p><button type="button" class="primary-button" id="copySellerRecovery">Copiar enlace</button><p role="status"></p></div>`;
+        form.querySelector('#copySellerRecovery').onclick=async()=>{try{await navigator.clipboard.writeText(r.recovery.url);if(d.isConnected)form.querySelector('[role=status]').textContent='Enlace copiado.';}catch{form.querySelector('input').select();form.querySelector('[role=status]').textContent='Copia el enlace seleccionado.';}};
+      }catch(error){if(isCurrent()&&d.isConnected)form.querySelector('[role=status]').textContent=error.message;}
+      finally{delete d.dataset.saving;b.disabled=false;}
+    };
+  }
+  window.QoriSellerActivationAdmin={create,renew,recover};
 })();

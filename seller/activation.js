@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if(window.QoriSellerActivation?.active)return;
   const token=new URLSearchParams(location.hash.slice(1)).get('activar');
   window.QoriSellerActivation={active:Boolean(token)};
   if(!token)return;

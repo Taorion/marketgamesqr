@@ -10,6 +10,7 @@ const { getBusinessSubscription } = require("../services/subscriptionService");
 const { sendPasswordResetEmail } = require("../services/passwordResetMailService");
 
 const { eligibility: resetEligibility } = require('../services/passwordResetEligibility');
+const { passwordResetUrl, isSeller } = require('../services/passwordResetLinks');
 
 const passwordSchema = z.string().min(8).max(120);
 
@@ -75,10 +76,6 @@ function sessionInfoFromToken(token) {
 
 function hashResetToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-function passwordResetUrl(token) {
-  return `${env.publicAppUrl.replace(/\/$/, "")}/empresa/?reset_token=${encodeURIComponent(token)}`;
 }
 
 async function login(req, res, next, demoMode = false, adminMode = false) {
@@ -156,7 +153,7 @@ async function requestPasswordReset(req, res, next) {
     };
 
     const userResult = await query(
-      `select id, email, is_active
+      `select id, email, is_active, role, platform_role
        from app_users
        where lower(email) = lower($1)
        limit 1`,
@@ -194,7 +191,7 @@ async function requestPasswordReset(req, res, next) {
     if (!issued) return res.json(genericResponse);
 
     try {
-      await sendPasswordResetEmail({ to: user.email, resetUrl: passwordResetUrl(rawToken) });
+      await sendPasswordResetEmail({ to: user.email, resetUrl: passwordResetUrl(rawToken, user) });
     } catch (error) {
       await query(
         "update password_reset_tokens set used_at = now() where user_id = $1 and token_hash = $2 and used_at is null",
@@ -206,7 +203,7 @@ async function requestPasswordReset(req, res, next) {
     const response = { ...genericResponse };
     if (!env.isProduction) {
       response.reset_token = rawToken;
-      response.reset_url = passwordResetUrl(rawToken);
+      response.reset_url = passwordResetUrl(rawToken, user);
     }
     return res.json(response);
   } catch (error) {
@@ -223,16 +220,17 @@ async function resetPassword(req, res, next) {
     const passwordHash = await bcrypt.hash(body.password, 12);
     const result = await withTransaction(async client => {
       // Serialize issuance and consumption per user, then recheck the token.
-      await client.query('select id from app_users where id=$1 for update', [candidate.user_id]);
-      const token = (await client.query('select id from password_reset_tokens where token_hash=$1 and user_id=$2 and used_at is null and expires_at>now() for update', [tokenHash, candidate.user_id])).rows[0];
+      const user = (await client.query('select id,role,platform_role from app_users where id=$1 for update', [candidate.user_id])).rows[0];
+      const token = (await client.query('select id,metadata from password_reset_tokens where token_hash=$1 and user_id=$2 and used_at is null and expires_at>now() for update', [tokenHash, candidate.user_id])).rows[0];
       const allowed = await resetEligibility(client, candidate.user_id);
-      if (!token || !allowed) throw badRequest('Enlace de recuperación inválido o vencido.');
+      if (!user || !token || !allowed || (token.metadata?.source === 'SELLER_ADMIN_RECOVERY' && !isSeller(user))) throw badRequest('Enlace de recuperación inválido o vencido.');
+      if (isSeller(user) && (body.password.length < 12 || Buffer.byteLength(body.password, 'utf8') > 72)) throw badRequest('Usa al menos 12 caracteres y como máximo 72 bytes para tu contraseña.');
       await client.query('update app_users set password_hash=$2,updated_at=now() where id=$1', [candidate.user_id, passwordHash]);
       await client.query('update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null', [candidate.user_id]);
-      return allowed;
+      return { ...allowed, seller: isSeller(user) };
     });
     res.set('Cache-Control', 'no-store').json({ok:true,
-      next_url:result.pending ? '/paquetes/#retomar' : '/empresa/',
+      next_url:result.pending ? '/paquetes/#retomar' : result.seller ? '/seller/' : '/empresa/',
       message:result.pending ? 'Contraseña actualizada. Retoma tu inscripción con el mismo correo para continuar el pago pendiente.' : 'Contraseña actualizada. Ya puedes iniciar sesión.'});
 
   } catch (error) {
