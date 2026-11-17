@@ -29,11 +29,12 @@ async function signup(payload){
    await db.query("update business_qr_credit_accounts set included_balance=$2,included_period_key='PENSE_EN_TI_WELCOME' where business_id=$1",[b.id,program.tickets]);
   }
   await db.query('insert into qori_free_enrollments(document_key,business_id) values($1,$2)',[document,b.id]);
+  if(program.giftcards)await db.query('insert into qori_giftcard_credit_accounts(business_id,balance,welcome_granted,purchased,used) values($1,$2,$2,0,0)',[b.id,program.giftcards]);
   if(advisor){
    await db.query('insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$2)',[b.id,advisor.id]);
    await prospectReferrals.linkSignupProspect(db,advisor,d,b.id,signupProspect);
   }
-  await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'PENSE_EN_TI_ENROLLED','business',$2,$3::jsonb)",[u.id,b.id,JSON.stringify({seller_id:advisor?.id||null,free_program:program.code,initial_tickets:program.tickets,initial_giftcards:0})]);
+  await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'PENSE_EN_TI_ENROLLED','business',$2,$3::jsonb)",[u.id,b.id,JSON.stringify({seller_id:advisor?.id||null,free_program:program.code,initial_tickets:program.tickets,initial_giftcards:program.giftcards||0})]);
   return {ok:true,business_id:b.id,email:d.email,portal_url:'/empresa/?view='+program.view,free_program:program.code,message:'Tu cuenta '+program.name+' está lista. '+program.summary};
  });
 }

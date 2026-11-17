@@ -8,6 +8,11 @@ router.get('/advisor/:id',handle(req=>require('../services/commercialAdvisorServ
 router.get('/receipts/:token',rateLimit({keyPrefix:'gift-receipt',max:60,windowMs:60000}),handle(req=>require('../services/giftDeliveryService').receipt(req.params.token)));
 router.use(authRequired,requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER'));
 router.get('/balances',handle(req=>s.balances(req.user)));
-router.get('/giftcards/packages',handle(()=>({packages:[]})));
-router.post('/giftcards/checkout',handle(req=>{const d=require('../utils/validators').validate(require('zod').z.object({package_code:require('zod').z.enum(['GF50','GF200','GF600','GF2000','GF6000']),idempotency_key:require('zod').z.string().uuid()}).strict(),req.body);return require('../services/mercadoPagoService').createCreditCheckout(req.user,d);}));
+router.get('/giftcards/packages',handle(async req=>{
+ const {plan}=await require('../services/subscriptionService').getBusinessSubscription(req.user.business_id);
+ if(!plan.portal_access_allowed||plan.raw_status!=='ACTIVE'||!plan.features.gift_cards)throw require('../utils/http').forbidden('Las Gift Cards no están incluidas en tu programa actual.');
+ if(Number.isFinite(plan.limits?.gift_cards_total))throw require('../utils/http').forbidden('Tu muestra tiene un cupo total. Elige una suscripción antes de comprar emisiones adicionales.');
+ return {packages:require('../services/packageCatalog').GIFTCARD_PACKAGE_OFFERS};
+}));
+router.post('/giftcards/checkout',requireRoles('BUSINESS_OWNER'),handle(req=>{const d=require('../utils/validators').validate(require('zod').z.object({package_code:require('zod').z.enum(['GF10','GF25','GF50','GF100']),idempotency_key:require('zod').z.string().uuid()}).strict(),req.body);return require('../services/mercadoPagoService').createCreditCheckout(req.user,d);}));
 module.exports=router;

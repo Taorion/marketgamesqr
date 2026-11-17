@@ -57,7 +57,9 @@ function productSlug() {
 }
 
 function queryString() {
-  return window.location.search || "";
+  const params = new URLSearchParams(window.location.search);
+  if (window.QoriOrders?.sessionId) params.set('order_session', window.QoriOrders.sessionId);
+  return params.size ? '?' + params.toString() : '';
 }
 
 async function api(path, options = {}) {
@@ -77,7 +79,7 @@ async function api(path, options = {}) {
 
 function money(value, currency = "COP") {
   const amount = Number(value || 0);
-  if (!Number.isFinite(amount) || amount <= 0) return "";
+  if (!Number.isFinite(amount) || amount < 0) return "";
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: currency || "COP",
@@ -98,7 +100,7 @@ function productInitials(product) {
 function productCard(product) {
   const tags = Array.isArray(product.tags) ? product.tags.slice(0, 3) : [];
   const promotion = product.active_promotion || null;
-  const price = product.price ? `<strong class="product-price">${promotion && product.compare_at_price ? `<s>${escapeHtml(money(product.compare_at_price, product.currency))}</s> ` : ""}${escapeHtml(money(product.price, product.currency))}</strong>` : "";
+  const price = product.price !== null && product.price !== undefined ? `<strong class="product-price">${promotion && product.compare_at_price ? `<s>${escapeHtml(money(product.compare_at_price, product.currency))}</s> ` : ""}${escapeHtml(money(product.price, product.currency))}</strong>` : "";
   return `
     <article class="product-card" data-product-id="${escapeHtml(product.id)}">
       <div class="product-image">
@@ -106,22 +108,22 @@ function productCard(product) {
       </div>
       <div>
         <h3>${escapeHtml(product.name)}</h3>
-        <p>${escapeHtml(product.short_description || product.description || "Solicita informacion por WhatsApp.")}</p>
+        <p>${escapeHtml(product.short_description || product.description || "Consulta los detalles de este producto.")}</p>
       </div>
       ${price}
       ${promotion ? `<span class="product-promotion-badge">${escapeHtml(promotion.label || "Promoción temporal")} · hasta ${escapeHtml(new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(promotion.ends_at)))}</span>` : ""}
       ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
       <div class="product-actions">
         <button class="primary-button" type="button" data-order-product="${escapeHtml(product.id)}">${escapeHtml(product.cta_label || state.catalog?.default_cta_label || "Ordenar por WhatsApp")}</button>
-        <button class="info-button" type="button" data-info-product="${escapeHtml(product.id)}">Saber mas</button>
+        <button class="info-button" type="button" data-info-product="${escapeHtml(product.id)}">Ver detalles</button>
       </div>
     </article>
   `;
 }
 
 function filteredProducts() {
-  if (state.selectedCategory === "all") return state.products;
-  return state.products.filter((product) => product.category === state.selectedCategory);
+  const term = (document.getElementById("catalogSearch")?.value || "").trim().toLocaleLowerCase("es");
+  return state.products.filter(product => (state.selectedCategory === "all" || product.category === state.selectedCategory) && (!term || [product.name, product.category, product.description].join(" ").toLocaleLowerCase("es").includes(term)));
 }
 
 function renderCategories() {
@@ -138,6 +140,10 @@ function renderProducts() {
   const products = filteredProducts();
   productGrid.innerHTML = products.map(productCard).join("");
   emptyState.classList.toggle("hidden", products.length > 0);
+  if (!products.length && state.products.length) {
+    emptyState.querySelector('strong').textContent = 'No encontramos productos con esta búsqueda.';
+    emptyState.querySelector('p').textContent = 'Prueba otra palabra o selecciona otra categoría.';
+  }
   const featured = state.products.filter((product) => product.is_featured).slice(0, 3);
   featuredSection.classList.toggle("hidden", featured.length === 0);
   featuredGrid.innerHTML = featured.map(productCard).join("");
@@ -176,7 +182,9 @@ async function loadCatalog() {
     state.products = data.products || [];
     state.categories = data.categories || [];
     renderCatalog();
-    if (data.product) {
+    const ordersEnabled = await window.QoriOrders?.init(data.catalog, state.products);
+    if (ordersEnabled) { document.getElementById("catalogSearchLabel").hidden = false; if (data.product) window.QoriOrders.openProduct(data.product.id); }
+    if (data.product && !ordersEnabled) {
       state.selectedProduct = data.product;
       openIntent(data.product);
     }
@@ -275,4 +283,5 @@ intentModal.addEventListener("click", (event) => {
 });
 intentForm.addEventListener("submit", submitIntent);
 
+document.getElementById("catalogSearch")?.addEventListener("input", renderProducts);
 loadCatalog();

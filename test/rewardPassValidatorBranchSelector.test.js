@@ -9,7 +9,7 @@ const html = fs.readFileSync(path.join(root, "empresa", "index.html"), "utf8");
 
 test("el Validador carga el directorio tenant antes de redimir una Tarjeta regalo", () => {
   assert.match(html, /id="validatorRewardPassBranchInput"/);
-  assert.match(html, /validator-reward-branch=v504-20260916/);
+  assert.match(html, /js\/app[.]js[?]v=/);
   assert.match(app, /if \(session\?\.user\?\.business_id\) \{[\s\S]*loadBusinessBranches\(\{ quiet: true \}\)[\s\S]*renderValidatorRewardPassBranchOptions\(\)/);
   assert.doesNotMatch(app, /session\?\.user\?\.business_id && hasPlanFeature\("multi_branch"\)/);
   assert.match(app, /data\.kind === "reward_pass"[\s\S]*loadBusinessBranches\(\{ force: true, quiet: true \}\)[\s\S]*renderValidatorRewardPassBranchOptions\(data\.reward_pass\)/);

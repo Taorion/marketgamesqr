@@ -7,7 +7,7 @@ test('free plan tools are restricted before the account screen has ever been ope
  const w=new JSDOM('',{runScripts:'outside-only'}).window;
  try{w.state={accountWorkspaceLoaded:false};w.isAdmin=()=>false;w.isPrepaidValidatorOnly=()=>false;w.normalizePlanTierCode=x=>x;w.eval(source);
   for(const code of Object.keys(programs)){const plan=PLAN_CATALOG[code];w.currentPlan=()=>plan;
-   assert.equal(w.hasPlanFeature('qr_validator'),true);assert.equal(w.hasPlanFeature('rms_core'),false);assert.equal(w.hasPlanFeature('gift_cards'),false);assert.equal(w.hasPlanFeature('stamp_cards'),code==='SELLOS_GRATIS');assert.equal(w.hasPlanFeature('interactive_activations'),code==='ACTIVACIONES_GRATIS');
+   assert.equal(w.hasPlanFeature('qr_validator'),true);assert.equal(w.hasPlanFeature('rms_core'),false);assert.equal(w.hasPlanFeature('gift_cards'),code==='UN_REGALO_PERSONAL');assert.equal(w.hasPlanFeature('stamp_cards'),code==='SELLOS_GRATIS');assert.equal(w.hasPlanFeature('interactive_activations'),code==='ACTIVACIONES_GRATIS');
   }
  }finally{w.close();}
 });
@@ -30,12 +30,12 @@ test('free portal banner shows only the chosen program, inventory, validator and
  for(const [code,p] of Object.entries(programs)){
   const w=new JSDOM('<main></main>',{url:'https://example.test/empresa/',runScripts:'outside-only'}).window;
   try{w.authHeaders=()=>({Authorization:'Bearer local'});w.fetch=async()=>({ok:true,json:async()=>({balances:{plan_code:code,tickets:p.tickets,products:4}})});w.eval(read('empresa/js/pense-en-ti.js'));await tick();await tick();
-   assert.deepEqual([...w.document.querySelectorAll('[data-step]')].map(b=>b.dataset.step),[p.view,'inventory','validator','account']);assert.ok(w.document.querySelector('h2').textContent.includes(p.name));assert.doesNotMatch(w.document.body.textContent,/giftcards/i);
+   assert.deepEqual([...w.document.querySelectorAll('[data-step]')].map(b=>b.dataset.step),[p.view,'inventory','validator','account']);assert.ok(w.document.querySelector('h2').textContent.includes(p.name));assert.equal(Boolean(w.document.querySelector('[data-giftcard-store]')),code==='UN_REGALO_PERSONAL');
   }finally{w.close();}
  }
 });
 test('Customer publication dialog limits each free program to its own kind without requesting paid gift tools',async()=>{
- for(const [code,kind] of [['PENSE_EN_TI','PRODUCT'],['SELLOS_GRATIS','STAMP'],['ACTIVACIONES_GRATIS','ACTIVITY']]){
+ for(const [code,kind] of [['PENSE_EN_TI','PRODUCT'],['SELLOS_GRATIS','STAMP'],['ACTIVACIONES_GRATIS','ACTIVITY'],['UN_REGALO_PERSONAL','GIFT']]){
   const w=new JSDOM('<body></body>',{url:'https://example.test/empresa/',runScripts:'outside-only'}).window,calls=[];
   try{w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.currentPlan=()=>({code,free_program:true});w.authHeaders=()=>({});
    w.api=async(path)=>{calls.push(path);return path.endsWith('/publications')?{directory:{},activities:[],stamps:[],products:[],publications:[]}:path.endsWith('/program-requests')?{requests:[]}:{orders:[]};};

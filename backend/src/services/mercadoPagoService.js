@@ -208,6 +208,7 @@ async function createPortalCheckoutIntent(user, details, body = {}) {
   );
   const existing = existingResult.rows[0];
   if (!existing) throw badRequest("No se pudo recuperar el intento de pago. Intenta nuevamente.");
+  if(existing.package_code!==details.package_code||Number(existing.package_size)!==Number(details.package_size)||Number(existing.price_cop)!==Number(details.price_cop))throw badRequest('Este intento de pago corresponde a otro paquete. Inicia una nueva compra.');
   if (existing.checkout_url || existing.sandbox_checkout_url) return { order: existing, reused: true };
 
   const ageMs = Date.now() - new Date(existing.updated_at || existing.created_at).getTime();
@@ -409,7 +410,15 @@ function verifyWebhookSignature(req) {
   }
 }
 
-async function createCreditCheckout(user, body) {
+async function createAdminCreditCheckout(user, businessId, body) {
+  require('./adminAccessPolicy').requireAdminAccess(user);
+  return createCreditCheckout({...user, business_id: businessId}, body, {
+    source: 'admin_recharges',
+    returnPath: '/admin/?recharge_business=' + encodeURIComponent(businessId),
+  });
+}
+
+async function createCreditCheckout(user, body, context = {}) {
   if (!user.business_id) {
     throw badRequest("Este usuario no tiene negocio asignado.");
   }
@@ -422,7 +431,8 @@ async function createCreditCheckout(user, body) {
     throw badRequest("Paquete QR no disponible.");
   }
   const access=await assertActiveSubscriptionForTicketPurchase(user);
-  if(offer.kind==='GIFTCARDS')throw badRequest('Este paquete de emisiones ya no está disponible. Consulta las herramientas incluidas en tu plan.');
+  if(offer.kind==='GIFTCARDS'&&!access.plan.features.gift_cards)throw forbidden('Las Gift Cards no están incluidas en tu programa actual.');
+  if(offer.kind==='GIFTCARDS'&&Number.isFinite(access.plan.limits?.gift_cards_total))throw forbidden('Tu muestra tiene un cupo total. Elige una suscripción antes de comprar emisiones adicionales.');
   if (!offer.subscriber_allowed) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
   }
@@ -433,7 +443,7 @@ async function createCreditCheckout(user, body) {
     package_title: offer.title,
     price_cop: offer.price_cop,
     metadata: {
-        source: "business_portal",
+        source: context.source || "business_portal",
         requested_by_email: user.email,
       },
   }, body);
@@ -461,9 +471,9 @@ async function createCreditCheckout(user, body) {
       external_reference: purchaseOrder.external_reference,
       notification_url: webhookUrl(),
       back_urls: {
-        success: appUrl("/empresa/?payment=success"),
-        failure: appUrl("/empresa/?payment=failure"),
-        pending: appUrl("/empresa/?payment=pending"),
+        success: appUrl(`${context.returnPath || '/empresa/?view=account'}&payment=success&order=${purchaseOrder.id}${context.returnPath ? '#recargas' : ''}`),
+        failure: appUrl(`${context.returnPath || '/empresa/?view=account'}&payment=failure&order=${purchaseOrder.id}${context.returnPath ? '#recargas' : ''}`),
+        pending: appUrl(`${context.returnPath || '/empresa/?view=account'}&payment=pending&order=${purchaseOrder.id}${context.returnPath ? '#recargas' : ''}`),
       },
       metadata: {
         order_id: purchaseOrder.id,
@@ -1281,7 +1291,9 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     return finalizeApprovedPortalSubscription(client, order, payment, signup);
   }
 
-  if(order.package_code==='GF5'||/^GF(50|200|600|2000|6000)$/.test(order.package_code)) {
+  // Keep historical orders payable while only offering the current four packs.
+  if(/^GF(5|10|25|50|100|200|600|2000|6000)$/.test(order.package_code)) {
+    if(payment.status!=='approved'||payment.currency_id!=='COP')throw badRequest('La compra de Gift Cards requiere un pago aprobado en COP.');
     validateApprovedPayment(order,payment);
     if(order.credited_at)return {order:mapPurchaseOrder(order),credited:false,duplicate:true};
     const units=order.package_code==='GF5'?5:Number(order.package_code.slice(2));
@@ -1485,6 +1497,7 @@ module.exports = {
     verifyWebhookSignature,
   },
   createCreditCheckout,
+  createAdminCreditCheckout,
   createStorageAddonCheckout,
   createDemoCreditPurchase,
   createPrepaidSignupCheckout,

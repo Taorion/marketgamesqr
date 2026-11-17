@@ -587,6 +587,9 @@ async function getPublicCatalog(slug, reqMeta = {}, params = {}) {
   );
   if (!catalogResult.rowCount) throw notFound("Catalogo no encontrado o no publicado.");
   const catalog = catalogResult.rows[0];
+  // The new cart annotates this existing visit rather than recording a second view.
+  const orderTracking = /^[0-9a-f-]{36}$/i.test(String(params.order_session || '')) && require('./catalogOrderService').enabled(catalog.business_id)
+    ? { session_id: params.order_session, step: 'CATALOG' } : null;
   const products = await query(
     `select *
      from smart_catalog_products
@@ -601,13 +604,13 @@ async function getPublicCatalog(slug, reqMeta = {}, params = {}) {
     campaign_id: params.campaign_id || catalog.linked_campaign_id || null,
     activation_id: params.activation_id || catalog.linked_activation_id || null,
     qr_code_id: params.qr_code_id || null,
-    source: params.source || "public_catalog",
+    source: orderTracking ? 'catalog_orders' : (params.source || "public_catalog"),
     channel: params.channel || "catalog_link",
     partner_id: params.partner_id || null,
     branch_id: params.branch_id || null,
     partner_name: params.partner_name || null,
     referral_source: params.referral_source || null,
-    metadata: trackingMetadata(params),
+    metadata: { ...trackingMetadata(params), ...orderTracking },
   }, reqMeta);
   return {
     catalog: mapCatalog(catalog),
@@ -1173,6 +1176,7 @@ async function seedDoctorAngieCatalog(businessId, user) {
 }
 
 module.exports = {
+  publicProductWithPromotion,
   archiveCatalog,
   catalogDetail,
   createAgendaTask,

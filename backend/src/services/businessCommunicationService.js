@@ -839,6 +839,7 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
   )).filter(Boolean);
   if (!selected.length) throw badRequest("No encontramos contactos válidos para este envío.");
   if (selected.length !== requestedRecipients.length) throw badRequest("Uno o más contactos ya no están disponibles para este envío.");
+  await require('./catalogOrderConsentService').assertOrderContactConsent({ query }, businessId, selected);
 
   const seenEmails = new Set();
   const recipientsForDelivery = [];
@@ -1192,6 +1193,7 @@ async function selectedCommunicationAudience(businessId, recipientRefs = []) {
   const byTypedId = new Map(audience.contacts.map((contact) => [`${String(contact.source_type || "").toUpperCase()}:${contact.source_id}`, contact]));
   const selected = requested.map((recipient) => byTypedId.get(`${recipient.source_type}:${recipient.source_id}`)).filter(Boolean);
   if (selected.length !== requested.length) throw badRequest("Uno o más contactos ya no están disponibles para esta comunicación.");
+  await require('./catalogOrderConsentService').assertOrderContactConsent({ query }, businessId, selected);
   return selected;
 }
 
@@ -1346,6 +1348,7 @@ async function listBusinessCommunicationWhatsAppQueue(businessId, id) {
 }
 
 async function markBusinessCommunicationWhatsAppOpened(businessId, userId, id, recipientRef) {
+  await require('./catalogOrderConsentService').assertOrderContactConsent({ query }, businessId, [recipientRef]);
   const recipient = await query(
     `select r.*, bc.campaign_id, bc.activation_id
      from business_communication_recipients r

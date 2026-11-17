@@ -478,11 +478,14 @@ async function getTicketContext(user) {
     qr_purchased_total: 0,
     qr_used_total: 0,
   };
+  const giftBalance=Number((await query('select balance from qori_giftcard_credit_accounts where business_id=$1',[businessId])).rows[0]?.balance||0);
+  const prepaid=business.plan_code==='UN_REGALO_PERSONAL'||business.is_seller_demo||giftBalance>0;
   return {
     business_name: business.name,
     demo_mode: Boolean(business.is_seller_demo),
-    reward_pass_ticket_cost: business.plan_code==='PENSE_EN_TI'||business.is_seller_demo?0:getRewardPassTicketCostFromSettings(business.settings || {}),
-    giftcard_balance: business.plan_code==='PENSE_EN_TI'||business.is_seller_demo?Number((await query('select balance from qori_giftcard_credit_accounts where business_id=$1',[businessId])).rows[0]?.balance||0):null,
+    program_name: business.plan_code==='UN_REGALO_PERSONAL'?'Un regalo personal':'Gift Cards',
+    reward_pass_ticket_cost: prepaid?0:getRewardPassTicketCostFromSettings(business.settings || {}),
+    giftcard_balance: prepaid?giftBalance:null,
     ticket_balance: Number(account.qr_balance || 0),
     qr_purchased_total: Number(account.qr_purchased_total || 0),
     qr_used_total: Number(account.qr_used_total || 0),
@@ -492,7 +495,7 @@ async function getTicketContext(user) {
 async function createRewardPass(user, payload, options = {}) {
   assertManager(user);
   const businessId = userBusinessId(user);
-  const subscription = await getBusinessSubscription(businessId);
+  const subscription = await assertStandaloneBusinessFeature(user,businessId,'gift_cards');
   const issuedAt = payload.issued_at ? new Date(payload.issued_at) : new Date();
   const expiresAt = payload.expires_at ? new Date(payload.expires_at) : new Date(defaultExpiresAt(issuedAt));
   if (expiresAt <= issuedAt) {
@@ -519,12 +522,15 @@ async function createRewardPass(user, payload, options = {}) {
       const total = await client.query("select count(*)::int as total from reward_passes where company_id=$1", [businessId]);
       if (Number(total.rows[0]?.total || 0) >= totalGiftCardLimit) throw forbidden(`Tu muestra ${subscription.plan.name} permite emitir hasta ${totalGiftCardLimit} Gift Cards en total. Elige una suscripción para continuar.`);
     }
+    const prepaidAccount=(await client.query('select balance from qori_giftcard_credit_accounts where business_id=$1 for update',[businessId])).rows[0];
+    const freeGift = business.plan_code === 'UN_REGALO_PERSONAL' || business.is_seller_demo || Number(prepaidAccount?.balance||0)>0;
     const monthlyGiftCardLimit = subscription.plan.limits?.gift_cards_month;
-    if (monthlyGiftCardLimit !== null && monthlyGiftCardLimit !== undefined) {
+    if (!freeGift && monthlyGiftCardLimit !== null && monthlyGiftCardLimit !== undefined) {
       const monthlyCount = await client.query(
         `select count(*)::int as total
          from reward_passes
          where company_id = $1
+           and not giftcard_credit_used
            and created_at >= date_trunc('month', now())
            and created_at < date_trunc('month', now()) + interval '1 month'`,
         [businessId]
@@ -533,10 +539,9 @@ async function createRewardPass(user, payload, options = {}) {
         throw forbidden(`Tu plan ${subscription.plan.name} permite emitir ${monthlyGiftCardLimit} tarjetas de regalo al mes. Alcanzaste el limite mensual.`);
       }
     }
-    const freeGift = business.plan_code === 'PENSE_EN_TI' || business.is_seller_demo;
     if(freeGift) {
       const capacity=await client.query('update qori_giftcard_credit_accounts set balance=balance-1,used=used+1 where business_id=$1 and balance>0 returning balance',[businessId]);
-      if(!capacity.rowCount)throw badRequest('Agotaste tus emisiones de Gift Card. Compra un paquete desde Pensé en ti.');
+      if(!capacity.rowCount)throw badRequest('Agotaste tus emisiones de Gift Card. Compra un paquete de 10, 25, 50 o 100 en Comprar Gift Cards.');
     }
     const ticketCost = freeGift ? 0 : getRewardPassTicketCostFromSettings(business.settings || {});
     const account = await ensureCreditAccount(client, businessId);
@@ -653,6 +658,7 @@ async function createRewardPass(user, payload, options = {}) {
       ]
     );
     const pass = passResult.rows[0];
+    if(freeGift)await client.query('update reward_passes set giftcard_credit_used=true where id=$1',[pass.id]);
     const balanceAfter = balanceBefore - ticketCost;
     await client.query(
       `update business_qr_credit_accounts

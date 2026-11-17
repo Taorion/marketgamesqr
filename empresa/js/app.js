@@ -1692,6 +1692,7 @@ const SIDEBAR_GROUP_ICONS = Object.freeze({
   admin: "settings",
 });
 const sidebarSectionByView = Object.freeze({
+  "catalog-orders": "offer",
   campaigns: "gos",
   "strategic-qr": "offer",
   communications: "offer",
@@ -5907,6 +5908,7 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 }
 
 const viewFeatureMap = {
+  "catalog-orders": null,
   quotes: "quotes",
   "courtesies": "product_gifts",
   "customer-network": "customer_network",
@@ -7606,6 +7608,8 @@ async function loadAccountWorkspaceData(options = {}) {
 }
 
 function setView(view) {
+  const catalogOrdersApi = (path, options = {}) => api('/api/business' + path, { ...options, noClientCache: true, headers: { ...authHeaders(), ...(options.headers || {}) } });
+  window.QoriCatalogOrders?.discover(catalogOrdersApi, session?.user?.id);
   const requestedView = view;
   const previousView = state.currentView;
   if (isBusinessSeller() && view !== "sellers") {
@@ -7647,6 +7651,7 @@ function setView(view) {
     closeBranchDetailModal();
   }
   state.currentView = view;
+  if (view === 'catalog-orders') window.QoriCatalogOrders?.mount(document.getElementById('catalogOrdersRoot'), catalogOrdersApi, session?.user?.id);
   if (view === "stamp-cards") window.StampCards?.open();
   if (view === "quotes") window.Quotes?.open();
   if (view === "courtesies") window.QoriBusinessCourtesies?.open();
@@ -8151,7 +8156,7 @@ function applyInitialRouteParams() {
     state.paymentReturnStatus = paymentResult;
     openAccountSection("billing");
     const feedback = {
-      success: ["Mercado Pago recibió el pago. Estamos confirmando la acreditación de tus tickets.", "success", "Pago recibido"],
+      success: ["Volviste de Mercado Pago. Estamos verificando el pago y la acreditación del saldo correspondiente.", "info", "Verificando pago"],
       pending: ["El pago sigue pendiente. Tu saldo se actualizará cuando Mercado Pago lo confirme.", "info", "Pago en revisión"],
       failure: ["El pago no fue aprobado. Puedes retomar la recarga y elegir otro medio de pago.", "error", "Pago no completado"],
     }[paymentResult];
@@ -13071,6 +13076,19 @@ function renderSmartCatalogTopProducts() {
   panel.appendChild(article);
 }
 
+document.addEventListener('qori:catalog-editor', async event => {
+  try {
+    setView('smart-catalogs');
+    await loadSmartCatalogData({ quiet: true });
+    if (event.detail?.id) await loadSmartCatalogDetail(event.detail.id);
+    if (event.detail?.create) openSmartCatalogCreateModal();
+    else setSmartCatalogTab('products');
+  } catch (error) { showFeedback(error.message, 'error', { title: 'Vitrina web' }); }
+});
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-smart-catalog-orders]');
+  if (button) window.QoriCatalogOrders?.openStorefront(button.dataset.smartCatalogOrders || '');
+});
 function renderSmartCatalogWorkbench() {
   const root = document.querySelector('.view-section[data-view="smart-catalogs"]');
   if (!root) return;
@@ -13137,6 +13155,7 @@ function renderSmartCatalogWorkbench() {
         <div class="smart-catalog-active-actions">
           <button class="solid-button compact" type="button" data-smart-catalog-jump="${activeCatalog ? "products" : "catalogs"}">${activeCatalog ? "Agregar productos" : "Crear vitrina"}</button>
           <button class="ghost-button compact" type="button" data-smart-catalog-workbench-copy ${activeCatalog ? "" : "disabled"}>Copiar enlace</button>
+          <button class="ghost-button compact" type="button" data-smart-catalog-orders="${escapeHtml(activeCatalog?.id || '')}">Domicilios, QR y volante</button>
           <button class="ghost-button compact" type="button" data-smart-catalog-jump="intents" ${activeCatalog ? "" : "disabled"}>Ver interesados</button>
         </div>
       </div>
@@ -25583,7 +25602,7 @@ function renderQrCreditShop() {
     const account = state.qrCreditAccount || {};
     const balance = Number(account.qr_balance || 0).toLocaleString("es-CO");
     const courtesy = Number(account.qr_courtesy_total || 0).toLocaleString("es-CO");
-    const rechargeCopy = `Cortesia recibida: ${courtesy} tickets. Las recargas estan disponibles solo para cuentas con suscripcion activa.`;
+    const rechargeCopy = `Cortesia recibida: ${courtesy} tickets. Las recargas están disponibles para cuentas activas, incluidos los programas gratuitos.`;
     setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
   }
   const account = state.qrCreditAccount || {};
@@ -25597,7 +25616,7 @@ function renderQrCreditShop() {
     ? state.qrCreditOrders.map((order) => `
       <tr>
         <td data-label="Fecha">${escapeHtml(formatDate(order.created_at))}</td>
-        <td data-label="Concepto">${escapeHtml(order.package_title)}<br><small>${Number(order.package_size || 0).toLocaleString("es-CO")} tickets</small></td>
+        <td data-label="Concepto">${escapeHtml(order.package_title)}<br><small>${Number(order.package_size || 0).toLocaleString("es-CO")} ${/^GF/.test(order.package_code || "") ? "emisiones de Gift Card" : "tickets"}</small></td>
         <td data-label="Valor">${escapeHtml(copMoney(order.price_cop))}</td>
         <td data-label="Estado y acción"><span class="status-chip ${order.status === "APPROVED" ? "ok" : order.status === "PENDING" ? "pending" : "danger"}">${escapeHtml(paymentStatusLabel(order.status))}</span>${order.status === "PENDING" && (order.checkout_url || order.sandbox_checkout_url) ? `<button class="account-order-resume" type="button" data-resume-checkout="${escapeHtml(order.checkout_url || order.sandbox_checkout_url)}">Continuar pago</button>` : ""}</td>
       </tr>
@@ -46358,7 +46377,7 @@ function renderRewardPassContext() {
   const balance = toNumber(context.ticket_balance ?? context.qr_balance ?? 0);
   if (rewardPassTicketContext) {
     rewardPassTicketContext.textContent = context.giftcard_balance!=null
-      ? `${context.demo_mode?'Demo Qori':'Pensé en ti'}: ${Number(context.giftcard_balance)} emisiones de Gift Card disponibles. Cada Gift Card usa una emisión de este saldo independiente.`
+      ? `${context.demo_mode?'Demo Qori':(context.program_name||'Gift Cards')}: ${Number(context.giftcard_balance)} emisiones de Gift Card disponibles. Cada Gift Card usa una emisión de este saldo independiente.`
       : `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
   }
 }

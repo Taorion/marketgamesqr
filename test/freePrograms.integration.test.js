@@ -7,20 +7,20 @@ const {programs}=require('../backend/src/services/freeProgramPolicy'),{planFromB
 const stamps=require('../backend/src/services/stampCardService'),activations=require('../backend/src/services/interactiveActivationService');
 let server,base,n=0;const accounts={};
 async function api(path,user,body,method=body?'POST':'GET'){
- const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json','X-Forwarded-For':'198.51.100.'+(++n),...(user?{Authorization:'Bearer '+jwt.sign({sub:user.id,password_version:0},env.jwtSecret)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};
+ const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json','X-Forwarded-For':'198.51.100.'+(++n),...(user?{Authorization:'Bearer '+jwt.sign({sub:user.id,password_version:user.password_version||0},env.jwtSecret)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};
 }
 const rules={name:'Visitas QA',stamps_required:2,benefit_type:'FREE_GIFT',benefit_value:{label:'Café de cortesía'},minimum_purchase:0,one_per_day:false,allow_manual:true,card_valid_days:365,ticket_valid_days:30,reward_cost:0,ticket_cost:1,terms:'QA',status:'ACTIVE'};
 const activationBody=(status='active')=>({activation_type:'SEALED_LETTER',title:'Detalle QA '+uuid(),status,reward_mode:'fixed',reward_ticket_cost:1,reward_config:{reward_type:'FREE_GIFT',reward_label:'Café de cortesía'},capture_config:{collect_participant_data:false},game_config:{},interaction_config:{},visual_config:{}});
 after(async()=>{if(server)await new Promise(r=>server.close(r));await pool.end();});
 test('Free programs: actual registration, API isolation, concurrent quotas and purchased rewards',async t=>{
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
- await t.test('three independent registrations have exact entitlements and initial balances',async()=>{
+ await t.test('four independent registrations have exact entitlements and initial balances',async()=>{
   for(const p of Object.values(programs)){
    const payload={free_program:p.code,company_name:'Programa QA '+uuid(),contact_name:'QA Responsable',email:uuid()+'@example.test',nit:uuid(),phone:'3100000000',city:'Bogotá',address:'Calle QA',password:'PruebaLocal!2026',password_confirm:'PruebaLocal!2026',terms_accepted:true,privacy_accepted:true};
    const r=await api('/api/pense-en-ti/signup',null,payload);assert.equal(r.status,200,JSON.stringify(r));
    const b=(await query('select * from businesses where id=$1',[r.data.business_id])).rows[0],u=(await query('select * from app_users where business_id=$1',[b.id])).rows[0];accounts[p.code]={b,u,payload};
-   const plan=planFromBusiness(b);assert.equal(plan.code,p.code);assert.equal(plan.free_program,true);assert.equal(plan.portal_access_allowed,true);assert.equal(plan.features.stamp_cards,p.code==='SELLOS_GRATIS');assert.equal(plan.features.interactive_activations,p.code==='ACTIVACIONES_GRATIS');assert.equal(plan.features.product_gifts,p.code==='PENSE_EN_TI');assert.equal(plan.features.gift_cards,false);assert.equal(plan.limits.gift_inventory_products,5);
-   assert.equal((await query('select qr_balance from business_qr_credit_accounts where business_id=$1',[b.id])).rows[0].qr_balance,p.tickets);assert.equal((await query('select * from qori_giftcard_credit_accounts where business_id=$1',[b.id])).rowCount,0);
+   const plan=planFromBusiness(b);assert.equal(plan.code,p.code);assert.equal(plan.free_program,true);assert.equal(plan.portal_access_allowed,true);assert.equal(plan.features.stamp_cards,p.code==='SELLOS_GRATIS');assert.equal(plan.features.interactive_activations,p.code==='ACTIVACIONES_GRATIS');assert.equal(plan.features.product_gifts,p.code==='PENSE_EN_TI');assert.equal(plan.features.gift_cards,p.code==='UN_REGALO_PERSONAL');assert.equal(plan.limits.gift_inventory_products,5);
+   assert.equal((await query('select qr_balance from business_qr_credit_accounts where business_id=$1',[b.id])).rows[0].qr_balance,p.tickets);assert.equal((await query('select * from qori_giftcard_credit_accounts where business_id=$1',[b.id])).rowCount,p.code==='UN_REGALO_PERSONAL'?1:0);
    assert.equal(r.data.portal_url,'/empresa/?view='+p.view);
   }
  });
@@ -33,8 +33,9 @@ test('Free programs: actual registration, API isolation, concurrent quotas and p
    for(const path of ['/api/auth/me','/api/business/access','/api/business/profile','/api/qr/credits/me','/api/payments/qr-credits/offers','/api/business/inventory/products']){
     const r=await api(path,u);assert.equal(r.status,200,path+JSON.stringify(r));if(path.endsWith('/offers'))assert.ok(r.data.packages.every(p=>p.kind!=='GIFTCARDS'));
    }
-   for(const path of ['/api/business/sales','/api/business/contacts/feed','/api/business/customer/relationships','/api/business/qr/batches','/api/business/reward-passes','/api/business/quotes','/api/business/rms-machine'])assert.equal((await api(path,u)).status,403,path);
+   for(const path of ['/api/business/sales','/api/business/contacts/feed','/api/business/customer/relationships','/api/business/qr/batches','/api/business/quotes','/api/business/rms-machine'])assert.equal((await api(path,u)).status,403,path);
    for(const [code,path] of [['SELLOS_GRATIS','/api/business/stamp-cards/context'],['ACTIVACIONES_GRATIS','/api/business/interactive-activations'],['PENSE_EN_TI','/api/business/customer/courtesies']])assert.equal((await api(path,u)).status,code===b.plan_code?200:403,path+' '+b.plan_code);
+   assert.equal((await api('/api/business/reward-passes',u)).status,b.plan_code==='UN_REGALO_PERSONAL'?200:403);
    assert.equal((await api('/api/qr/generate',u,{})).status,403);
    assert.equal((await api('/api/business/customer/publications',u,{kind:'AFFILIATION'})).status,403);
    await api('/api/business/profile',u,{settings:{subscription:{lifetime_access:true},commercial_entitlements:{features:{rms_core:true}}},plan_code:'PRO'},'PATCH');
@@ -85,6 +86,7 @@ test('Free programs: actual registration, API isolation, concurrent quotas and p
  });
  await t.test('each free program publishes only its own benefits to Customer',async()=>{
   for(const [code,{b,u}] of Object.entries(accounts)){
+   if(code==='UN_REGALO_PERSONAL')continue; // Dedicated Gift Card publication/issuance coverage in unRegaloPersonal.integration.test.js
    const directory=await api('/api/business/customer/directory',u,{published:true,category:'QA',city:'Bogotá',address:'Calle QA',description:'Negocio QA'},'PUT');assert.equal(directory.status,200,JSON.stringify(directory));
    const catalog=await api('/api/business/customer/publications',u);assert.equal(catalog.status,200,JSON.stringify(catalog));assert.equal((await api('/api/business/customer/program-requests',u)).status,200);
    const kind=code==='PENSE_EN_TI'?'PRODUCT':code==='SELLOS_GRATIS'?'STAMP':'ACTIVITY';
@@ -114,7 +116,7 @@ test('Free programs: actual registration, API isolation, concurrent quotas and p
   }}finally{global.fetch=actualFetch;env.mercadoPagoAccessToken=old;}
  });
  await t.test('Admin supervises all free accounts; business owners cannot inspect other accounts',async()=>{
-  const admin=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Admin QA','QORI_SUPERADMIN') returning *",[uuid()+'@example.test'])).rows[0];
+  const admin=(await query("insert into app_users(email,password_hash,full_name,role) values('cbotero@gosqori.com','qa','Admin QA','QORI_SUPERADMIN') on conflict(email) do update set role='QORI_SUPERADMIN',is_active=true returning *")).rows[0];
   for(const {b,u} of Object.values(accounts)){
    const r=await api('/api/admin/accounts/businesses/'+b.id,admin);assert.equal(r.status,200,JSON.stringify(r));assert.ok(JSON.stringify(r.data).includes(b.plan_code));
    assert.equal((await api('/api/admin/accounts/businesses/'+b.id,u)).status,403);

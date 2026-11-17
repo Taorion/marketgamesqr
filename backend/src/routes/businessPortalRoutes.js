@@ -377,7 +377,10 @@ router.get("/communications/:id/whatsapp/queue", communicationWhatsAppQueue);
 router.post("/communications/:id/whatsapp/opened", markCommunicationWhatsAppOpened);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", requireRevenueCenter, heavyBusinessCache, commandCenterAnalytics);
-router.use("/branches", requireBranches);
+router.use("/branches", (req,res,next)=>{
+  if(req.method==='GET'&&req.path==='/'&&req.user.free_program_code==='UN_REGALO_PERSONAL')return requireBusinessFeature('gift_cards')(req,res,next);
+  return requireBranches(req,res,next);
+});
 router.get("/branches", listBranches);
 router.post("/branches", createBranch);
 router.patch("/branches/:branchId", updateBranch);

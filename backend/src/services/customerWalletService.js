@@ -15,8 +15,9 @@ async function readiness(businessId) {
       exists(select 1 from affiliate_reward_rules r where r.business_id=b.id and r.status='ACTIVE') point_rewards,
       exists(select 1 from branches br where br.business_id=b.id and br.is_active) branches,
       coalesce((select qr_balance from business_qr_credit_accounts c where c.business_id=b.id),0) credits,
+      coalesce((select balance from qori_giftcard_credit_accounts c where c.business_id=b.id),0) gift_credits,
       (select count(*)::int from reward_passes rp where rp.company_id=b.id) gifts_total,
-      (select count(*)::int from reward_passes rp where rp.company_id=b.id and rp.created_at>=date_trunc('month',now())) gifts_month
+      (select count(*)::int from reward_passes rp where rp.company_id=b.id and not rp.giftcard_credit_used and rp.created_at>=date_trunc('month',now())) gifts_month
       from businesses b left join customer_business_programs p on p.business_id=b.id where b.id=$1`,[businessId]),
     getBusinessSubscription(businessId)
   ]);
@@ -26,8 +27,8 @@ async function readiness(businessId) {
   const subscribed=!!row.is_active&&plan.raw_status==='ACTIVE'&&plan.portal_access_allowed;
   const configuredCost=Number(row.settings?.reward_pass_ticket_cost??row.settings?.rewardPassTicketCost??gifts.DEFAULT_TICKET_COST);
   const cost=Number.isInteger(configuredCost)&&configuredCost>0?configuredCost:gifts.DEFAULT_TICKET_COST;
-  const capacity=Number(row.credits)>=cost && (plan.limits?.gift_cards_total==null||row.gifts_total<plan.limits.gift_cards_total)
-    && (plan.limits?.gift_cards_month==null||row.gifts_month<plan.limits.gift_cards_month);
+  const capacity=(plan.limits?.gift_cards_total==null||row.gifts_total<plan.limits.gift_cards_total)
+    && (Number(row.gift_credits)>0 || (plan.code!=='UN_REGALO_PERSONAL' && Number(row.credits)>=cost && (plan.limits?.gift_cards_month==null||row.gifts_month<plan.limits.gift_cards_month)));
   const checks=[
     {key:'subscription',label:'Suscripción y establecimiento activos',ok:subscribed},
     {key:'stamps',label:'Programa de sellos activo',ok:!!row.stamps},

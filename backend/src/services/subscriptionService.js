@@ -10,6 +10,7 @@ const PLAN_CODES = {
   DESPEGA: "DESPEGA",
   DESCUBRE: "DESCUBRE",
   PENSE_EN_TI: "PENSE_EN_TI",
+  UN_REGALO_PERSONAL: "UN_REGALO_PERSONAL",
   SELLOS_GRATIS: "SELLOS_GRATIS",
   ACTIVACIONES_GRATIS: "ACTIVACIONES_GRATIS",
   STARTER: "STARTER",
@@ -948,24 +949,24 @@ PLAN_CATALOG[PLAN_CODES.DESCUBRE] = {
   },
 };
 
-// Three separate free programs. Shared tools are sufficient to operate each
+// Separate free programs. Shared tools are sufficient to operate each
 // program, not a subscription to the rest of the portal.
 const {programs:FREE_PROGRAMS,isFreeProgram}=require('./freeProgramPolicy');
 for(const program of Object.values(FREE_PROGRAMS)) {
- const stamps=program.code==='SELLOS_GRATIS',activations=program.code==='ACTIVACIONES_GRATIS',gifts=program.code==='PENSE_EN_TI';
+ const stamps=program.code==='SELLOS_GRATIS',activations=program.code==='ACTIVACIONES_GRATIS',gifts=program.code==='PENSE_EN_TI',cards=program.code==='UN_REGALO_PERSONAL';
  PLAN_CATALOG[program.code]={...PLAN_CATALOG[PLAN_CODES.DESPEGA],code:program.code,name:program.name,
   monthly_price_cop:0,price_label:'Gratis, sin mensualidad',billing_period:'free',public_signup_available:false,
   access_summary:program.summary,pricing_note:program.summary,free_program:true,default_view:program.view,
-  included:[stamps?'1 programa de sellos':activations?'2 activaciones activas a la vez':'20 tickets iniciales de entrega única','Hasta 5 productos registrados','Validador gratis','Compra de tickets para emisiones'],
-  not_included:['Otros programas gratuitos','Módulos de las suscripciones','Gift Cards','Recargas automáticas de tickets'],
+  included:[cards?'5 emisiones de Gift Cards iniciales de entrega única':stamps?'1 programa de sellos':activations?'2 activaciones activas a la vez':'20 tickets iniciales de entrega única','Hasta 5 productos registrados','Validador gratis',cards?'Paquetes de 10, 25, 50 y 100 emisiones a $2.500 COP cada una':'Compra de tickets para emisiones'],
+  not_included:['Otros programas gratuitos','Módulos de las suscripciones',cards?'Valor monetario de los regalos':'Gift Cards','Recargas automáticas'],
   features:{...Object.fromEntries(Object.keys(PLAN_CATALOG[PLAN_CODES.DESPEGA].features).map(k=>[k,false])),
    portal_access:true,account_profile:true,account_security:true,plan_management:true,qr_validator:true,qr_prepaid_purchase:true,
-   products:true,gift_inventory:true,product_gifts:gifts,stamp_cards:stamps,interactive_activations:activations,customer_network:false,quotes:false},
+   products:true,gift_inventory:true,product_gifts:gifts,gift_cards:cards,stamp_cards:stamps,interactive_activations:activations,customer_network:false,quotes:false},
   limits:{...Object.fromEntries(Object.keys(PLAN_CATALOG[PLAN_CODES.DESPEGA].limits).map(k=>[k,0])),
    users:1,validators:1,branches:1,welcome_courtesy_tickets:program.tickets,gift_inventory_products:5,storage_bytes:50*1024*1024,
    stamp_programs:stamps?1:0,stamp_members:stamps?null:0,active_interactive_activations:activations?2:0,
    activation_types_month:activations?null:0,allowed_interactive_activation_types:activations?null:[],history_days:30,
-   gift_cards_month:0,gift_cards_total:0}
+   gift_cards_month:cards?null:0,gift_cards_total:cards?null:0,welcome_giftcards:program.giftcards||0}
  };
 }
 for(const plan of Object.values(PLAN_CATALOG)) {

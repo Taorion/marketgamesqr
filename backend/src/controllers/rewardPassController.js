@@ -157,8 +157,8 @@ async function create(req, res, next) {
     const rewardPass = await createRewardPass(req.user, body);
     res.status(201).json({
       message: rewardPass.idempotent
-        ? "Esta emisión ya había sido procesada. No se descontaron tickets nuevamente."
-        : "Reward Pass emitido correctamente. Se descontaron los tickets de tu saldo Qori.",
+        ? "Esta emisión ya había sido procesada. No se descontó saldo nuevamente."
+        : "Gift Card emitida correctamente. Se descontó el saldo de emisión correspondiente.",
       reward_pass: rewardPass,
     });
   } catch (error) {

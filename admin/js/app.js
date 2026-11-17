@@ -215,6 +215,7 @@ function renderShell() {
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
   if (!logged) {
+    window.QoriRecharges?.clear();
     window.QoriAccounts?.clear();
     window.QoriCommercial?.clear();
     document.body.classList.remove("commercial-mode", "legacy-visible");
@@ -460,6 +461,8 @@ async function loadWorkspace() {
   if(!session||session!==currentSession)return;
   if(identity.user?.admin_access !== true){clearSession("Tu cuenta no tiene acceso a Admin. Ingresa al Portal de embajadores.");renderShell();return;}
   session.user = identity.user;
+  await window.QoriRecharges?.load({api,user:identity.user});
+  if(session!==currentSession)return;
   document.getElementById('accountsNav').classList.toggle('hidden',(identity.user?.platform_role||identity.user?.role)!=='QORI_SUPERADMIN');
   const commercial = ["QORI_SUPERADMIN", "QORI_SELLER"].includes(identity.user?.platform_role || identity.user?.role);
   document.body.classList.toggle("commercial-mode", commercial);

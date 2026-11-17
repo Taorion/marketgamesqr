@@ -5,9 +5,11 @@ const {query,pool,withTransaction}=require('../backend/src/config/db'),{app}=req
 const {env}=require('../backend/src/config/env'),jwt=require('jsonwebtoken'),payments=require('../backend/src/services/mercadoPagoService');
 const actualFetch=global.fetch,uid=randomUUID;let server,base,seller,other,admin,client=0,failProvider=false;
 async function api(path,user,body,method=body?'POST':'GET') {
- const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json','X-Forwarded-For':'198.51.100.'+(++client),...(user?{Authorization:'Bearer '+jwt.sign({sub:user.id,password_version:0},env.jwtSecret)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};
+ if(user?.role==='QORI_SELLER'&&!/\/(closure|business-link|linkable-businesses)(?:\?|$)/.test(path))path=path.replace('/api/admin/commercial/','/api/seller/commercial/');
+ const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json','X-Forwarded-For':'198.51.100.'+(++client),...(user?{Authorization:'Bearer '+jwt.sign({sub:user.id,password_version:user.password_version||0},env.jwtSecret)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};
 }
 async function person(role) {
+ if(role==='QORI_SUPERADMIN')return (await query("insert into app_users(email,password_hash,full_name,role) values('cbotero@gosqori.com','qa','Admin QA','QORI_SUPERADMIN') on conflict(email) do update set role='QORI_SUPERADMIN',is_active=true returning *")).rows[0];
  const u=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Prospecto QA',$2) returning *",[uid()+'@example.test',role])).rows[0];
  if(role==='QORI_SELLER')await query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version,status,approval_mode) values($1,$2,'3100000000','Bogotá','4610','2026-11-11-comisiones-vf1','APPROVED','DOCUMENTS')",[u.id,uid()]);return u;
 }
@@ -28,7 +30,7 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
  admin=await person('QORI_SUPERADMIN');seller=await person('QORI_SELLER');other=await person('QORI_SELLER');
  await t.test('dashboard and CRM expose every public plan; checkout preserves plan, seller and exact prospect',async()=>{
   const dashboard=await api('/api/seller/dashboard',seller);assert.equal(dashboard.status,200);
-  assert.deepEqual(dashboard.data.plan_referral_links.map(p=>p.code),['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS','DESPEGA','STARTER','GROWTH','PRO']);
+  assert.deepEqual(dashboard.data.plan_referral_links.map(p=>p.code),['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS','UN_REGALO_PERSONAL','DESPEGA','STARTER','GROWTH','PRO']);
   for(const entry of dashboard.data.plan_referral_links){const url=new URL(entry.url);assert.equal(url.searchParams.get(entry.monthly_price_cop===0?'seller':'advisor'),seller.id);assert.equal(url.searchParams.has('prospect_ref'),false);if(entry.monthly_price_cop!==0)assert.equal(url.searchParams.get('plan'),entry.code);else assert.equal(url.searchParams.get('program'),entry.code);}
   for(const code of ['DESPEGA','STARTER','GROWTH','PRO']){
    const p=await prospect(),links=await api(path(p.id)+'/referral',seller),url=new URL(links.data.plan_referral_links.find(l=>l.code===code).url);
@@ -54,7 +56,7 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
   assert.equal((await current(p.id)).closed_by,admin.id);assert.equal((await query('select id from qori_seller_commissions where order_id=$1',[r.data.order.id])).rowCount,1);
  });
  await t.test('free signup reuses prospect without creating a duplicate or a paid closure',async()=>{
-  for(const code of ['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS']){const p=await prospect(),token=await link(p),r=await api('/api/pense-en-ti/signup',null,{...signup(p,token),free_program:code});assert.equal(r.status,200,JSON.stringify(r));
+  for(const code of ['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS','UN_REGALO_PERSONAL']){const p=await prospect(),token=await link(p),r=await api('/api/pense-en-ti/signup',null,{...signup(p,token),free_program:code});assert.equal(r.status,200,JSON.stringify(r));
   assert.equal((await current(p.id)).business_id,r.data.business_id);assert.equal((await query('select id from qori_sales_prospects where business_id=$1',[r.data.business_id])).rowCount,1);assert.equal((await api(path(p.id)+'/closure',admin)).data.can_close,false);}
  });
  await t.test('forged, expired, stale, other-seller, wrong-email and orphan tokens fail without provisioning',async()=>{

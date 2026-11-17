@@ -1,7 +1,8 @@
 const programs=Object.freeze({
  PENSE_EN_TI:{code:'PENSE_EN_TI',name:'Pensé en ti',view:'courtesies',tickets:20,kind:'TICKET',summary:'20 tickets iniciales para regalar productos. Máximo 5 productos y validador. Las recargas se compran.'},
  SELLOS_GRATIS:{code:'SELLOS_GRATIS',name:'Una razón para volver',view:'stamp-cards',tickets:0,kind:'STAMP',summary:'Un programa de sellos, máximo 5 productos y validador. Los QR de premios consumen tickets comprados.'},
- ACTIVACIONES_GRATIS:{code:'ACTIVACIONES_GRATIS',name:'Crea activaciones',view:'strategic-qr',tickets:0,kind:'ACTIVITY',summary:'Hasta 2 activaciones activas a la vez, máximo 5 productos y validador. Los QR de premios consumen tickets comprados.'}
+ ACTIVACIONES_GRATIS:{code:'ACTIVACIONES_GRATIS',name:'Crea activaciones',view:'strategic-qr',tickets:0,kind:'ACTIVITY',summary:'Hasta 2 activaciones activas a la vez, máximo 5 productos y validador. Los QR de premios consumen tickets comprados.'},
+ UN_REGALO_PERSONAL:{code:'UN_REGALO_PERSONAL',name:'Un regalo personal',view:'reward-passes',tickets:0,giftcards:5,kind:'GIFT',summary:'5 emisiones iniciales de Gift Cards digitales, de entrega única. Después compra paquetes de 10, 25, 50 o 100 emisiones a $2.500 COP cada una. El valor del regalo lo define el negocio.'}
 });
 const isFreeProgram=code=>Object.hasOwn(programs,code);
 const publicationKind=code=>code==='PENSE_EN_TI'?'PRODUCT':programs[code]?.kind;
@@ -12,6 +13,14 @@ function allowedRequest(code,method,path,body={}){
  const read=method==='GET',write=method==='POST',profile=path==='/api/business/profile';
  if(read&&['/api/auth/me','/api/business/access','/api/business/profile','/api/business/storage/summary','/api/business/tickets/balance','/api/business/tickets/transactions','/api/qr/credits/me','/api/pense-en-ti/balances','/api/business/users','/api/payments/qr-credits/offers','/api/payments/qr-credits/orders'].includes(path))return true;
  if(profile&&method==='PATCH')return true;
+ if(code==='UN_REGALO_PERSONAL'){
+  if(read&&['/api/business/branches','/api/pense-en-ti/giftcards/packages'].includes(path))return true;
+  if(write&&path==='/api/pense-en-ti/giftcards/checkout')return true;
+  if(read&&['/api/business/customer/standard','/api/business/customer/gift-orders'].includes(path))return true;
+  if(method==='PUT'&&path==='/api/business/customer/gift-settings')return true;
+  if(write&&/^\/api\/business\/customer\/gift-orders\/[^/]+\/confirm-payment$/.test(path))return true;
+  if(/^\/api\/business\/reward-passes(\/|$)/.test(path))return true;
+ }
  if(write&&['/api/auth/password/change','/api/payments/qr-credits/checkout','/api/payments/tickets/checkout','/api/payments/subscriptions/checkout','/api/payments/subscriptions/auto-renewal','/api/business/customer/lookup'].includes(path))return true;
  if(/^\/api\/business\/inventory\/(categories|subcategories|catalog|products)(\/|$)/.test(path)&&!path.endsWith('/insights'))return true;
  if(read&&/^\/api\/qr\/validate\/[^/]+$/.test(path)||write&&/^\/api\/qr\/redeem\/[^/]+$/.test(path))return true;

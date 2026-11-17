@@ -7,8 +7,8 @@ async function card(b,value,balance,status='active',expired=false,claimed=true){
 async function balances(b){return (await admin.detail(user,'businesses',b.id)).record.balances;}
 test('Admin balances use real credits, plan caps and canonical giftcard money without writes',async t=>{
  assert.equal((await query('select current_database() db')).rows[0].db,'qori_customer_qa');
- user=(await query("insert into app_users(email,full_name,role,password_hash) values($1,'Balance QA','QORI_SUPERADMIN','qa') returning *",[uuid()+'@example.test'])).rows[0];
- const free=await business('PENSE_EN_TI'),trial=await business('DESCUBRE'),paid=await business('STARTER'),empty=await business('PENSE_EN_TI');
+ user=(await query("insert into app_users(email,full_name,role,password_hash) values('cbotero@gosqori.com','Balance QA','QORI_SUPERADMIN','qa') on conflict(email) do update set role='QORI_SUPERADMIN',is_active=true returning *")).rows[0];
+ const free=await business('UN_REGALO_PERSONAL'),trial=await business('DESCUBRE'),paid=await business('STARTER'),empty=await business('PENSE_EN_TI');
  await query('insert into business_qr_credit_accounts(business_id,qr_balance,included_balance,qr_used_total,qr_purchased_total) values($1,63,13,7,50),($2,100,0,0,100),($3,3,0,0,3)',[free.id,trial.id,paid.id]);
  await query('insert into qori_giftcard_credit_accounts(business_id,balance,purchased,used,welcome_granted) values($1,65,50,5,20)',[free.id]);
  await card(free,10000,6000,'partially_redeemed');await card(free,20000,20000,'active',false,false);await card(free,30000,30000,'active',true);await card(free,40000,40000,'cancelled');await card(free,5000,0);

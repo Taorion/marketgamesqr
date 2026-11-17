@@ -257,6 +257,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/portal", portalRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/business/agenda-push", agendaPushRoutes);
+app.use("/api/business/catalog-orders", require("./routes/catalogOrderRoutes").router);
+app.use("/api/public/catalog-orders", require("./routes/catalogOrderRoutes").publicRouter);
 app.use("/api/business", businessPortalRoutes);
 app.use("/api/business/qr", businessQrRoutes);
 app.use("/api/business/catalogs", smartCatalogRoutes);

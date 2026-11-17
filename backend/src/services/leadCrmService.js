@@ -3066,6 +3066,7 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
 
 async function createLeadActivation(businessId, user, leadId, sourceType, payload) {
   return withTransaction(async (client) => {
+    await require('./catalogOrderConsentService').assertOrderContactConsent(client, businessId, [{ source_type: sourceType, source_id: leadId }]);
     const lead = await ensurePlayerForAction(client, businessId, leadId, sourceType);
     const implicitRmsKey = payload.metadata?.source === "rms_activation_1" && payload.interactive_activation_id
       ? `rms-activation-1:${lead.source_type}:${lead.id}:${payload.interactive_activation_id}`

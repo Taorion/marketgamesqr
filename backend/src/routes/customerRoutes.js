@@ -336,6 +336,14 @@ businessRouter.post('/invitations',handle(req=>network.send(req.user,parse(z.obj
 businessRouter.get('/invitations/:id',handle(async req=>({invitations:(await query(`select i.id,i.kind,i.title,i.state,i.created_at,i.expires_at from customer_invitations i join customer_accounts a on a.id=i.customer_id where i.business_id=$1 and a.public_id=$2 order by i.created_at desc limit 100`,[req.user.business_id,parse(uuid,req.params.id)])).rows})));
 businessRouter.post('/invitations/:id/cancel',handle(async req=>{const r=await query("update customer_invitations set state='CANCELLED',decided_at=now() where id=$1 and business_id=$2 and state='PENDING' returning id",[parse(uuid,req.params.id),req.user.business_id]);if(!r.rowCount)throw badRequest('La invitación ya no está pendiente.');return {ok:true};}));
 businessRouter.get('/standard',handle(req=>wallet.readiness(req.user.business_id)));
+businessRouter.put('/gift-settings',requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER'),handle(async req=>{
+ await require('../services/subscriptionService').assertStandaloneBusinessFeature(req.user,req.user.business_id,'gift_cards');
+ const d=parse(z.object({gift_enabled:z.boolean(),gift_min:money,gift_max:money,gift_terms:text(8000).min(10),gift_payment_instructions:text(2000).min(10)}).strict(),req.body);
+ if(Number(d.gift_max)<Number(d.gift_min))throw badRequest('El máximo debe ser mayor o igual al mínimo.');
+ await query(`insert into customer_business_programs(business_id,gift_enabled,gift_min,gift_max,gift_terms,gift_payment_instructions)
+ values($1,$2,$3,$4,$5,$6) on conflict(business_id) do update set gift_enabled=excluded.gift_enabled,gift_min=excluded.gift_min,gift_max=excluded.gift_max,gift_terms=excluded.gift_terms,gift_payment_instructions=excluded.gift_payment_instructions,updated_at=now()`,[req.user.business_id,d.gift_enabled,d.gift_min,d.gift_max,d.gift_terms,d.gift_payment_instructions]);
+ return wallet.readiness(req.user.business_id);
+}));
 businessRouter.put('/standard',handle(req=>wallet.savePrograms(req.user,parse(z.object({points_terms:text(4000).min(10),accumulation_terms:text(2000).min(10),gift_enabled:z.boolean(),gift_min:money,gift_max:money,gift_terms:text(8000).min(10),gift_payment_instructions:text(2000).min(10)}),req.body))));
 businessRouter.get('/gift-orders',handle(req=>wallet.businessOrders(req.user)));
 businessRouter.post('/gift-orders/:id/confirm-payment',handle(req=>wallet.confirmGiftPayment(req.user,parse(uuid,req.params.id),parse(z.object({amount:money,payment_reference:text(120).min(3),payment_method:text(120).min(2),payment_received:z.literal(true)}),req.body))));

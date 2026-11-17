@@ -87,7 +87,7 @@ const QR_PACKAGE_OFFERS = rawPackageOffers.map((offer) => ({
   payment_url: `/paquetes/?package=${offer.code}`,
 }));
 
-const GIFTCARD_PACKAGE_OFFERS=QR_PACKAGE_OFFERS.map(p=>({code:'GF'+p.package_size,public_code:'GF'+p.package_size,package_size:p.package_size,unit_price_cop:2500,price_cop:p.package_size*2500,title:p.package_size+' emisiones de Gift Card',subscriber_allowed:true,kind:'GIFTCARDS'}));
+const GIFTCARD_PACKAGE_OFFERS=[10,25,50,100].map(size=>({code:'GF'+size,public_code:'GF'+size,package_size:size,unit_price_cop:2500,price_cop:size*2500,title:size+' emisiones de Gift Card',subscriber_allowed:true,kind:'GIFTCARDS',display_currency:'COP',payment_currency:'COP',description:'Saldo para emitir Gift Cards digitales. No incluye el valor del regalo.'}));
 function findPackageOffer(code) {
   const gift=GIFTCARD_PACKAGE_OFFERS.find(p=>p.code===String(code||'').trim().toUpperCase());if(gift)return gift;
   return QR_PACKAGE_OFFERS.find((offer) => offer.code === String(code || "").trim().toUpperCase());

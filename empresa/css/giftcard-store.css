@@ -1,0 +1,12 @@
+.giftcard-store{box-sizing:border-box;width:min(960px,calc(100vw - 24px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #dbe5f0;border-radius:24px;background:#f5f8fc;color:#152d49;box-shadow:0 24px 80px #10294d40;overflow:auto;font-family:inherit}
+.giftcard-store::backdrop{background:#071c38a8;backdrop-filter:blur(3px)}
+#giftcardBillingPanel[hidden]{display:none!important}
+.giftcard-store header{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;background:#fff;border-bottom:1px solid #dbe5f0}
+.giftcard-store h2,.giftcard-store h3{margin:0}.giftcard-store header button{border:1px solid #cbd5e1;background:white;border-radius:12px;min-height:44px;min-width:44px;color:#152d49;cursor:pointer}
+.giftcard-store-body{padding:24px}.giftcard-store-balance{padding:16px 20px;background:#e7f0ff;border-radius:16px;font-size:18px}
+.giftcard-store-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.giftcard-store-pack{display:flex;flex-direction:column;gap:12px;padding:20px 14px;border:1px solid #d2deeb;border-radius:18px;background:#fff;min-width:0}
+.giftcard-store-pack strong{font-size:28px;color:#0c3970}.giftcard-store-pack button,.giftcard-store-action{min-height:44px;border:0;background:#123f79;color:#fff;padding:12px;border-radius:12px;cursor:pointer;font:inherit}.giftcard-store-pack button{margin-top:auto}
+.giftcard-store button:disabled{opacity:.55;cursor:wait}.giftcard-store p{line-height:1.6}.giftcard-store small{line-height:1.5}.giftcard-store-status{padding:12px 0;overflow-wrap:anywhere}.giftcard-store-order{padding:14px 0;border-top:1px solid #dbe5f0;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.giftcard-store-order a{color:#123f79;font-weight:700}.giftcard-store :focus-visible{outline:3px solid #e4a526;outline-offset:3px}
+@media(max-width:700px){.giftcard-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.giftcard-store header,.giftcard-store-body{padding:16px}.giftcard-store h2{font-size:22px}}
+@media(max-width:360px){.giftcard-store-grid{grid-template-columns:1fr}}

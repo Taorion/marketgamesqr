@@ -26,7 +26,7 @@
         <img id="catalogLogo" src="/img/Logotipo%20Qori%20VF.png" alt="Qori">
         <span id="catalogBrand">Qori</span>
       </div>
-      <p class="catalog-kicker">Catalogo accionable conectado a WhatsApp y Maquina RMS</p>
+      <p class="catalog-kicker">Productos de tu negocio favorito</p>
       <h1 id="catalogTitle">Cargando catalogo...</h1>
       <p id="catalogDescription">Ordena o solicita informacion directamente por WhatsApp.</p>
       <div class="catalog-hero-actions">
@@ -37,6 +37,7 @@
 
     <section class="activation-benefit hidden" id="activationBenefit"></section>
 
+    <label class="qo-search" id="catalogSearchLabel" hidden>Buscar en la vitrina<input id="catalogSearch" type="search" placeholder="¿Qué estás buscando?" autocomplete="off"></label>
     <nav class="category-strip" id="categoryStrip" aria-label="Categorias"></nav>
 
     <section class="featured-section hidden" id="featuredSection">
@@ -51,7 +52,7 @@
       <div class="section-head">
         <span>Productos y servicios</span>
         <h2>Escoge lo que te interesa</h2>
-        <p>El catalogo no es una vitrina pasiva. Es una estacion de conversion dentro de la Maquina RMS.</p>
+        <p>Explora nuestra oferta y encuentra lo que necesitas.</p>
       </div>
       <div class="product-grid" id="productGrid"></div>
       <div class="empty-state hidden" id="emptyState">
@@ -104,6 +105,8 @@
     </form>
   </div>
 
-  <script src="/smart-catalog/app.js?v=qori-catalog-document-20260817-v152" defer></script>
+  <link rel="stylesheet" href="/smart-catalog/orders.css?v=catalog-orders-v2-20261113">
+  <script src="/smart-catalog/orders.js?v=catalog-orders-v2-20261113" defer></script>
+  <script src="/smart-catalog/app.js?v=catalog-orders-v2-20261113" defer></script>
 </body>
 </html>
