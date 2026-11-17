@@ -10,8 +10,8 @@ function setup({admin=false}={}){
  const ctx={admin,isCurrent:()=>current,download:async(...args)=>downloads.push(args),request:async(path,body,method)=>{calls.push({path,body,method});return body?{resource:{...body,id:'asset-1',revision:3,byte_size:10}}:data;}};
  w.eval(fs.readFileSync('seller/resources.js','utf8'));return {w,host,ctx,calls,downloads,copied,data,stop:()=>{current=false;}};
 }
-test('Seller shows Qori Academy pending without requesting, sharing or downloading materials',async()=>{
- const s=setup();try{await s.w.QoriSellerResources.render(s.host,s.ctx);assert.match(s.host.textContent,/Qori Academy/);assert.match(s.host.textContent,/Esta sección está en desarrollo/);assert.match(s.host.textContent,/mantente atento/);assert.equal(s.host.querySelector('[data-resource],button,a,input'),null);assert.equal(s.calls.length,0);assert.equal(s.downloads.length,0);}finally{s.w.close();}
+test('Seller delegates to the available Academy library',async()=>{
+ const s=setup();try{let called=false;s.w.QoriAcademy={render:async(host,ctx)=>{called=host===s.host&&ctx===s.ctx;}};await s.w.QoriSellerResources.render(s.host,s.ctx);assert.equal(called,true);assert.equal(s.calls.length,0);}finally{s.w.close();}
 });
 
 test('Admin resource editor uses explicit publication and optimistic revision; export and modal cleanup work',async()=>{

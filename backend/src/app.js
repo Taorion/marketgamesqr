@@ -166,6 +166,7 @@ app.use(helmet({
         "https://mgautoparts.netlify.app",
         "https://luxyandpets.com",
         "https://atelierdecoleccion.com",
+        "https://drive.google.com",
       ],
       "form-action": ["'self'"],
       "worker-src": ["'self'", "blob:"],

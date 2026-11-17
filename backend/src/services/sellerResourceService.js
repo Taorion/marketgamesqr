@@ -9,7 +9,7 @@ const {badRequest,notFound,forbidden}=require('../utils/http');
 const {requireApproved}=require('./qoriSellerService');
 const {requireSuperadmin}=require('./commercialAuthorization');
 const {guides,productionAssets}=require('./sellerResourceContent');
-const academy={status:'IN_DEVELOPMENT',title:'Qori Academy',message:'Esta sección está en desarrollo. Embajador Qori, mantente atento a tu nueva sección: Qori Academy.'};
+const academy={status:'AVAILABLE',title:'Qori Academy',message:'Qori Academy está disponible para embajadores aprobados. Ingresa a Qori Seller para consultar las capacitaciones.'};
 const uuid=z.string().uuid(),maxBytes=15*1024*1024;
 const columns='id,resource_key,title,description,usage,audience,stage,kind,state,version_label,url,filename,mime,byte_size,sha256,revision,created_at,updated_at';
 const schema=z.object({resource_key:z.string().regex(/^[a-z0-9][a-z0-9_-]{1,79}$/),title:z.string().trim().min(3).max(140),description:z.string().trim().max(800).default(''),usage:z.string().trim().max(2000).default(''),audience:z.enum(['SELLER','PROSPECT','CANDIDATE']),stage:z.enum(['START','DISCOVER','PRESENT','CLOSE','ACTIVATE','FOLLOW_UP']),kind:z.enum(['FILE','LINK']),state:z.enum(['DRAFT','PUBLISHED','ARCHIVED']).default('DRAFT'),version_label:z.string().trim().min(1).max(40),url:z.string().max(2000).nullable().optional(),filename:z.string().min(1).max(180).optional(),base64:z.string().max(Math.ceil(maxBytes/3)*4).optional(),expected_revision:z.number().int().positive().optional()}).strict();
