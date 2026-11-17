@@ -2,7 +2,7 @@
  'use strict';
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=value=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(value);
- function render(host,links,{isCurrent=()=>true}={}){
+ function render(host,links,{isCurrent=()=>true,request}={}){
   host.className='seller-plan-links';
   host.innerHTML='<h2>Mis enlaces de embajador</h2><p>Elige el plan que quieres presentar. Cada enlace conserva tu atribución y abre la opción seleccionada.</p><div class="seller-plan-links-grid">'+links.map((plan,index)=>
    '<article class="card" data-plan-code="'+esc(plan.code)+'"><h3>'+esc(plan.name)+'</h3><p class="seller-plan-price">'+(plan.monthly_price_cop?money(plan.monthly_price_cop)+' COP / mes':'Gratis · sin mensualidad')+'</p><p>'+esc(plan.summary)+'</p><label>Tu enlace de '+esc(plan.name)+'<input type="url" readonly data-link value="'+esc(plan.url)+'" aria-label="Enlace personal de '+esc(plan.name)+'"></label><div class="actions"><button type="button" class="primary" data-copy>Copiar enlace</button><a data-whatsapp class="outline" href="https://wa.me/?text='+encodeURIComponent('Te comparto '+plan.name+' de Qori. Conoce el plan y crea tu cuenta aquí: '+plan.url)+'" target="_blank" rel="noopener noreferrer">WhatsApp</a><a '+(index===0?'id="referralLink" ':'')+'href="'+esc(plan.url)+'" target="_blank" rel="noopener noreferrer">Ver '+esc(plan.name)+' ↗</a></div><p role="status" data-status></p></article>').join('')+'</div><p class="small">Si ya registraste al cliente en Mi CRM, abre ese contacto y usa «Compartir suscripción» para conservar también su seguimiento.</p>';
@@ -12,18 +12,29 @@
    catch{if(host.isConnected&&isCurrent()){input.focus();input.select();status.textContent='Selecciona y copia el enlace mostrado.';}}
    finally{button.disabled=false;}
   });
+  host.querySelectorAll('[data-plan-code]').forEach(card=>{
+   const button=document.createElement('button');button.type='button';button.className='outline';button.dataset.showQr='';button.textContent='Mostrar QR';
+   button.onclick=()=>{if(isCurrent())window.QoriSellerReferralQR?.open(card.querySelector('[data-link]').value,{request,isCurrent});};
+   card.querySelector('.actions').append(button);
+  });
  }
- function bindProspectPlan(dialog,referral){
+ function bindProspectPlan(dialog,referral,{request,isCurrent=()=>true}={}){
   const plans=(referral.plan_referral_links||[]);if(!plans.length)return;
   const label=document.createElement('label');label.textContent='Elige el plan para este cliente';
   const select=document.createElement('select');select.dataset.referralPlan='';
   for(const p of [{code:'',name:'Ver todos los planes'},...plans]){const option=document.createElement('option');option.value=p.code;option.textContent=p.name;select.append(option);}
   label.append(select);dialog.querySelector('[data-link]').closest('label').before(label);
+  const qrButton=document.createElement('button');qrButton.type='button';qrButton.className='outline';qrButton.dataset.showQr='';qrButton.textContent='Mostrar QR del plan';qrButton.disabled=true;
+  const qrHint=document.createElement('p');qrHint.className='small';qrHint.textContent='Elige un plan para que el QR abra directamente su formulario.';
+  const qrHost=document.createElement('div');qrHost.dataset.prospectQr='';
+  dialog.querySelector('[data-whatsapp]').after(qrButton,qrHint,qrHost);
+  qrButton.onclick=()=>{const plan=plans.find(p=>p.code===select.value);if(plan&&isCurrent())window.QoriSellerReferralQR?.mount(qrHost,plan.url,{request,isCurrent});};
   select.onchange=()=>{
    const plan=plans.find(p=>p.code===select.value),url=plan?.url||referral.plan_referral_url;
    dialog.querySelector('[data-link]').value=url;
    dialog.querySelector('[data-whatsapp]').href='https://wa.me/?text='+encodeURIComponent('Te comparto '+(plan?.name||'los planes')+' de Qori. Usa el correo '+referral.email+': '+url);
    dialog.querySelector('[data-status]').textContent='';
+   qrButton.disabled=!plan;qrHost.replaceChildren();
   };
  }
  window.QoriSellerReferralLinks={render,bindProspectPlan};

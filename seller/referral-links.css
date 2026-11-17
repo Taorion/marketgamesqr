@@ -7,3 +7,13 @@
 .seller-plan-links-grid input{width:100%;min-width:0;font-size:13px}
 .seller-plan-links-grid .actions{gap:12px;margin:18px 0 10px}
 .seller-plan-links-grid [data-status]{font-size:13px;margin:0;overflow-wrap:anywhere}
+.seller-qr-dialog{width:min(560px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:20px}
+.seller-qr-dialog>.row{position:sticky;top:-20px;background:white;padding:12px 0;z-index:1;align-items:center}
+.seller-qr-dialog h2{font-size:1.2rem;margin:0}
+.seller-referral-qr{text-align:center;min-width:0;overflow-wrap:anywhere}
+.seller-referral-qr img{display:block;width:min(100%,440px);height:auto;margin:16px auto;background:white;border-radius:0}
+.seller-referral-qr h3{margin:16px 0 4px}
+.seller-referral-qr .primary{display:inline-block;text-decoration:none;margin:10px 0}
+.seller-referral-qr .qr-instruction{font-weight:700}
+[data-prospect-qr]{min-width:0}
+@media(max-width:480px){.seller-qr-dialog{padding:12px}.seller-qr-dialog>.row{top:-12px}.seller-referral-qr img{margin:10px auto}.seller-plan-links-grid .actions{flex-wrap:wrap}}

@@ -247,6 +247,11 @@ app.get(['/customer','/customer/','/customer/index.html'],(req,res,next)=>{
 });
 app.use("/api/customer", require("./routes/customerRoutes").router);
 app.use("/api/seller", require("./routes/qoriSellerRoutes"));
+app.get('/inscripcion/:token',rateLimit({keyPrefix:'seller-signup-qr',max:120,windowMs:60000}),async(req,res,next)=>{
+  res.set({'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'});
+  try{res.redirect(302,await require('./services/sellerReferralQrService').resolve(req.params.token));}
+  catch(error){if(error.status>=400&&error.status<500)res.status(410).type('html').send('<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Enlace de inscripción Qori</title><main><h1>Este QR ya no está disponible</h1><p>Pide a tu embajador un QR actualizado para continuar con la inscripción.</p></main></html>');else next(error);}
+});
 app.use("/api/public/seller-kit", require("./routes/sellerResourceRoutes").publicRouter);
 app.use("/api/pense-en-ti", require("./routes/penseEnTiRoutes"));
 app.use("/api/business/customer", require("./routes/customerRoutes").businessRouter);
