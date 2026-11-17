@@ -1521,7 +1521,11 @@ async function assertDailyUsageLimit(businessId, eventType, limit, nextQuantity,
 }
 
 async function assertFeatureForRequest(req, businessId, feature) {
-  return assertBusinessFeature(req.user, businessId, feature);
+  const subscription = await assertBusinessFeature(req.user, businessId, feature);
+  // Response caches must follow the entitlements authorized for this request.
+  if (!req.authorizedSubscriptions) req.authorizedSubscriptions = new Map();
+  req.authorizedSubscriptions.set(String(businessId), subscription);
+  return subscription;
 }
 
 async function assertPortalAccess(req) {

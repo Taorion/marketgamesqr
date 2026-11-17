@@ -83,7 +83,7 @@ test("las restricciones se aplican en API, portal y altas con cupo", () => {
   assert.match(routes, /router\.use\("\/campaigns", requireCampaigns\)/);
   assert.match(routes, /router\.use\("\/inventory", requireProducts\)/);
   assert.match(routes, /router\.use\(\["\/channels"[\s\S]*requireAcquisitionChannels\)/);
-  assert.match(routes, /router\.use\("\/branches", requireBranches\)/);
+  assert.match(routes, /router\.use\("\/branches",[\s\S]*?return requireBranches\(req,res,next\)/);
   assert.match(portal, /dashboard: "revenue_center"/);
   assert.match(portal, /"rms-machine": "rms_core"/);
   assert.match(portal, /function portalDefaultViewForPlan\(\)/);

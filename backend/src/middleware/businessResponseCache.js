@@ -1,3 +1,4 @@
+const { createHash } = require("node:crypto");
 const DEFAULT_TTL_MS = 120_000;
 const DEFAULT_MAX_BYTES = 768 * 1024;
 const MAX_ENTRIES = 500;
@@ -19,7 +20,12 @@ function defaultBusinessId(req) {
 
 function cacheScope(req, businessId, includeUser) {
   const userPart = includeUser ? `:user:${req.user?.id || "anon"}` : "";
-  return `business:${businessId}${userPart}`;
+  const plan = req.authorizedSubscriptions?.get(businessId)?.plan;
+  const accessKey = createHash("sha256").update(JSON.stringify({
+    role: req.user?.role, business_role: req.user?.business_role,
+    code: plan?.code, features: plan?.features, limits: plan?.limits,
+  })).digest("hex");
+  return `business:${businessId}${userPart}:access:${accessKey}`;
 }
 
 function cacheKey(req, scope, prefix) {
@@ -97,7 +103,7 @@ function cacheBusinessResponse({
     const cached = getCacheEntry(key);
     if (cached) {
       res.vary("Authorization");
-      res.set("Cache-Control", "private, max-age=60, stale-while-revalidate=120");
+      res.set("Cache-Control", "private, no-store");
       res.set("X-Portal-Cache", "HIT");
       return res.status(cached.statusCode || 200).json(cached.body);
     }
@@ -115,7 +121,7 @@ function cacheBusinessResponse({
           setCacheEntry(scope, key, { statusCode: res.statusCode, body }, ttlMs);
           res.vary("Authorization");
           res.set("X-Portal-Cache", "MISS");
-          res.set("Cache-Control", "private, max-age=60, stale-while-revalidate=120");
+          res.set("Cache-Control", "private, no-store");
         } else {
           res.set("X-Portal-Cache", "SKIP-LARGE");
         }

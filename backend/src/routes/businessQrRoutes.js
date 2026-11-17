@@ -1,5 +1,6 @@
 const express = require("express");
 const { authRequired, requireRoles } = require("../middleware/auth");
+const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   cacheBusinessResponse,
   invalidateBusinessResponseCache,
@@ -27,8 +28,13 @@ const {
 const router = express.Router();
 
 router.use(authRequired);
+router.use(requirePortalAccess);
 router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 router.use(invalidateBusinessResponseCache());
+// Authorize before cached responses, including after an upgrade or downgrade.
+router.use(["/batches", "/trivias"], requireBusinessFeature("qr_batch_generator"));
+router.use("/affiliates", requireBusinessFeature("affiliates"));
+router.use(["/history", "/metrics"], requireBusinessFeature("qr_simple_generator"));
 
 const qrReadCache = cacheBusinessResponse({ keyPrefix: "business-qr", ttlMs: 180_000 });
 

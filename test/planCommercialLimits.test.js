@@ -60,11 +60,12 @@ for (const [code, affiliateLimit, giftLimit] of [['STARTER', 10, 10], ['GROWTH',
         assert.match(sql, /created_at < date_trunc\('month', now\(\)\) \+ interval '1 month'/);
         return { rows: [{ total: used }] };
       }
+      if (sql.includes('from qori_giftcard_credit_accounts')) return { rows: [], rowCount: 0 };
       throw new Error(`Unexpected query: ${sql}`);
     } };
     const service = loadService('backend/src/services/rewardPassService.js', {
       '../config/db': { withTransaction: fn => fn(client), query: () => { throw new Error('Unexpected global query'); } },
-      './subscriptionService': { getBusinessSubscription: async () => ({ plan }) },
+      './subscriptionService': { getBusinessSubscription: async () => ({ plan }), assertStandaloneBusinessFeature: async () => ({ plan }) },
       './qrCreditService': { ensureCreditAccount: async () => { creditChecks++; return { qr_balance: 0 }; } },
     });
     const user = { id: 'owner-1', business_id: 'tenant-1', role: 'BUSINESS_OWNER' };

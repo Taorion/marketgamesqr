@@ -3,6 +3,7 @@ const { canAccessBusiness } = require("../middleware/auth");
 const { forbidden } = require("../utils/http");
 const {
   assertStandaloneBusinessFeature,
+  assertBusinessFeature,
   getBusinessSubscription,
 } = require("../services/subscriptionService");
 
@@ -17,6 +18,8 @@ async function businessRedemptions(req, res, next) {
 
     const subscription = await getBusinessSubscription(businessId);
     const isPrepaid = subscription.plan.category === "prepaid";
+    // Keep the legacy sample; subscription history requires its own entitlement.
+    if (!isPrepaid) await assertBusinessFeature(req.user, businessId, "redemptions");
     const limit = isPrepaid ? PREPAID_HISTORY_SAMPLE_LIMIT : 200;
     const [result, countResult] = await Promise.all([
       query(

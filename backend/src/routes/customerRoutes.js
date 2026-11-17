@@ -2,7 +2,7 @@ const express = require('express');
 const { z } = require('zod');
 const { query, withTransaction } = require('../config/db');
 const { authRequired, requireRoles } = require('../middleware/auth');
-const { requirePortalAccess } = require('../middleware/subscription');
+const { requirePortalAccess, requireBusinessFeature } = require('../middleware/subscription');
 const { badRequest, notFound, tooManyRequests } = require('../utils/http');
 const auth = require('../services/customerAuthService');
 const passwordAuth = require('../services/customerPasswordService');
@@ -345,6 +345,7 @@ businessRouter.put('/gift-settings',requireRoles('BUSINESS_OWNER','BUSINESS_MANA
  return wallet.readiness(req.user.business_id);
 }));
 businessRouter.put('/standard',handle(req=>wallet.savePrograms(req.user,parse(z.object({points_terms:text(4000).min(10),accumulation_terms:text(2000).min(10),gift_enabled:z.boolean(),gift_min:money,gift_max:money,gift_terms:text(8000).min(10),gift_payment_instructions:text(2000).min(10)}),req.body))));
+businessRouter.use('/gift-orders',requireBusinessFeature('gift_cards'));
 businessRouter.get('/gift-orders',handle(req=>wallet.businessOrders(req.user)));
 businessRouter.post('/gift-orders/:id/confirm-payment',handle(req=>wallet.confirmGiftPayment(req.user,parse(uuid,req.params.id),parse(z.object({amount:money,payment_reference:text(120).min(3),payment_method:text(120).min(2),payment_received:z.literal(true)}),req.body))));
 businessRouter.put('/directory',handle(async req=>{

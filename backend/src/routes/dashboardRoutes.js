@@ -9,7 +9,7 @@ const router = express.Router();
 router.get(
   "/businesses/:id",
   authRequired,
-  requireBusinessFeature("portal_access", (req) => req.params.id),
+  requireBusinessFeature("dashboard_basic", (req) => req.params.id),
   cacheBusinessResponse({
     keyPrefix: "dashboard",
     ttlMs: 300_000,

@@ -13,6 +13,7 @@ const router = express.Router();
 
 router.use(authRequired);
 router.use("/businesses/:id", requireBusinessFeature("portal_access", (req) => req.params.id));
+router.use("/businesses/:id/campaigns", requireBusinessFeature("campaigns", (req) => req.params.id));
 router.get("/businesses/:id/campaigns", listCampaigns);
 router.post("/businesses/:id/campaigns", createCampaign);
 router.get("/businesses/:id/rewards", listRewards);
