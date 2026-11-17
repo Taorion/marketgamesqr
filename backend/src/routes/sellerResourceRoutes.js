@@ -4,7 +4,17 @@ const router=express.Router(),publicRouter=express.Router();
 const run=fn=>async(req,res,next)=>{try{res.set({'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'});await fn(req,res);}catch(e){if(e.code==='23505'){e.status=409;e.message='Ese código de recurso ya existe.';}next(e);}};
 function attachment(res,filename,mime,bytes){res.set({'Content-Type':mime,'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"}).send(bytes);}
 router.get('/academy',run(async(req,res)=>res.json(await require('../services/sellerAcademyService').list(req.user))));
-router.get('/academy/:id/download',run(async(req,res)=>{const file=await require('../services/sellerAcademyService').file(req.user,req.params.id);res.set('X-Content-Type-Options','nosniff');res.download(file.path,file.filename,{headers:{'Content-Type':file.mime,'Cache-Control':'private, no-store'}},error=>{if(error&&!res.headersSent)res.status(error.status||500).json({error:{message:'No se pudo descargar el material.'}});});}));
+router.get('/academy/admin',run(async(req,res)=>res.json(await require('../services/sellerAcademyService').list(req.user,true))));
+const academyWrite=rateLimit({keyPrefix:'academy-write',max:90,windowMs:3600000});
+router.patch('/academy/settings',academyWrite,run(async(req,res)=>res.json(await require('../services/sellerAcademyService').configure(req.user,req.body))));
+router.post('/academy/materials',academyWrite,run(async(req,res)=>res.status(201).json(await require('../services/sellerAcademyService').save(req.user,null,req.body))));
+router.patch('/academy/materials/:id',academyWrite,run(async(req,res)=>res.json(await require('../services/sellerAcademyService').save(req.user,req.params.id,req.body))));
+router.get('/academy/:id/download',run(async(req,res)=>{
+ const file=await require('../services/sellerAcademyService').file(req.user,req.params.id);
+ if(file.content)return attachment(res,file.filename,file.mime,file.content);
+ res.set('X-Content-Type-Options','nosniff');res.download(file.path,file.filename,{headers:{'Content-Type':file.mime,'Cache-Control':'private, no-store'}},error=>{if(error&&!res.headersSent)res.status(error.status||500).json({error:{message:'No se pudo descargar el material.'}});});
+}));
+router.get('/academy/:id',run(async(req,res)=>res.json(await require('../services/sellerAcademyService').access(req.user,req.params.id))));
 router.get('/',run(async(req,res)=>res.json(await s.list(req.user))));
 router.get('/production-prompt',run(async(req,res)=>attachment(res,'PROMPT_COLECCION_DIGITAL_QORI.txt','text/plain; charset=utf-8',s.prompt(req.user))));
 router.get('/production-brief',run(async(req,res)=>attachment(res,'FUENTE_VIGENTE_QORI.json','application/json; charset=utf-8',JSON.stringify(s.brief(req.user),null,2))));

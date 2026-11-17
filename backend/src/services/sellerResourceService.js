@@ -45,7 +45,7 @@ function plans(seller,token){
 }
 async function list(user){
  await requireApproved(user);const admin=user.role==='QORI_SUPERADMIN';
- if(!admin)return {admin:false,resources:[],academy};
+ if(!admin)return {admin:false,resources:[],academy:await require('./sellerAcademyService').summary()};
  return {resources:[...guides,...(await query(`select ${columns} from qori_seller_resources ${admin?'':"where state='PUBLISHED'"} order by updated_at desc,id`)).rows],presentation_url:presentationUrl(user.id),admin,production_assets:admin?productionAssets:undefined};
 }
 async function save(user,id,payload){
@@ -69,7 +69,7 @@ async function save(user,id,payload){
 async function publicContext(params){
  const d=validate(z.object({seller:uuid,prospect_ref:z.string().max(2500).optional()}).strict(),params),advisor=await require('./commercialAdvisorService').advisorById(d.seller);
  await require('./prospectReferralService').validatePresentationContext(d.seller,d.prospect_ref);
- return {advisor,presentation_url:presentationUrl(d.seller,d.prospect_ref),plans:plans(d.seller,d.prospect_ref),resources:[],academy};
+ return {advisor,presentation_url:presentationUrl(d.seller,d.prospect_ref),plans:plans(d.seller,d.prospect_ref),resources:[],academy:await require('./sellerAcademyService').summary()};
 }
 async function download(user,id,params){
  validate(uuid,id);
@@ -79,7 +79,7 @@ async function download(user,id,params){
  if(!r||r.kind!=='FILE'||(!user&&(r.audience!=='PROSPECT'||r.state!=='PUBLISHED'))||(user&&user.role!=='QORI_SUPERADMIN'&&r.state!=='PUBLISHED'))throw notFound('Archivo no disponible.');
  return r;
 }
-async function opportunity(){return {resources:[],academy};}
+async function opportunity(){return {resources:[],academy:await require('./sellerAcademyService').summary()};}
 async function opportunityDownload(id){validate(uuid,id);throw forbidden(academy.message);}
 function brief(user){
  requireSuperadmin(user);const base=env.publicAppUrl.replace(/\/$/,'');
