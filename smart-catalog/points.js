@@ -35,6 +35,7 @@
   function recover(){const body=open('<h2>Recuperar mi ticket</h2><p>Hay una emisión pendiente de respuesta. Recuperaremos la misma solicitud sin volver a descontar puntos ni tickets.</p><button class="qp-primary" id="qp-recover">Recuperar ticket</button><p role="alert"></p>');body.querySelector('button').onclick=e=>submit(body,e.target);}
   async function init(c){
     catalog=c;document.body.classList.add('qp-storefront');
+    if(c.cover_image_url){const cover=new Image();cover.className='qp-hero-photo';cover.alt='';cover.src=c.cover_image_url;document.getElementById('catalogHero').append(cover);}
     // Capture every product action immediately; never fall back to WhatsApp for points catalogs.
     document.addEventListener('click',e=>{const b=e.target.closest('[data-order-product],[data-info-product],#catalogContactButton,#floatingWhatsappButton');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.orderProduct||b.dataset.infoProduct)add(b.dataset.orderProduct||b.dataset.infoProduct);else document.getElementById('qp-identify')?.click();},true);
     document.querySelectorAll('[data-order-product]').forEach(b=>b.disabled=true);
