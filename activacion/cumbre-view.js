@@ -9,7 +9,7 @@
         <div class="cumbre-cover"><span class="cumbre-eyebrow">UNA CIMA. TU RECOMPENSA.</span><h2>CUMBRE<br><em>QORI</em></h2><p>Salta entre pisos, rompe el hielo<br>y alcanza el cofre dorado.</p><button type="button" class="cumbre-start">Empezar ascenso →</button><small>← → mover · Espacio saltar · X martillo</small></div>
       </div>
       <div class="cumbre-controls" aria-label="Controles del juego"><div><button type="button" data-bit="1" aria-label="Mover a la izquierda">◀</button><button type="button" data-bit="2" aria-label="Mover a la derecha">▶</button></div><div><button type="button" data-bit="8" aria-label="Usar martillo">✦<small>GOLPE</small></button><button type="button" data-bit="4" aria-label="Saltar">↑<small>SALTO</small></button></div></div>
-      <div class="cumbre-foot"><span class="cumbre-charge">PODER <b>○ ○ ○</b></span><button type="button" class="cumbre-sound" aria-label="Activar sonido" aria-pressed="false">Sonido: apagado</button></div>
+      <div class="cumbre-foot"><span class="cumbre-charge">PODER <b>○ ○ ○</b></span><button type="button" class="cumbre-sound" aria-label="Activar música y efectos" aria-pressed="false">♫ Activar música</button></div>
       <p class="cumbre-hint">Tres aciertos cargan un supersalto. Úsalo con salto + golpe.</p><p class="cumbre-status" role="status" aria-live="polite"></p>
     </section>`;
     const label = String(options.prize || "Premio de la cima");
@@ -24,19 +24,18 @@
     let lastPoseTick = -3;
     let authoritative = options.initialState ? structuredClone(options.initialState) : null, serverFinished = false;
     const confirmedImpacts = new Map((s.impacts || []).map(impact => [impact.id, impact])), seenCombat = new Set();
-    let running = false, destroyed = false, raf = 0, last = 0, accumulator = 0, sound = false, audio;
+    let running = false, destroyed = false, raf = 0, last = 0, accumulator = 0;
+    const soundButton = host.querySelector('.cumbre-sound');
+    const audio = root.QoriSummitAudio?.create({ onChange(state) {
+      const active = state.enabled && state.unlocked;
+      soundButton.disabled = !state.available;
+      soundButton.textContent = !state.available ? 'Audio no disponible' : active ? '♫ Música: activada' : state.enabled ? '♫ Activar música' : '♫ Música: apagada';
+      soundButton.setAttribute('aria-pressed', String(active));
+      soundButton.setAttribute('aria-label', active ? 'Silenciar música y efectos' : 'Activar música y efectos');
+    } });
     ctx.imageSmoothingEnabled = false;
     function on(target, name, callback, settings) { target.addEventListener(name, callback, settings); removers.push(() => target.removeEventListener(name, callback, settings)); }
-    function tone(note, length = 0.08) {
-      if (!sound) return;
-      try {
-        audio ||= new (root.AudioContext || root.webkitAudioContext)();
-        const osc = audio.createOscillator(), gain = audio.createGain();
-        osc.type = "square"; osc.frequency.value = note; gain.gain.setValueAtTime(0.025, audio.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + length);
-        osc.connect(gain); gain.connect(audio.destination); osc.start(); osc.stop(audio.currentTime + length);
-      } catch (_) { sound = false; }
-    }
+    function tone(note, length = 0.08) { audio?.effect(note, length); }
     const rect = (x, y, w, h, color) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
     function text(value, x, y, size, color = "#eefaff", align = "left") {
       ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, x, y);
@@ -137,7 +136,7 @@
       host.querySelector(".cumbre-charge b").textContent = "● ".repeat(s.charge) + "○ ".repeat(3 - s.charge);
     }
     function end() {
-      running = false; pressed.clear();
+      running = false; audio?.setPlaying(false); pressed.clear();
       tone(s.won ? 880 : 165, .3);
       cover.hidden = false; cover.innerHTML = "";
       const title = document.createElement("h2"), copy = document.createElement("p");
@@ -159,7 +158,7 @@
       for (const mask of inputs) { const tail=trace.at(-1); if(tail?.[0]===mask)tail[1]++;else trace.push([mask,1]); }
       lastPoseTick = Math.min(lastPoseTick, s.tick-3);
       if (s.done && !wasDone) { cancelAnimationFrame(raf); end(); }
-      else if (!s.done && wasDone) { running=true; cover.hidden=true; last=performance.now(); raf=requestAnimationFrame(frame); }
+      else if (!s.done && wasDone) { running=true; audio?.setPlaying(true); cover.hidden=true; last=performance.now(); raf=requestAnimationFrame(frame); }
       draw();
     }
     function frame(now) {
@@ -206,21 +205,24 @@
     }
     on(host.querySelector(".cumbre-start"), "click", () => {
       cover.hidden = true; running = true; last = performance.now(); canvas.focus({ preventScroll: true });
+      audio?.setPlaying(true); audio?.unlock();
       status.textContent = "Ascenso iniciado. Llega al cofre de la cima."; raf = requestAnimationFrame(frame);
     });
     const keyBits = { ArrowLeft: 1, KeyA: 1, ArrowRight: 2, KeyD: 2, Space: 4, ArrowUp: 4, KeyW: 4, KeyX: 8, KeyJ: 8 };
-    on(window, "keydown", e => { if (!running || !keyBits[e.code] || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; e.preventDefault(); pressed.set(e.code, keyBits[e.code]); });
+    on(window, "keydown", e => { if (!running || !keyBits[e.code] || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; e.preventDefault(); audio?.unlock(); pressed.set(e.code, keyBits[e.code]); });
     on(window, "keyup", e => pressed.delete(e.code));
-    on(window, "blur", () => pressed.clear()); on(document, "visibilitychange", () => { pressed.clear(); last = performance.now(); });
+    on(window, "blur", () => { pressed.clear(); audio?.setVisible(false); });
+    on(window, "focus", () => audio?.setVisible(!document.hidden));
+    on(document, "visibilitychange", () => { pressed.clear(); last = performance.now(); audio?.setVisible(!document.hidden); });
     host.querySelectorAll("[data-bit]").forEach(button => {
-      on(button, "pointerdown", e => { e.preventDefault(); if (!running) return; button.setPointerCapture(e.pointerId); pressed.set(e.pointerId, Number(button.dataset.bit)); button.classList.add("pressed"); });
+      on(button, "pointerdown", e => { e.preventDefault(); if (!running) return; audio?.unlock(); button.setPointerCapture(e.pointerId); pressed.set(e.pointerId, Number(button.dataset.bit)); button.classList.add("pressed"); });
       const release = e => { pressed.delete(e.pointerId); button.classList.remove("pressed"); };
       on(button, "pointerup", release); on(button, "pointercancel", release); on(button, "lostpointercapture", release);
     });
-    on(host.querySelector(".cumbre-sound"), "click", e => { sound = !sound; e.currentTarget.textContent = `Sonido: ${sound ? "activado" : "apagado"}`; e.currentTarget.setAttribute("aria-pressed", String(sound)); e.currentTarget.setAttribute("aria-label", sound ? "Desactivar sonido" : "Activar sonido"); tone(660); });
+    on(soundButton, 'click', () => audio?.toggle());
     draw();
     if (options.race) {
-      running = true; last = performance.now(); raf = requestAnimationFrame(frame);
+      running = true; audio?.setPlaying(true); last = performance.now(); raf = requestAnimationFrame(frame);
       host.querySelector('.cumbre-prize small').textContent = 'Un solo premio: gana quien llegue primero.';
       host.querySelector('.cumbre-hint').textContent = 'Acércate al rival, mira hacia él y pulsa GOLPE para empujarlo. Si cae fuera de su pantalla, pierde una vida.';
     }
@@ -269,8 +271,8 @@
         if (track.samples.length > 16) track.samples.shift();
         if (!running) draw();
       },
-      finish(message) { serverFinished = true; running = false; pressed.clear(); cancelAnimationFrame(raf); cover.hidden = false; cover.textContent = message; status.textContent = message; },
-      destroy() { destroyed = true; cancelAnimationFrame(raf); pressed.clear(); removers.forEach(fn => fn()); audio?.close(); }
+      finish(message) { serverFinished = true; running = false; audio?.setPlaying(false); pressed.clear(); cancelAnimationFrame(raf); cover.hidden = false; cover.textContent = message; status.textContent = message; },
+      destroy() { destroyed = true; cancelAnimationFrame(raf); pressed.clear(); removers.forEach(fn => fn()); audio?.destroy(); }
     };
   }
   root.QoriSummit = { mount };

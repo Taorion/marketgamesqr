@@ -1,7 +1,7 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path");
 const { JSDOM } = require("jsdom");
 const { play } = require("./helpers/summitBot");
-function setup() {
+function setup(audioEnv) {
   const dom = new JSDOM('<div id="host"></div>', { runScripts: "outside-only", pretendToBeVisual: true });
   const w = dom.window; let clock = 0, id = 0; const frames = new Map();
   w.structuredClone = structuredClone;
@@ -11,7 +11,8 @@ function setup() {
   const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }),fillText(value,x,y){labels.push({value,x,y});},fillRect(x,y,width,height){rects.push({x,y,width,height,color:this.fillStyle});} }, { get: (t, k) => t[k] || (() => {}) });
   w.HTMLCanvasElement.prototype.getContext = () => context;
   w.HTMLElement.prototype.setPointerCapture = () => {};
-  for (const file of ["cumbre-core.js", "cumbre-view.js"]) w.eval(fs.readFileSync(path.join(__dirname, "..", "activacion", file), "utf8"));
+  if(audioEnv){w.AudioContext=audioEnv.root.AudioContext;w.setInterval=audioEnv.root.setInterval;w.clearInterval=audioEnv.root.clearInterval;}
+  for (const file of ["cumbre-core.js", "cumbre-audio.js", "cumbre-view.js"]) w.eval(fs.readFileSync(path.join(__dirname, "..", "activacion", file), "utf8"));
   return { w, host: w.document.getElementById("host"), frames, labels,rects,now:()=>clock,close: () => w.close(), frame() { clock += 1000 / 60; for (const [key, fn] of [...frames]) { frames.delete(key); fn(clock + .00001); } } };
 }
 test("the visible prize is safely rendered, keyboard play reaches it and returns a replay", () => {
@@ -130,4 +131,24 @@ test('a delayed confirmed hit cancels a predicted finish and resumes play before
  game.reconcile({...initial,impacts:[{id:'a:1:me',attacker_id:'a',target_id:'me',tick:1,direction:1}]});
  assert.equal(host.querySelector('.cumbre-cover').hidden,true);assert.ok(env.frames.size>0);
  env.frame();assert.equal(finished,1);game.destroy();env.close();
+});
+
+test('solo start unlocks music; mute, focus, terminal state and teardown control its lifecycle',async()=>{
+ const audioEnv=require('./helpers/fakeSummitAudio').environment(),env=setup(audioEnv),{w,host}=env;
+ const game=w.QoriSummit.mount(host,{config:{floors:8},seed:'music'});
+ assert.equal(audioEnv.contexts.length,0);host.querySelector('.cumbre-start').click();await Promise.resolve();
+ assert.equal(audioEnv.timers.size,1);assert.equal(host.querySelector('.cumbre-sound').getAttribute('aria-pressed'),'true');
+ host.querySelector('.cumbre-sound').click();assert.equal(audioEnv.timers.size,0);assert.match(host.querySelector('.cumbre-sound').textContent,/apagada/);
+ host.querySelector('.cumbre-sound').click();await Promise.resolve();assert.equal(audioEnv.timers.size,1);
+ w.dispatchEvent(new w.Event('blur'));assert.equal(audioEnv.timers.size,0);w.dispatchEvent(new w.Event('focus'));assert.equal(audioEnv.timers.size,1);
+ game.finish('Terminó la carrera');assert.equal(audioEnv.timers.size,0);game.destroy();assert.equal(audioEnv.contexts[0].state,'closed');env.close();
+});
+
+test('multiplayer first touch unlocks the music without changing simultaneous movement controls',async()=>{
+ const audioEnv=require('./helpers/fakeSummitAudio').environment(),env=setup(audioEnv),{w,host}=env;
+ const game=w.QoriSummit.mount(host,{config:{floors:8},seed:'family-music',race:{startsAt:0,now:env.now}});
+ assert.equal(audioEnv.contexts.length,0);
+ for(const bit of [2,4]){const e=new w.Event('pointerdown',{bubbles:true});Object.defineProperty(e,'pointerId',{value:bit});host.querySelector(`[data-bit="${bit}"]`).dispatchEvent(e);}
+ await Promise.resolve();env.frame();assert.equal(audioEnv.timers.size,1);assert.ok(game.packet(0).runs.some(run=>run[0]===6));
+ game.destroy();assert.equal(audioEnv.timers.size,0);env.close();
 });

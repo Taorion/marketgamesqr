@@ -11,7 +11,7 @@ La demo permite cambiar el texto del premio, la altura y la dificultad. Usa un p
 - Teclado: flechas izquierda/derecha o A/D; espacio, arriba o W para saltar; X/J para golpear.
 - Celular: botones de dirección, salto y golpe; admite varios dedos a la vez.
 - Tres bloques o criaturas golpeados cargan el supersalto: salto + golpe.
-- Sonido opcional, apagado inicialmente. En individual, ocultar la pestaña pausa la simulación. En multijugador el reloj común continúa.
+- Música chiptune original de 16 compases a 144 BPM, con melodía de onda cuadrada, bajo, arpegios y percusión suave. Se genera localmente con Web Audio y comienza al pulsar Empezar o al tocar un control en multijugador. **♫ Música** activa o silencia música y efectos, recordando la elección. Se detiene al ocultar o abandonar la pantalla y al terminar la partida. En individual, ocultar la pestaña pausa la simulación; en multijugador el reloj común continúa.
 - Si el personaje desaparece por debajo de su propia pantalla, pierde una vida y reaparece en la última plataforma estable donde estuvo apoyado. Una plataforma frágil no cambia ese punto de retorno; las móviles estables conservan su posición actual. La cámara vuelve a mostrar al personaje y recibe dos segundos de protección frente a enemigos; una nueva caída sigue restando vida. Sin vidas, termina el ascenso.
 - La simulación v3 aplica estas reglas tanto en el cliente como en la validación del servidor. Las salas abiertas con las reglas anteriores vencen al actualizarse; al recargar se permite iniciar una nueva participación, sin mezclar recorridos de distintas versiones ni perder un premio ya confirmado.
 
