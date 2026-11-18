@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   function mount(host, options) {
-    let game, timer, destroyed = false, busy = false, checked = false, room, ack = 0, offset = 0, delivered = false;
+    let game, timer, destroyed = false, busy = false, pendingStart = false, checked = false, room, ack = 0, offset = 0, delivered = false;
     host.innerHTML = `<section class="cumbre-lobby"><h3>¿Cómo quieres subir?</h3>
       <p>Juega a tu ritmo o compite con tu familia por el premio de la cima.</p>
       <div class="cumbre-mode-buttons"><button type="button" data-action="solo">Individual</button><button type="button" data-action="family">Multijugador · 2 a 8</button></div>
@@ -11,8 +11,8 @@
         <button type="button" data-action="join">Unirme a la sala</button>
         <p>Todos escanean el mismo QR. Una persona crea la sala y comparte este código con su familia.</p></div>
       <div class="cumbre-room" hidden><p>SALA <strong class="cumbre-room-code"></strong></p><p class="cumbre-room-prize"></p>
-        <ol class="cumbre-players"></ol><p class="cumbre-race-help">Todos deben estar listos. El primero en llegar gana el único premio.</p>
-        <div class="cumbre-room-actions"><button type="button" data-action="ready">Estoy listo</button><button type="button" data-action="start">Iniciar carrera</button><button type="button" data-action="leave">Salir de la sala</button></div>
+        <ol class="cumbre-players"></ol><p class="cumbre-race-help">Pueden iniciar desde 2 jugadores conectados, hasta un máximo de 8. El primero en llegar gana el único premio.</p>
+        <div class="cumbre-room-actions"><button type="button" data-action="start">Iniciar carrera</button><button type="button" data-action="leave">Salir de la sala</button></div>
       </div><p class="cumbre-network" role="status" aria-live="polite"></p><button type="button" data-action="resume" hidden>Volver a conectar</button>
       </section><div class="cumbre-play-host"></div>`;
     const panel = host.querySelector('.cumbre-lobby'), playHost = host.querySelector('.cumbre-play-host');
@@ -32,13 +32,13 @@
       const list = host.querySelector('.cumbre-players'); list.replaceChildren();
       room.members.forEach(m => {
         const li = document.createElement('li');
-        li.textContent = `${m.alias}${m.id === room.own.id ? ' (tú)' : ''} · ${room.status === 'waiting' ? m.ready ? 'Listo' : 'Preparándose' : `Piso ${m.floor}/${room.config.floors}`}${m.connected ? '' : ' · Sin conexión'}`;
+        li.textContent = `${m.alias}${m.id === room.own.id ? ' (tú)' : ''} · ${room.status === 'waiting' ? m.connected ? 'Conectado' : 'Sin conexión' : `Piso ${m.floor}/${room.config.floors}`}${room.status !== 'waiting' && !m.connected ? ' · Sin conexión' : ''}`;
         list.append(li);
       });
-      const own = room.members.find(m => m.id === room.own.id);
-      buttons('ready').textContent = own.ready ? 'Ya no estoy listo' : 'Estoy listo';
+      const connected = room.members.filter(m => m.connected).length;
       buttons('start').hidden = room.host_id !== room.own.id;
-      buttons('start').disabled = room.members.length < 2 || room.members.some(m => !m.ready || !m.connected);
+      buttons('start').disabled = connected < 2;
+      buttons('start').textContent = connected >= 2 ? `Iniciar con ${connected} jugadores` : 'Iniciar carrera';
       host.querySelector('.cumbre-room-actions').hidden = room.status !== 'waiting';
       if (room.status === 'racing' && !game) {
         ack = room.own.state.tick;
@@ -55,7 +55,10 @@
         say(copy); game?.finish(copy);
         host.querySelector('.cumbre-race-help').textContent = copy;
         if (room.own.result && !delivered) { delivered = true; Promise.resolve(options.onResult?.(room.own.result)).catch(e => { delivered = false; say(e.message); buttons('resume').hidden = false; }); }
-      } else say(room.status === 'waiting' ? 'Esperando a la familia…' : 'Carrera en curso. El reloj sigue aunque se interrumpa la conexión.');
+      } else say(room.status === 'waiting'
+        ? connected < 2 ? 'Esperando a otro jugador. Pueden iniciar desde 2 conectados.'
+          : room.host_id === room.own.id ? 'Ya pueden iniciar la carrera. No hace falta llenar la sala.' : 'Esperando a que el organizador inicie la carrera.'
+        : 'Carrera en curso. El reloj sigue aunque se interrumpa la conexión.');
       schedule();
     }
     async function send(action, extra = {}) {
@@ -77,15 +80,23 @@
       } finally {
         busy = false;
         host.querySelectorAll('[data-action]').forEach(b => { if (b.dataset.action !== 'start') b.disabled = !checked && b.dataset.action !== 'resume'; });
+        if (pendingStart) {
+          pendingStart = false;
+          if (!destroyed && room?.status === 'waiting' && room.host_id === room.own.id) send('start');
+        }
       }
     }
     function poll() {
-      const packet = room?.status === 'racing' && game?.packet(ack);
+      const packet = room?.status === 'racing' ? game?.packet(ack) : null;
       if (packet?.runs.length) send('input', packet); else send('state');
     }
     function click(event) {
       const action = event.target.closest('[data-action]')?.dataset.action;
-      if (!action || busy) return;
+      if (!action) return;
+      if (busy) {
+        if (action === 'start') { pendingStart = true; say('Iniciando carrera…'); }
+        return;
+      }
       if (action === 'solo') {
         clearTimeout(timer); panel.hidden = true;
         game = root.QoriSummit.mount(playHost, options.solo); return;
@@ -97,7 +108,6 @@
         if (action === 'join' && !/^[A-Z2-9]{6}$/.test(code)) return say('Escribe el código de seis caracteres de tu sala.');
         return send(action, { alias, ...(action === 'join' ? { code } : {}) });
       }
-      if (action === 'ready') return send(action, { ready: !room.members.find(m => m.id === room.own.id).ready });
       if (action === 'resume') { game?.destroy(); game = null; }
       send(action);
     }

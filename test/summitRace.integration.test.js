@@ -42,7 +42,6 @@ const call = (p,action,extra={},options={}) => act('familia',{...p,action,...ext
 async function pair() {
   const p=await player('Ana'),q=await player('Luis');
   const {room}=await call(p,'create'); await call(q,'join',{code:room.code});
-  await call(p,'ready',{ready:true});await call(q,'ready',{ready:true});
   return {p,q,room:(await call(p,'start')).room};
 }
 function chunks(trace,max=600) {
@@ -50,12 +49,32 @@ function chunks(trace,max=600) {
   for(let from=0;from<flat.length;from+=max){const runs=[];for(const mask of flat.slice(from,from+max)){const t=runs.at(-1);if(t?.[0]===mask)t[1]++;else runs.push([mask,1]);}result.push({from,runs});}
   return result;
 }
-test('same code shares seed, requires readiness, and allows 2–8 players',async()=>{
+test('same code shares seed, requires two connected players, and allows 2–8 players',async()=>{
   const host=await player(),{room}=await call(host,'create');
-  await assert.rejects(call(host,'start'),/2 a 8/);
+  await assert.rejects(call(host,'start'),/2 jugadores conectados/);
   for(let i=0;i<7;i++){const p=await player('Familiar '+i);const joined=(await call(p,'join',{code:room.code})).room;assert.equal(joined.seed,room.seed);}
   await assert.rejects(call(await player(),'join',{code:room.code}),/8 jugadores/);
   const another=await player(); await assert.rejects(call(another,'state',{code:room.code}),/perteneces/);
+});
+
+test('two players start without readiness or filling all eight places',async()=>{
+  const {room}=await pair();
+  assert.equal(room.status,'racing');assert.equal(room.members.length,2);
+  assert.ok(room.members.every(m=>m.ready===false));
+  const countdown=new Date(room.starts_at)-new Date(room.server_now);
+  assert.ok(countdown>=2900&&countdown<=3000);
+});
+
+test('only one connected player cannot start; disconnected extras do not block two online players',async()=>{
+  const p=await player('Ana'),q=await player('Luis'),r=await player('Dani');
+  const {room}=await call(p,'create');await call(q,'join',{code:room.code});await call(r,'join',{code:room.code});
+  await query("update qori_summit_members set updated_at=now()-interval '10 seconds'");
+  await assert.rejects(call(p,'start'),/2 jugadores conectados/);
+  await call(q,'state');
+  // The host's start request proves they are connected, even after a stale heartbeat.
+  const started=(await call(p,'start')).room;
+  assert.equal(started.status,'racing');assert.equal(started.members.length,3);
+  assert.equal(started.members.find(m=>m.id===r.participant_id).connected,false);
 });
 test('countdown, session ownership, activation scope and late joins are enforced',async()=>{
   const {p,q,room}=await pair();
@@ -121,7 +140,7 @@ test('tables deny direct anonymous reads and have RLS enabled',async()=>{
   const grants=(await query("select has_table_privilege('anon','qori_summit_rooms','SELECT') allowed")).rows[0];assert.equal(grants.allowed,false);
 });
 
-test('two HTTP clients use the production controller to create, join, ready and resume their shared room',async()=>{
+test('two HTTP clients create, join and directly start then resume their shared room',async()=>{
   const express=require('express'),app=express();app.use(express.json());
   app.post('/api/public/activations/:slug/summit',require('../backend/src/controllers/summitRaceController').action);
   app.use((err,req,res,next)=>res.status(err.status||500).json({message:err.message}));
@@ -133,7 +152,7 @@ test('two HTTP clients use the production controller to create, join, ready and 
     const created=await post({...p,action:'create'});assert.equal(created.status,200);
     assert.equal(created.data.room.members.length,1);
     const joined=await post({...q,action:'join',code:created.data.room.code});assert.equal(joined.status,200);assert.equal(joined.data.room.members.length,2);
-    await Promise.all([post({...p,action:'ready',ready:true}),post({...q,action:'ready',ready:true})]);
+    assert.ok(joined.data.room.members.every(m=>m.ready===false));
     const started=await post({...p,action:'start'});assert.equal(started.data.room.status,'racing');
     const resumed=await post({...q,action:'resume'});assert.equal(resumed.data.room.starts_at,started.data.room.starts_at);
     const denied=await post({...p,action:'state',game_session_token:crypto.randomUUID()});assert.equal(denied.status,403);

@@ -91,8 +91,8 @@ async function act(slug, body, { customerId, transaction = withTransaction, comp
     if (body.action === 'start') {
       assertOpen(a);
       if (room.status !== 'waiting' || room.host_id !== p.id) throw forbidden('Solo quien organiza puede iniciar la sala en espera.');
-      if (members.length < 2 || members.some(m => !m.ready)) throw badRequest('Se necesitan de 2 a 8 jugadores, todos listos.');
-      if (members.some(m => now - new Date(m.updated_at).getTime() > 8000)) throw badRequest('Espera a que todos vuelvan a conectarse.');
+      const connected = members.filter(m => m.participant_id === p.id || now - new Date(m.updated_at).getTime() < 8000);
+      if (connected.length < 2) throw badRequest('Se necesitan al menos 2 jugadores conectados para iniciar.');
       room.status = 'racing'; room.starts_at = new Date(now + 3000).toISOString();
       await client.query("update qori_summit_rooms set status='racing',starts_at=$2 where id=$1", [room.id, room.starts_at]);
     }

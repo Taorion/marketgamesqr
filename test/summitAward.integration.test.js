@@ -14,7 +14,7 @@ test('full canonical services issue one race QR and debit one ticket, then prese
  const a=(await activationService.createInteractiveActivation(b.id,u,{title:'Cumbre local QA',activation_type:'QORI_SUMMIT',game_config:{floors:8,duration_seconds:45},capture_config:{collect_participant_data:false},reward_config:{reward_type:'FREE_GIFT',reward_label:'Premio QA sin valor'},max_rewards:2})).activation;
  const start=async alias=>{const p=await activationService.startInteractiveParticipant(a.public_slug,{}, {allowIdentityRecovery:false});return {participant_id:p.participant.id,game_session_token:p.game_session_token,alias};};
  const p=await start('Ana'),q=await start('Luis'),call=(player,action,extra={})=>act(a.public_slug,{...player,action,...extra});
- const room=(await call(p,'create')).room;await call(q,'join',{code:room.code});await call(p,'ready',{ready:true});await call(q,'ready',{ready:true});await call(p,'start');
+ const room=(await call(p,'create')).room;await call(q,'join',{code:room.code});await call(p,'start');
  await query("update qori_summit_rooms set starts_at=now()-interval '35 seconds' where activation_id=$1",[a.id]);
  const inputs=play(room.config,room.seed).trace.flatMap(([mask,frames])=>Array(frames).fill(mask));
  let result;

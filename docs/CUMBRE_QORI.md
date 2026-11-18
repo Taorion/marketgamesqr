@@ -20,7 +20,7 @@ La activación integrada ofrece ambos modos después de registrar la participaci
 1. Todos escanean el mismo QR de la activación y eligen **Multijugador**.
 2. Una persona escribe su apodo y pulsa **Crear sala familiar**. Comparte el código de seis caracteres.
 3. Los demás escriben su apodo y el código en **Unirme a la sala**. Cada sala admite entre 2 y 8 personas.
-4. Todos pulsan **Estoy listo**; quien creó la sala pulsa **Iniciar carrera**. Cuenta regresiva común de tres segundos.
+4. Desde **2 jugadores conectados**, quien creó la sala pulsa **Iniciar con 2 jugadores** (el botón muestra la cantidad conectada). No hace falta llenar los 8 cupos ni confirmar que todos estén listos. Cuenta regresiva común de tres segundos; los jugadores desconectados pueden volver, con el reloj de la carrera ya en marcha.
 5. Todos recorren la misma montaña, con las mismas condiciones. Se ven los otros escaladores y una lista de avance, actualizados aproximadamente cada medio segundo. Los personajes no se empujan ni comparten colisiones.
 6. Gana la primera llegada al cofre que recibe y valida el servidor. La latencia de la conexión puede influir en llegadas muy cercanas. Solo esa sesión recibe el resultado privado y el QR del premio.
 
