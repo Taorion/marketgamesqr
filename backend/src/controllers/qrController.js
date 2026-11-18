@@ -6,6 +6,7 @@ const { mapPublicCreditAccount } = require("../services/qrCreditService");
 const { validate, generateQrSchema } = require("../utils/validators");
 
 const redeemCheckoutSchema = z.object({
+  document_physically_checked: z.boolean().optional(),
   idempotency_key: z.string().trim().min(8).max(160),
   beneficiary: z.object({
     player_id: z.string().uuid().optional().nullable(),

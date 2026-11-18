@@ -235,6 +235,7 @@ async function getPublicAffiliateCard(token) {
        a.email,
        a.photo_data_url,
        a.qr_token,
+       a.points_total,
        a.status,
        a.created_at,
        a.updated_at,
@@ -266,6 +267,8 @@ async function getPublicAffiliateCard(token) {
   );
   return {
     affiliate: await attachQrDataUrl(affiliate),
+    points_catalogs: await require("./affiliateCatalogService").catalogsForBusiness(affiliate.business_id),
+    points_tickets: await require("./affiliateCatalogService").ticketsForCard(affiliate.business_id,affiliate.id),
     ledger: ledger.rows,
   };
 }

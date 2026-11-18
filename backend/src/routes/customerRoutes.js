@@ -69,6 +69,7 @@ router.get('/auth/web/oauth/:provider/callback',async(req,res)=>{
 });
 // Every Customer feature, including discovery, requires a verified session.
 router.use(auth.customerRequired);
+router.use('/points-catalogs',require('./affiliateCatalogRoutes').customerRouter);
 router.get('/finance-setup',handle(req=>require('../services/customerFinanceSetupService').status(req.customer)));
 router.post('/finance-setup',handle(req=>require('../services/customerFinanceSetupService').complete(req.customer,parse(z.object({
   request_id:uuid,balance:z.string().regex(/^-?\d{1,10}(\.\d{1,2})?$/),currency,

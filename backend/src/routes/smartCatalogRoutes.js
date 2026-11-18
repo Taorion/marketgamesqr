@@ -3,6 +3,7 @@ const { authRequired, requireRoles } = require("../middleware/auth");
 const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   cacheBusinessResponse,
+  clearBusinessResponseCache,
   invalidateBusinessResponseCache,
 } = require("../middleware/businessResponseCache");
 const {
@@ -31,6 +32,7 @@ router.use(requirePortalAccess);
 router.use(requireBusinessFeature("showcase"));
 router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 router.use(invalidateBusinessResponseCache());
+router.use((req,res,next)=>{if(['POST','PATCH','DELETE'].includes(req.method))res.on('finish',()=>{if(res.statusCode<400)clearBusinessResponseCache('public');});next();});
 
 const smartCatalogCache = cacheBusinessResponse({ keyPrefix: "smart-catalog", ttlMs: 180_000 });
 

@@ -324,7 +324,14 @@ async function getQrDetails(tokenInput, user) {
     },
   });
 
+  const pointsTicket = await require('./affiliateCatalogService').validatorTicket({query}, qr);
+  if (pointsTicket) {
+    qr.player_name = pointsTicket.holder_name;
+    qr.player_document_id = pointsTicket.document_id;
+    qr.requires_document_check = true;
+  }
   return {
+    points_ticket: pointsTicket,
     status: effectiveStatus,
     allowed: effectiveStatus === "ACTIVE",
     message: buildStatusMessage(effectiveStatus),
@@ -368,7 +375,7 @@ async function getQrDetails(tokenInput, user) {
       document_id: qr.player_document_id || qr.participant_document_id,
       capture_source: "TICKET",
     }, Boolean(qr.requires_document_check || qr.metadata?.source === "STAMP_CARD")),
-    player: (qr.player_id || qr.participant_player_id || qr.participant_name || qr.participant_email || qr.participant_phone || qr.participant_document_id)
+    player: (pointsTicket || qr.player_id || qr.participant_player_id || qr.participant_name || qr.participant_email || qr.participant_phone || qr.participant_document_id)
       ? {
           id: qr.player_id || qr.participant_player_id || null,
           name: qr.player_name || qr.participant_name || null,
@@ -683,6 +690,13 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       throw badRequest("Este QR esta vencido.");
     }
 
+    const pointsTicket = await require('./affiliateCatalogService').validatorTicket(client,qr);
+    if (pointsTicket) {
+      const key = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g,'');
+      if (checkoutPayload.mode !== 'STANDALONE') throw badRequest('Este ticket ya fue pagado con puntos. Entrega los productos sin registrar otra compra.');
+      if (checkoutPayload.document_physically_checked !== true || key(checkoutPayload.beneficiary?.document_id) !== key(pointsTicket.document_id)) throw badRequest('Revisa el documento físico: debe coincidir exactamente con el titular del canje.');
+      qr.requires_document_check = true;
+    }
     if (qr.metadata?.source === "STAMP_CARD") {
       const documentKey = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       if (!documentKey(qr.player_document_id) || documentKey(checkoutPayload.beneficiary?.document_id) !== documentKey(qr.player_document_id)) {
@@ -726,6 +740,8 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       purchase: checkoutPayload.purchase || {},
     });
     const redemptionMetadata = {
+      points_ticket: pointsTicket,
+      document_physically_checked: pointsTicket ? true : undefined,
       benefit_application: checkout,
       origin_type: qr.origin_type,
       affiliate_id: qr.affiliate_id || null,

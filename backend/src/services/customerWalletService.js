@@ -63,7 +63,9 @@ async function affiliateCard(account,id) {
     query('select id,points_awarded,amount,reason,created_at from affiliate_point_ledger where business_id=$1 and affiliate_id=$2 order by created_at desc limit 100',[a.business_id,a.id]),
     points.getAffiliatePointRules(a.business_id),query('select points_terms,accumulation_terms from customer_business_programs where business_id=$1',[a.business_id])
   ]);
-  return {card:{id:a.id,business_id:a.business_id,business_name:card.business_name,full_name:a.full_name,status:a.status,points_total:a.points_total,qr_image:card.qr_data_url},
+  const points_catalogs=await require('./affiliateCatalogService').catalogsForAffiliate(account,id);
+  const points_tickets=await require('./affiliateCatalogService').ticketsForCard(a.business_id,a.id);
+  return {points_catalogs,points_tickets,card:{id:a.id,business_id:a.business_id,business_name:card.business_name,full_name:a.full_name,status:a.status,points_total:a.points_total,qr_image:card.qr_data_url},
     rules,terms:program.rows[0]||{},ledger:ledger.rows,rewards:rewards.map(r=>({id:r.id,title:r.title,benefit_label:r.benefit_label,required_points:r.required_points,
       unlocked:Number(a.points_total)>=Number(r.required_points),ticket_status:r.qr_status||r.ticket_status,expires_at:r.expires_at}))};
 }

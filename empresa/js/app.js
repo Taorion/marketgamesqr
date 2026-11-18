@@ -12421,6 +12421,7 @@ function applySmartCatalogInventoryProductToForm(options = {}) {
   setField("name", product.name);
   setField("short_description", product.description || product.short_description || product.notes);
   setField("category", product.category);
+  setField("redemption_points_cost", product.redemption_points_cost);
   setField("price", product.unit_price || product.price || product.sale_price);
   setField("image_url", product.image_url || product.image);
   syncSmartCatalogProductImagePreview();
@@ -12449,7 +12450,9 @@ function prepareSmartCatalogProductPayload(payload = {}) {
     season_name: payload.season_name || null,
     seasonal_benefit: payload.seasonal_benefit || null,
     created_from: "smart_catalog_product_form",
+    redemption_points_cost: payload.redemption_points_cost ? Number(payload.redemption_points_cost) : null,
   };
+  delete payload.redemption_points_cost;
   delete payload.benefits_text;
   delete payload.tags_text;
   delete payload.season_name;
@@ -13026,7 +13029,7 @@ function renderSmartCatalogTables() {
           ${smartCatalogProductBenefits(product).length ? `<br>${smartCatalogProductBenefits(product).slice(0, 3).map((benefit) => `<span class="pill muted">${escapeHtml(benefit)}</span>`).join(" ")}` : ""}
         </td>
         <td>${escapeHtml(product.category || "-")}</td>
-        <td>${product.price === null || product.price === undefined ? "-" : money(product.price)}</td>
+        <td>${smartCatalogSelectedCatalog()?.metadata?.redemption_mode === "AFFILIATE_POINTS" ? `${Number(product.metadata?.redemption_points_cost || findInventoryProduct(product.inventory_product_id)?.redemption_points_cost || 0).toLocaleString("es-CO")} puntos` : product.price === null || product.price === undefined ? "-" : money(product.price)}</td>
         <td><span class="status-chip ${smartCatalogStatusClass(product.stock_status)}">${escapeHtml(smartCatalogStatusLabel(product.stock_status))}</span></td>
         <td><div class="table-actions smart-catalog-row-actions">
           <button class="ghost-button compact" type="button" data-smart-product-edit="${escapeHtml(product.id)}">Editar</button>
@@ -13412,6 +13415,7 @@ function openSmartCatalogEditModal(catalogId) {
   if (!modal || !smartCatalogForm) return;
   smartCatalogForm.reset();
   smartCatalogForm.dataset.editingCatalogId = catalog.id;
+  smartCatalogForm.elements.redemption_mode.value = catalog.metadata?.redemption_mode || "COMMERCE";
   ["title", "description", "brand_name", "whatsapp_number", "default_cta_label", "theme_color", "linked_campaign_id", "status"].forEach((name) => {
     const field = smartCatalogForm.querySelector(`[name="${name}"]`);
     if (field) field.value = catalog[name] ?? "";
@@ -13486,6 +13490,7 @@ function openSmartCatalogProductModal(options = {}) {
     const seasonalBenefit = smartCatalogProductForm.querySelector('[name="seasonal_benefit"]');
     if (benefits) benefits.value = smartCatalogProductBenefits(product).join("\n");
     if (tags) tags.value = Array.isArray(product.tags) ? product.tags.join(", ") : "";
+    smartCatalogProductForm.elements.redemption_points_cost.value = product.metadata?.redemption_points_cost || "";
     if (seasonName) seasonName.value = product.metadata?.season_name || "";
     if (seasonalBenefit) seasonalBenefit.value = product.metadata?.seasonal_benefit || "";
     const featured = smartCatalogProductForm.querySelector('[name="is_featured"]');
@@ -13549,6 +13554,8 @@ async function submitSmartCatalog(event) {
   setInlineMessage(smartCatalogMessage, editingCatalogId ? "Guardando cambios de la vitrina..." : "Creando vitrina web...", "info");
   try {
     const payload = smartCatalogFormPayload(smartCatalogForm);
+    payload.metadata = {...((state.smartCatalogs || []).find(c=>c.id===editingCatalogId)?.metadata || {}), redemption_mode:payload.redemption_mode};
+    delete payload.redemption_mode;
     const data = await api(editingCatalogId ? `/api/business/catalogs/${encodeURIComponent(editingCatalogId)}` : "/api/business/catalogs", {
       method: editingCatalogId ? "PATCH" : "POST",
       headers: authHeaders(),
@@ -13576,6 +13583,7 @@ async function submitSmartCatalogProduct(event) {
   const editingProductId = smartCatalogProductForm.dataset.editingProductId || "";
   const payload = smartCatalogFormPayload(smartCatalogProductForm);
   delete payload.image_file;
+  payload.metadata = {...((state.smartCatalogProducts || []).find(p=>p.id===editingProductId)?.metadata || {})};
   prepareSmartCatalogProductPayload(payload);
   const catalogId = payload.catalog_id || state.smartCatalogSelectedCatalogId;
   if (!catalogId) {
@@ -19438,6 +19446,7 @@ function renderValidatorBeneficiary(data = null) {
 }
 
 function collectValidatorBeneficiary() {
+  if (state.validatorLastValidation?.points_ticket && !document.getElementById('validatorPointsDocumentChecked')?.checked) throw new Error('Debes revisar el documento físico y confirmar que coincide antes de entregar el canje.');
   const beneficiary = {
     player_id: state.validatorSelectedCustomer?.player_id || state.validatorLastValidation?.player?.id || null,
     name: validatorBeneficiaryNameInput.value.trim(),
@@ -19473,6 +19482,7 @@ function setValidatorOperationState(mode = "idle", data = state.validatorLastVal
   setValidatorFormEnabled(validatorStandardSaleFields, ["validated_standard", "validated_product"].includes(mode));
   if (validatorSaleNotesInput) validatorSaleNotesInput.disabled = ["completed_reward", "completed_standard", "completed_product"].includes(mode);
 
+  if (data?.points_ticket) validatorStandardSaleFields.hidden = true;
   const settings = {
     idle: ["Siguiente acción", "Valida un ticket para comenzar", "La operación se adaptará automáticamente al tipo de ticket detectado.", "En espera", "capture"],
     validating: ["Consulta segura", "Comprobando autenticidad", "Estamos verificando negocio, estado, vigencia y beneficio.", "Validando", "verify"],
@@ -19538,6 +19548,16 @@ function setValidatorResult(mode, title, message, data = null) {
   ].filter(Boolean).join(" | ") || (isTransferableTicket ? "Se completará durante la redención" : "-");
   validatorExpiresValue.textContent = isProduct ? "Mientras el producto esté activo" : formatDate(data?.qr_code?.expires_at);
   renderValidatorBeneficiary(data);
+  document.getElementById('validatorPointsTicket')?.remove();
+  if (data?.points_ticket) {
+    const ticket = data.points_ticket;
+    const panel = document.createElement('section'); panel.id = 'validatorPointsTicket'; panel.className = 'qp-validator-items';
+    panel.innerHTML = '<h3>Productos a redimir con puntos</h3><ul>' + ticket.items.map(item=>'<li><strong>'+item.quantity+' × '+escapeHtml(item.name)+'</strong> · '+Number(item.total_points).toLocaleString('es-CO')+' puntos</li>').join('')+'</ul><p>Total: <strong>'+Number(ticket.total_points).toLocaleString('es-CO')+' puntos</strong>. Ya descontados del carné.</p><p>'+escapeHtml(ticket.notice)+'</p><label><input type="checkbox" id="validatorPointsDocumentChecked">Revisé el documento físico del titular y coincide con el documento de este ticket.</label>';
+    validatorBeneficiaryPanel.prepend(panel);
+    validatorBeneficiaryDocumentInput.value = '';
+    validatorBeneficiaryDocumentInput.placeholder = 'Escribe el documento físico presentado';
+    validatorBeneficiaryHelp.textContent = 'Verifica el documento físico y entrega exactamente los productos de este ticket. No vuelvas a descontar puntos.';
+  }
   validatorRedeemButton.disabled = !data?.allowed;
   if (data?.kind === "reward_pass") {
     renderValidatorRewardPassBranchOptions(data.reward_pass);
@@ -34295,7 +34315,7 @@ async function validateValidatorToken(rawValue) {
             inventory_product_id: scopedInventoryProduct?.id || data.benefit_application?.product_scope?.inventory_product_id || null,
           })];
         }
-        state.validatorRedemptionMode = data.benefit_application?.purchase_required || openCart ? "PURCHASE" : "STANDALONE";
+        state.validatorRedemptionMode = data.points_ticket ? "STANDALONE" : data.benefit_application?.purchase_required || openCart ? "PURCHASE" : "STANDALONE";
       } else if (openCart) {
         resetValidatorSaleForm();
       }
@@ -34401,6 +34421,7 @@ async function redeemValidatorToken() {
       } : {
         idempotency_key: state.validatorRedemptionKey || (state.validatorRedemptionKey = createRewardPassOperationKey("qr-redeem")),
         beneficiary: collectValidatorBeneficiary(),
+        document_physically_checked: document.getElementById("validatorPointsDocumentChecked")?.checked === true,
         mode: state.validatorRedemptionMode,
         purchase: {
           subtotal: checkoutPreview?.subtotal || 0,

@@ -796,6 +796,7 @@ async function createWhatsappIntent(slug, productId, body = {}, reqMeta = {}) {
     );
     if (!catalogResult.rowCount) throw notFound("Catalogo no encontrado o no publicado.");
     const catalog = catalogResult.rows[0];
+    if (require('./affiliateCatalogService').isPoints(catalog)) throw badRequest('Usa el carrito de puntos para esta vitrina.');
     const product = productId
       ? (await client.query(
         "select * from smart_catalog_products where id = $1 and catalog_id = $2 and business_id = $3 and stock_status <> 'HIDDEN'",

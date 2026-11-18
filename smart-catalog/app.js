@@ -182,6 +182,11 @@ async function loadCatalog() {
     state.products = data.products || [];
     state.categories = data.categories || [];
     renderCatalog();
+    if (data.catalog.metadata?.redemption_mode === 'AFFILIATE_POINTS') {
+      await window.QoriPointShop.init(data.catalog);
+      if (data.product) window.QoriPointShop.openProduct(data.product.id);
+      return;
+    }
     const ordersEnabled = await window.QoriOrders?.init(data.catalog, state.products);
     if (ordersEnabled) { document.getElementById("catalogSearchLabel").hidden = false; if (data.product) window.QoriOrders.openProduct(data.product.id); }
     if (data.product && !ordersEnabled) {

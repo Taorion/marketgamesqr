@@ -108,7 +108,7 @@ function renderCard(data) {
   const affiliate = data.affiliate || {};
   const businessSettings = affiliate.business_settings || {};
   const businessName = text(affiliate.business_name || businessSettings.name, "Sales Machine");
-  const points = Number(affiliate.points_total || affiliate.ledger_points || 0);
+  const points = Number(affiliate.points_total ?? affiliate.ledger_points ?? 0);
   const active = String(affiliate.status || "ACTIVE").toUpperCase() !== "INACTIVE";
 
   const isPanoIngles = isPanoInglesBusiness(businessName, affiliate.business_id);
@@ -138,6 +138,11 @@ function renderCard(data) {
     els.photoInitials.hidden = false;
   }
   renderLedger(data.ledger || []);
+  let pointsLinks=document.getElementById('affiliatePointsCatalogs');
+  if(!pointsLinks){pointsLinks=document.createElement('section');pointsLinks.id='affiliatePointsCatalogs';els.pointsTotal.parentElement.after(pointsLinks);}
+  pointsLinks.replaceChildren();
+  for(const t of data.points_tickets||[]){const a=document.createElement('a');a.textContent='Mi ticket · '+t.total_points+' puntos · '+({ACTIVE:'Por redimir',REDEEMED:'Entregado',CANCELLED:'Anulado'}[t.status]||t.status);a.href=t.receipt_url;a.style.cssText='display:block;padding:12px;margin:8px 0;border:1px solid #0759d6;border-radius:12px;text-align:center';pointsLinks.append(a);}
+  for(const c of data.points_catalogs||[]){const a=document.createElement('a');a.textContent='Canjear mis puntos · '+c.title;a.href='/c/'+encodeURIComponent(c.slug)+'#card='+encodeURIComponent(affiliate.qr_token);a.style.cssText='display:block;padding:12px;margin:8px 0;background:#0759d6;color:white;border-radius:12px;text-align:center';pointsLinks.append(a);}
 }
 
 async function refreshCard(manual = false) {

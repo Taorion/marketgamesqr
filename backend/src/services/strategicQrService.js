@@ -1035,6 +1035,7 @@ async function cancelStrategicQr(businessId, qrId, user = {}) {
       return { deleted: true, qr, already_cancelled: true };
     }
 
+    await require("./affiliateCatalogService").refundCancelled(client, qr, user);
     const metadataPatch = {
       portal_deleted: true,
       cancelled_at: new Date().toISOString(),

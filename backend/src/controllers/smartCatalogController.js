@@ -190,6 +190,7 @@ async function businessCreate(req, res, next) {
     const catalogs = await listCatalogs(businessId);
     await assertLimitForBusiness(businessId, "showcases", catalogs.length, "vitrinas web");
     const body = validate(catalogSchema, req.body);
+    if (body.metadata?.redemption_mode === "AFFILIATE_POINTS") await require("../services/subscriptionService").assertStandaloneBusinessFeature(req.user,businessId,"affiliates");
     res.status(201).json({ catalog: await createCatalog(businessId, req.user, body) });
   } catch (error) {
     next(error);
@@ -207,6 +208,7 @@ async function businessDetail(req, res, next) {
 async function businessPatch(req, res, next) {
   try {
     const body = validate(catalogPatchSchema, req.body);
+    if (body.metadata?.redemption_mode === "AFFILIATE_POINTS") await require("../services/subscriptionService").assertStandaloneBusinessFeature(req.user,businessIdFor(req),"affiliates");
     res.json({ catalog: await updateCatalog(businessIdFor(req), req.params.catalogId, body) });
   } catch (error) {
     next(error);

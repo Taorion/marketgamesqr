@@ -282,6 +282,7 @@ app.use("/api", salesRoutes);
 app.use("/api/public", publicGameRoutes);
 app.use("/api/public", publicQrRoutes);
 app.use("/api/public", publicAffiliateRoutes);
+app.use("/api/public/points-catalogs", require("./routes/affiliateCatalogRoutes").publicRouter);
 app.use("/api/public", publicSmartCatalogRoutes);
 app.use("/api/public", packageSalesRoutes);
 app.get("/api/public/rms-attachments/:publicToken", publicAttachmentDownload);
