@@ -13,8 +13,10 @@ const server = app.listen(env.port, () => {
   console.log(`Sales Machine Portal RMS running on http://localhost:${env.port}`);
   startDeactivatedUserCleanup();
 });
+const stopSummitLive = require('./services/summitLiveService').attach(server);
 
 async function shutdown() {
+  stopSummitLive();
   await stopSellerCommissions();
   await stopAgendaPushWorker();
   await stopCustomerPayments();

@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   function mount(host, options) {
-    let game, timer, destroyed = false, busy = false, pendingStart = false, checked = false, room, ack = 0, offset = 0, delivered = false;
+    let game, live, timer, destroyed = false, busy = false, pendingStart = false, checked = false, room, ack = 0, offset = 0, delivered = false;
     host.innerHTML = `<section class="cumbre-lobby"><h3>¿Cómo quieres subir?</h3>
       <p>Juega a tu ritmo o compite con tu familia por el premio de la cima.</p>
       <div class="cumbre-mode-buttons"><button type="button" data-action="solo">Individual</button><button type="button" data-action="family">Multijugador · 2 a 8</button></div>
@@ -20,12 +20,12 @@
     const buttons = name => host.querySelector(`[data-action="${name}"]`);
     const say = value => { message.textContent = value; };
     function schedule() { clearTimeout(timer); if (!destroyed && room && !['finished','expired'].includes(room.status)) timer = setTimeout(poll, room.status === 'racing' ? 500 : 1000); }
-    function render(next) {
+    function render(next, access) {
       if (destroyed) return;
       room = next;
       roomPanel.hidden = !room;
       host.querySelector('.cumbre-mode-buttons').hidden = Boolean(room);
-      if (!room) { game?.destroy(); game = null; return; }
+      if (!room) { live?.destroy(); live = null; game?.destroy(); game = null; return; }
       host.querySelector('.cumbre-family').hidden = true;
       host.querySelector('.cumbre-room-code').textContent = room.code;
       host.querySelector('.cumbre-room-prize').textContent = `Premio: ${room.prize}`;
@@ -44,11 +44,14 @@
         ack = room.own.state.tick;
         game = root.QoriSummit.mount(playHost, { config: room.config, seed: room.seed, prize: room.prize,
           initialState: room.own.state, race: { startsAt: new Date(room.starts_at).getTime(), now: () => Date.now() + offset },
+          onPose: pose => live?.send(pose),
           onFinish: () => { clearTimeout(timer); poll(); } });
       }
       game?.opponents(room.members.filter(m => m.id !== room.own.id));
+      if (room.status === 'racing' && access && !live) live = root.QoriSummitLive?.connect(access, (id, pose) => game?.remotePose(id, pose));
       ack = room.own.state.tick;
       if (room.status === 'finished' || room.status === 'expired') {
+        live?.destroy(); live = null;
         clearTimeout(timer);
         const winner = room.members.find(m => m.id === room.winner_id);
         const copy = winner ? (winner.id === room.own.id ? `¡Ganaste! ${room.prize}` : `${winner.alias} llegó primero y ganó ${room.prize}.`) : room.status === 'expired' ? 'La sala venció o la activación cambió. No se entregó un premio.' : 'Terminó la carrera. Nadie alcanzó el cofre.';
@@ -72,7 +75,7 @@
         checked = true;
         if (result.room) offset = new Date(result.room.server_now).getTime() - (sent + Date.now()) / 2;
         buttons('resume').hidden = true;
-        render(result.room);
+        render(result.room, result.live);
       } catch (error) {
         if (destroyed) return;
         say(`${error.message} Puedes volver a conectar sin cambiar de jugador.`);
@@ -108,12 +111,12 @@
         if (action === 'join' && !/^[A-Z2-9]{6}$/.test(code)) return say('Escribe el código de seis caracteres de tu sala.');
         return send(action, { alias, ...(action === 'join' ? { code } : {}) });
       }
-      if (action === 'resume') { game?.destroy(); game = null; }
+      if (action === 'resume') { live?.destroy(); live = null; game?.destroy(); game = null; }
       send(action);
     }
     host.addEventListener('click', click);
     send('resume');
-    return { destroy() { destroyed = true; clearTimeout(timer); game?.destroy(); host.removeEventListener('click', click); } };
+    return { destroy() { destroyed = true; clearTimeout(timer); live?.destroy(); game?.destroy(); host.removeEventListener('click', click); } };
   }
   root.QoriSummitModes = { mount };
 })(globalThis);

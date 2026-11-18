@@ -21,6 +21,14 @@ La activación integrada ofrece ambos modos después de registrar la participaci
 2. Una persona escribe su apodo y pulsa **Crear sala familiar**. Comparte el código de seis caracteres.
 3. Los demás escriben su apodo y el código en **Unirme a la sala**. Cada sala admite entre 2 y 8 personas.
 4. Desde **2 jugadores conectados**, quien creó la sala pulsa **Iniciar con 2 jugadores** (el botón muestra la cantidad conectada). No hace falta llenar los 8 cupos ni confirmar que todos estén listos. Cuenta regresiva común de tres segundos; los jugadores desconectados pueden volver, con el reloj de la carrera ya en marcha.
+
+### Movimiento de los rivales
+
+Durante la carrera, `/api/public/summit-live` transmite posiciones visuales por WebSocket a 20 Hz. El canvas interpola entre mensajes con un pequeño búfer de 90 ms y dibuja al rival en cada cuadro; las respuestas HTTP atrasadas no lo hacen retroceder. Cada rival conserva su color, apodo, animación de caminar y martillo.
+
+El controlador entrega un permiso firmado y temporal únicamente después de autenticar una participación en una carrera iniciada. El canal limita tamaño y frecuencia, fija la identidad y sala desde ese permiso, reemplaza conexiones duplicadas y se reconecta automáticamente. No acepta resultados, premios ni saldos: la simulación de controles, el ganador y el QR siguen siendo responsabilidad exclusiva de la transacción existente.
+
+Si WebSocket no está disponible, continúan los controles y la validación por HTTP, con movimiento visual suavizado desde esas respuestas. El canal visual distribuye mensajes entre conexiones de la misma instancia Node; antes de escalar a varias instancias se requiere un distribuidor compartido. Entre instancias distintas se conserva el respaldo HTTP, con mayor retraso visual.
 5. Todos recorren la misma montaña, con las mismas condiciones. Se ven los otros escaladores y una lista de avance, actualizados aproximadamente cada medio segundo. Los personajes no se empujan ni comparten colisiones.
 6. Gana la primera llegada al cofre que recibe y valida el servidor. La latencia de la conexión puede influir en llegadas muy cercanas. Solo esa sesión recibe el resultado privado y el QR del premio.
 

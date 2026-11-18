@@ -159,7 +159,8 @@ app.use(helmet({
       "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
       "img-src": ["'self'", "data:", "blob:", "https:"],
       "media-src": ["'self'", "blob:"],
-      "connect-src": ["'self'", ...env.corsOrigins],
+      "connect-src": ["'self'", ...env.corsOrigins,
+        ...[env.publicAppUrl, ...env.corsOrigins].filter(origin => /^https?:\/\//.test(origin)).map(origin => origin.replace(/^http/, 'ws'))],
       "frame-src": [
         "'self'",
         "https://mgcoffeeshop.netlify.app",

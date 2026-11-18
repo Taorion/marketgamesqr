@@ -145,6 +145,7 @@ test('two HTTP clients create, join and directly start then resume their shared 
   app.post('/api/public/activations/:slug/summit',require('../backend/src/controllers/summitRaceController').action);
   app.use((err,req,res,next)=>res.status(err.status||500).json({message:err.message}));
   const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
+  const stopLive=require('../backend/src/services/summitLiveService').attach(server);
   try {
     const url=`http://127.0.0.1:${server.address().port}/api/public/activations/familia/summit`;
     const post=async body=>{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {status:response.status,data:await response.json()};};
@@ -155,7 +156,19 @@ test('two HTTP clients create, join and directly start then resume their shared 
     assert.ok(joined.data.room.members.every(m=>m.ready===false));
     const started=await post({...p,action:'start'});assert.equal(started.data.room.status,'racing');
     const resumed=await post({...q,action:'resume'});assert.equal(resumed.data.room.starts_at,started.data.room.starts_at);
+    const {WebSocket}=require('ws'),{once}=require('node:events'),origin=new URL(url).origin;
+    const connect=async access=>{
+      const ws=new WebSocket(origin.replace('http','ws')+access.path,{origin});ws.on('error',()=>{});
+      await once(ws,'open');const ready=once(ws,'message');ws.send(JSON.stringify({type:'auth',token:access.token}));
+      assert.equal(JSON.parse((await ready)[0]).type,'ready');return ws;
+    };
+    const liveP=await connect(started.data.live),liveQ=await connect(resumed.data.live);
+    try{
+      const delivered=once(liveQ,'message'),s=started.data.room.own.state;
+      liveP.send(JSON.stringify({type:'pose',pose:{tick:0,x:s.player.x,y:s.player.y,face:1,lives:s.lives}}));
+      const movement=JSON.parse((await delivered)[0]);assert.equal(movement.id,p.participant_id);assert.equal(movement.type,'pose');
+    }finally{liveP.terminate();liveQ.terminate();}
     const denied=await post({...p,action:'state',game_session_token:crypto.randomUUID()});assert.equal(denied.status,403);
     const malformed=await post({...p,action:'input',runs:[[99,1]],from:0});assert.equal(malformed.status,400);
-  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  }finally{stopLive();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });

@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const { validate } = require('../utils/validators');
 const { act } = require('../services/summitRaceService');
+const { ticket } = require('../services/summitLiveService');
 const schema = z.object({
   action: z.enum(['create','join','resume','state','ready','start','input','leave']),
   participant_id: z.string().uuid(), game_session_token: z.string().min(8).max(180),
@@ -12,6 +13,7 @@ const schema = z.object({
 async function action(req,res,next) {
   try {
     const result = await act(req.params.slug, validate(schema, req.body), { customerId: req.customer?.id });
+    if (result.room) result.live = ticket(result.room);
     res.setHeader('Cache-Control','no-store'); res.json(result);
   } catch(error) { next(error); }
 }

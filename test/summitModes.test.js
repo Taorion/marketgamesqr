@@ -66,3 +66,18 @@ test('a failed request keeps reconnect available and a loser never receives a re
   assert.equal(env.host.querySelector('[data-action="resume"]').hidden,false);fail=false;env.click('resume');await tick();
   assert.equal(env.result(),undefined);assert.match(env.host.querySelector('.cumbre-network').textContent,/llegó primero/);assert.equal(env.host.querySelector('img'),null);env.close();
 });
+
+test('live movement is separate from authoritative requests and closes on the race result',async()=>{
+  const state=room('racing');let receive,stopped=0;const poses=[];
+  const env=setup(async()=>({room:structuredClone(state),live:{path:'/api/public/summit-live',token:'ticket'}}));
+  env.w.QoriSummitLive={connect(access,onPose){receive=onPose;assert.equal(access.token,'ticket');return {send:p=>poses.push(p),destroy(){stopped++;}};}};
+  try{
+    await tick();const game=env.mounts[0];let remote;
+    game.remotePose=(id,p)=>{remote={id,p};};
+    game.options.onPose({tick:3,x:90});assert.equal(poses.length,1);
+    receive('p2',{tick:4,x:100});assert.deepEqual(remote,{id:'p2',p:{tick:4,x:100}});
+    state.status='finished';state.winner_id='p2';
+    env.click('resume');await tick();assert.equal(stopped,1);
+    assert.equal(env.result(),undefined);
+  }finally{env.close();}
+});

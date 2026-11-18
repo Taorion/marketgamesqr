@@ -7,11 +7,12 @@ function setup() {
   w.structuredClone = structuredClone;
   Object.defineProperty(w.performance, "now", { value: () => clock });
   w.requestAnimationFrame = fn => { frames.set(++id, fn); return id; }; w.cancelAnimationFrame = n => frames.delete(n);
-  const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }) }, { get: (t, k) => t[k] || (() => {}) });
+  const labels=[];
+  const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }),fillText(value,x,y){labels.push({value,x,y});} }, { get: (t, k) => t[k] || (() => {}) });
   w.HTMLCanvasElement.prototype.getContext = () => context;
   w.HTMLElement.prototype.setPointerCapture = () => {};
   for (const file of ["cumbre-core.js", "cumbre-view.js"]) w.eval(fs.readFileSync(path.join(__dirname, "..", "activacion", file), "utf8"));
-  return { w, host: w.document.getElementById("host"), frames, close: () => w.close(), frame() { clock += 1000 / 60; for (const [key, fn] of [...frames]) { frames.delete(key); fn(clock + .00001); } } };
+  return { w, host: w.document.getElementById("host"), frames, labels,now:()=>clock,close: () => w.close(), frame() { clock += 1000 / 60; for (const [key, fn] of [...frames]) { frames.delete(key); fn(clock + .00001); } } };
 }
 test("the visible prize is safely rendered, keyboard play reaches it and returns a replay", () => {
   const env = setup(), { w, host } = env, config = { floors: 8 }, seed = "session-test";
@@ -53,4 +54,38 @@ test("touch supports simultaneous direction and jump, cancels inputs, and tears 
   for (let i = 0; i < 2750 && !result; i++) env.frame();
   assert.ok(result); assert.ok(result.trace.some(run => run[0] === 6)); assert.ok(result.trace.some(run => run[0] === 0));
   game.destroy(); assert.equal(env.frames.size, 0); env.close();
+});
+
+test('remote movement is interpolated every frame and older HTTP snapshots cannot rewind it',()=>{
+  const env=setup(),{w,host}=env,poses=[];
+  const initial=w.QoriSummitCore.create({floors:8},'live'),y=initial.player.y;
+  const game=w.QoriSummit.mount(host,{initialState:initial,race:{startsAt:0,now:env.now},onPose:p=>poses.push(p)});
+  game.opponents([{id:'b',alias:'Luis',x:40,y,tick:0}]);
+  const drawn=[];
+  for(let frame=0;frame<90;frame++){
+    if(frame%3===0)game.remotePose('b',{tick:frame,x:40+frame*2,y,face:1,lives:3,walking:true});
+    if(frame%30===0)game.opponents([{id:'b',alias:'Luis',x:40,y,tick:0}]);
+    env.frame();drawn.push(env.labels.filter(l=>l.value==='Luis').at(-1).x);
+  }
+  assert.ok(new Set(drawn.map(x=>Math.round(x))).size>70,'rival must move between network packets');
+  for(let i=12;i<drawn.length;i++)assert.ok(drawn[i]>=drawn[i-1]&&drawn[i]-drawn[i-1]<4,'continuous forward movement, not snapshot jumps');
+  assert.ok(drawn.at(-1)>185,'no half-second polling delay');
+  assert.ok(poses.length>=29&&poses.length<=31,'movement sent at 20 Hz');
+  game.remotePose('b',{tick:1,x:12,y,face:1,lives:3});env.frame();
+  assert.ok(env.labels.filter(l=>l.value==='Luis').at(-1).x>=drawn.at(-1));
+  game.remotePose('b',{tick:92,x:80,y,face:1,lives:2});env.frame();
+  assert.equal(env.labels.filter(l=>l.value==='Luis').at(-1).x,80,'respawn is not interpolated across the mountain');
+  game.destroy();env.close();
+});
+
+test('without a live channel the rival still eases toward HTTP positions without blocking local inputs',()=>{
+  const env=setup(),{w,host}=env,initial=w.QoriSummitCore.create({floors:8},'fallback'),y=initial.player.y;
+  const game=w.QoriSummit.mount(host,{initialState:initial,race:{startsAt:0,now:env.now}});
+  game.opponents([{id:'b',alias:'Luis',x:40,y,tick:0}]);env.frame();
+  game.opponents([{id:'b',alias:'Luis',x:140,y,tick:30}]);
+  w.dispatchEvent(new w.KeyboardEvent('keydown',{code:'ArrowRight'}));env.frame();
+  const first=env.labels.filter(l=>l.value==='Luis').at(-1).x;assert.ok(first>40&&first<70);
+  for(let i=0;i<30;i++)env.frame();
+  assert.ok(env.labels.filter(l=>l.value==='Luis').at(-1).x>139);
+  assert.ok(game.packet(0).runs.some(r=>r[0]===2));game.destroy();env.close();
 });

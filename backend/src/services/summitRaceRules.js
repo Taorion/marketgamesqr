@@ -39,6 +39,7 @@ function snapshot(room, members, ownId, now = Date.now()) {
     config: room.config, prize: room.prize, seed: room.seed,
     members: members.map(m => ({ id: m.participant_id, alias: m.alias, ready: m.ready,
       floor: m.state.highest, x: m.state.player.x, y: m.state.player.y,
+      tick: m.state.tick, face: m.state.player.face, lives: m.state.lives,
       done: m.state.done, connected: now - new Date(m.updated_at).getTime() < 8000 })),
     own: own ? { id: ownId, state: own.state, result: own.result || null } : null,
   };

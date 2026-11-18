@@ -19,6 +19,8 @@
     const s = options.initialState ? structuredClone(options.initialState) : core.create(options.config, options.seed), trace = [];
     const baseTick = s.tick, inputs = [];
     let opponents = [];
+    const remoteTracks = new Map();
+    let lastPoseTick = -3;
     let running = false, destroyed = false, raf = 0, last = 0, accumulator = 0, sound = false, audio;
     ctx.imageSmoothingEnabled = false;
     function on(target, name, callback, settings) { target.addEventListener(name, callback, settings); removers.push(() => target.removeEventListener(name, callback, settings)); }
@@ -35,6 +37,30 @@
     const rect = (x, y, w, h, color) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
     function text(value, x, y, size, color = "#eefaff", align = "left") {
       ctx.font = `bold ${size}px monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(value, x, y);
+    }
+    // Only the drawing uses these poses. They never enter the simulation or replay.
+    function remotePosition(other, now) {
+      const track = remoteTracks.get(other.id);
+      if (!track) return other;
+      let target = other;
+      const samples = track.samples, latest = samples.at(-1);
+      if (latest && now - latest.at < 750) {
+        const renderAt = now - 90;
+        let a = samples[0], b = a;
+        for (const sample of samples) {
+          b = sample;
+          if (sample.at >= renderAt) break;
+          a = sample;
+        }
+        const blend = b.at > a.at ? Math.max(0, Math.min(1, (renderAt - a.at) / (b.at - a.at))) : 0;
+        target = { ...b, x: a.x + (b.x - a.x) * blend, y: a.y + (b.y - a.y) * blend };
+      } else if (latest && (other.tick ?? 0) < latest.tick) target = latest;
+      const dt = Math.max(0, now - track.drawAt);
+      const blend = 1 - Math.exp(-dt / (latest && now - latest.at < 750 ? 25 : 100));
+      track.x += (target.x - track.x) * blend;
+      track.y += (target.y - track.y) * blend;
+      track.drawAt = now;
+      return { ...target, x: track.x, y: track.y };
     }
     function draw() {
       const cam = Math.round(s.camera), t = s.tick, p = s.player;
@@ -85,11 +111,18 @@
         if (t < s.hammerUntil) text("✦", hammerX + p.face * 13, y - 22, 15, "#fff0a4", "center");
       }
       opponents.forEach((other, i) => {
-        const y = other.y - cam, color = ['#d49ef5','#ed91a2','#9ee394','#86bdfa'][i % 4];
+        const pose = remotePosition(other, performance.now());
+        const x = pose.x, y = pose.y - cam, face = pose.face || 1, color = ['#d49ef5','#ed91a2','#9ee394','#86bdfa'][i % 4];
         if (y < -30 || y > 510) return;
-        ctx.globalAlpha = .65;
-        rect(other.x - 7, y - 25, 14, 18, color); rect(other.x - 8, y - 36, 16, 11, color);
-        ctx.globalAlpha = 1; text(String(other.alias).slice(0, 12), other.x, y - 43, 9, color, 'center');
+        const walk = pose.walking ? Math.floor((pose.tick || t) / 6) % 2 * 3 : 0;
+        ctx.globalAlpha = .85;
+        rect(x - 9, y - 24, 18, 17, color); rect(x - face * 10 - 4, y - 22, 8, 14, '#695173');
+        rect(x - 8, y - 37, 16, 15, '#f8c99a'); rect(x - 11, y - 40, 22, 9, color);
+        rect(x - 13, y - 33, 26, 4, '#eefaff'); rect(x - 6 + face * 3, y - 29, 10, 5, '#213953');
+        rect(x - 8, y - 7, 6, 7 - walk, '#1b273f'); rect(x + 2, y - 7, 6, 4 + walk, '#1b273f');
+        const hammerX = x + face * (pose.hammer ? 25 : 13);
+        rect(hammerX - 2, y - 28, 4, 17, '#ac7854'); rect(hammerX - 8, y - 31, 16, 7, '#d3e6ed');
+        ctx.globalAlpha = 1; text(String(other.alias).slice(0, 12), x, y - 46, 9, color, 'center');
       });
       for (let i = 0; i < 20; i++) rect((i * 67 + t * .32) % 360, (i * 41 + t * .56) % 480, 2, 2, "#b9d9e4");
       for (let y = 0; y < 480; y += 4) rect(0, y, 360, 1, "rgba(0,0,0,.06)");
@@ -138,7 +171,13 @@
         if (s.breaks > breaks) tone(660); if (s.lives < lives) tone(110, .18);
         accumulator -= 1000 / 60;
       }
-      draw(); if (s.done) end(); else raf = requestAnimationFrame(frame);
+      draw();
+      if (options.race && (s.tick - lastPoseTick >= 3 || s.done)) {
+        lastPoseTick = s.tick;
+        options.onPose?.({ tick: s.tick, x: s.player.x, y: s.player.y, face: s.player.face, lives: s.lives,
+          walking: s.player.ground >= 0 && Boolean(s.previous & 3), hammer: s.tick < s.hammerUntil });
+      }
+      if (s.done) end(); else raf = requestAnimationFrame(frame);
     }
     on(host.querySelector(".cumbre-start"), "click", () => {
       cover.hidden = true; running = true; last = performance.now(); canvas.focus({ preventScroll: true });
@@ -168,7 +207,24 @@
         }
         return { from, runs };
       },
-      opponents(list) { opponents = list; if (!running) draw(); },
+      opponents(list) {
+        opponents = list;
+        for (const other of list) if (!remoteTracks.has(other.id)) remoteTracks.set(other.id, { samples: [], x: other.x, y: other.y, drawAt: performance.now() });
+        for (const id of remoteTracks.keys()) if (!list.some(other => other.id === id)) remoteTracks.delete(id);
+        if (!running) draw();
+      },
+      remotePose(id, pose) {
+        const track = remoteTracks.get(id);
+        if (!track || !Number.isFinite(pose?.x) || !Number.isFinite(pose?.y) || !Number.isInteger(pose?.tick)) return;
+        const previous = track.samples.at(-1);
+        if (previous && pose.tick <= previous.tick) return;
+        if (previous && (pose.lives !== previous.lives || Math.hypot(pose.x - previous.x, pose.y - previous.y) > 160)) {
+          track.samples.length = 0; track.x = pose.x; track.y = pose.y;
+        }
+        track.samples.push({ ...pose, at: performance.now() });
+        if (track.samples.length > 16) track.samples.shift();
+        if (!running) draw();
+      },
       finish(message) { running = false; pressed.clear(); cancelAnimationFrame(raf); cover.hidden = false; cover.textContent = message; status.textContent = message; },
       destroy() { destroyed = true; cancelAnimationFrame(raf); pressed.clear(); removers.forEach(fn => fn()); audio?.close(); }
     };
