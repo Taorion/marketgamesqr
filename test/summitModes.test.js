@@ -81,3 +81,15 @@ test('live movement is separate from authoritative requests and closes on the ra
     assert.equal(env.result(),undefined);
   }finally{env.close();}
 });
+
+test('HTTP clock estimates cannot pause or accelerate a running race',async()=>{
+  const state=room('racing');let monotonic=0;
+  const env=setup(async()=>({room:structuredClone(state)}));
+  Object.defineProperty(env.w.performance,'now',{value:()=>monotonic});
+  try{
+    await tick();const game=env.mounts[0],before=game.options.race.now();
+    monotonic=100;state.server_now=new Date(Date.now()+10000).toISOString();
+    game.options.onFinish();await tick();
+    assert.equal(game.options.race.now()-before,100);
+  }finally{env.close();}
+});

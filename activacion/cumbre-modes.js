@@ -42,8 +42,9 @@
       host.querySelector('.cumbre-room-actions').hidden = room.status !== 'waiting';
       if (room.status === 'racing' && !game) {
         ack = room.own.state.tick;
+        const synchronizedAt = Date.now() + offset, monotonicAt = performance.now();
         game = root.QoriSummit.mount(playHost, { config: room.config, seed: room.seed, prize: room.prize,
-          initialState: room.own.state, race: { startsAt: new Date(room.starts_at).getTime(), now: () => Date.now() + offset },
+          initialState: room.own.state, race: { startsAt: new Date(room.starts_at).getTime(), now: () => synchronizedAt + performance.now() - monotonicAt },
           onPose: pose => live?.send(pose),
           onFinish: () => { clearTimeout(timer); poll(); } });
       }
