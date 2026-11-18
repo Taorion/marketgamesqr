@@ -7,12 +7,12 @@ function setup() {
   w.structuredClone = structuredClone;
   Object.defineProperty(w.performance, "now", { value: () => clock });
   w.requestAnimationFrame = fn => { frames.set(++id, fn); return id; }; w.cancelAnimationFrame = n => frames.delete(n);
-  const labels=[];
-  const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }),fillText(value,x,y){labels.push({value,x,y});} }, { get: (t, k) => t[k] || (() => {}) });
+  const labels=[],rects=[];
+  const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }),fillText(value,x,y){labels.push({value,x,y});},fillRect(x,y,width,height){rects.push({x,y,width,height,color:this.fillStyle});} }, { get: (t, k) => t[k] || (() => {}) });
   w.HTMLCanvasElement.prototype.getContext = () => context;
   w.HTMLElement.prototype.setPointerCapture = () => {};
   for (const file of ["cumbre-core.js", "cumbre-view.js"]) w.eval(fs.readFileSync(path.join(__dirname, "..", "activacion", file), "utf8"));
-  return { w, host: w.document.getElementById("host"), frames, labels,now:()=>clock,close: () => w.close(), frame() { clock += 1000 / 60; for (const [key, fn] of [...frames]) { frames.delete(key); fn(clock + .00001); } } };
+  return { w, host: w.document.getElementById("host"), frames, labels,rects,now:()=>clock,close: () => w.close(), frame() { clock += 1000 / 60; for (const [key, fn] of [...frames]) { frames.delete(key); fn(clock + .00001); } } };
 }
 test("the visible prize is safely rendered, keyboard play reaches it and returns a replay", () => {
   const env = setup(), { w, host } = env, config = { floors: 8 }, seed = "session-test";
@@ -88,4 +88,19 @@ test('without a live channel the rival still eases toward HTTP positions without
   for(let i=0;i<30;i++)env.frame();
   assert.ok(env.labels.filter(l=>l.value==='Luis').at(-1).x>139);
   assert.ok(game.packet(0).runs.some(r=>r[0]===2));game.destroy();env.close();
+});
+
+test('after an off-screen fall the HUD loses one heart and the character is drawn back inside the screen',()=>{
+  const env=setup(),{w,host}=env,initial=w.QoriSummitCore.create({floors:8,lives:2},'respawn');
+  initial.checkpoint=3;initial.highest=3;initial.camera=initial.platforms[6].y-300;
+  Object.assign(initial.player,{x:12,y:initial.camera+480+41,vy:0,ground:-1});
+  const poses=[];
+  const game=w.QoriSummit.mount(host,{initialState:initial,race:{startsAt:0,now:env.now},onPose:p=>poses.push(p)});
+  env.frame();
+  assert.equal(host.querySelector('[data-hud="lives"]').textContent,'♥');
+  assert.match(host.querySelector('.cumbre-status').textContent,/última plataforma estable/);
+  assert.equal(poses[0].lives,1);assert.equal(poses[0].y,initial.platforms[3].y);
+  const hat=env.rects.filter(r=>r.color==='#45c6c1').at(-1);
+  assert.ok(hat.y>=0&&hat.y+40<480,'respawn must actually draw inside the local canvas');
+  game.destroy();env.close();
 });

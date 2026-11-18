@@ -542,6 +542,10 @@ async function resumeSummitSession() {
     throw error;
   }
   if (!resumed.room) return false;
+  if (resumed.room.status === 'expired' && !resumed.room.own?.result) {
+    try { sessionStorage.removeItem(key); } catch (_) {}
+    return false;
+  }
   participant = { id: saved.participant_id }; gameSessionToken = saved.game_session_token;
   participantForm.classList.add('hidden'); renderMinigame(); return true;
 }

@@ -12,6 +12,8 @@ La demo permite cambiar el texto del premio, la altura y la dificultad. Usa un p
 - Celular: botones de dirección, salto y golpe; admite varios dedos a la vez.
 - Tres bloques o criaturas golpeados cargan el supersalto: salto + golpe.
 - Sonido opcional, apagado inicialmente. En individual, ocultar la pestaña pausa la simulación. En multijugador el reloj común continúa.
+- Si el personaje desaparece por debajo de su propia pantalla, pierde una vida y reaparece en la última plataforma estable donde estuvo apoyado. Una plataforma frágil no cambia ese punto de retorno; las móviles estables conservan su posición actual. La cámara vuelve a mostrar al personaje y recibe dos segundos de protección frente a enemigos; una nueva caída sigue restando vida. Sin vidas, termina el ascenso.
+- La simulación v2 aplica esta regla tanto en individual como en multijugador y en la validación del servidor. Las salas abiertas con las reglas anteriores vencen al actualizarse; al recargar se permite iniciar una nueva participación, sin mezclar recorridos de distintas versiones ni perder un premio ya confirmado.
 
 ## Carrera familiar: individual y multijugador
 

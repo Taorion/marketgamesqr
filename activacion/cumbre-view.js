@@ -168,7 +168,11 @@
         inputs.push(mask);
         const tail = trace[trace.length - 1]; if (tail && tail[0] === mask) tail[1]++; else trace.push([mask, 1]);
         if (previousY >= 0 && s.player.vy < 0) tone(440);
-        if (s.breaks > breaks) tone(660); if (s.lives < lives) tone(110, .18);
+        if (s.breaks > breaks) tone(660);
+        if (s.lives < lives) {
+          tone(110, .18);
+          if (!s.done) status.textContent = 'Perdiste una vida. Vuelves a la última plataforma estable.';
+        }
         accumulator -= 1000 / 60;
       }
       draw();

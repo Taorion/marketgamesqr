@@ -5,7 +5,7 @@
   else root.QoriSummitCore = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
-  const VERSION = 1, WIDTH = 360, HEIGHT = 480, GAP = 88;
+  const VERSION = 2, WIDTH = 360, HEIGHT = 480, GAP = 88, PLAYER_HEIGHT = 40;
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const integer = (n, fallback, a, b) => Number.isFinite(Number(n)) ? clamp(Math.round(Number(n)), a, b) : fallback;
   function normalize(config = {}) {
@@ -38,16 +38,18 @@
     const blocks = platforms.filter(p => p.i > 1 && p.i % 4 === 2 && p.i < cfg.floors)
       .map(p => ({ floor: p.i, x: p.x + p.w / 2, alive: true }));
     return { cfg, platforms, enemies, blocks, tick: 0, player: { x: 86, y: base, vy: 0, face: 1, ground: 0 },
-      highest: 0, lives: cfg.lives, hitUntil: 0, hammerUntil: 0, hammerReady: 0, charge: 0,
+      highest: 0, checkpoint: 0, lives: cfg.lives, hitUntil: 0, hammerUntil: 0, hammerReady: 0, charge: 0,
       previous: 0, coyote: 6, jumpBuffer: 0, done: false, won: false, reason: "", breaks: 0, camera: base - 420 };
   }
-  function damage(s) {
-    if (s.tick < s.hitUntil || s.done) return;
+  function damage(s, falling = false) {
+    if (s.done || (!falling && s.tick < s.hitUntil)) return;
     s.lives--;
     if (s.lives <= 0) { s.done = true; s.reason = "lives"; return; }
-    const floor = s.platforms[s.highest], x = platformX(floor, s.tick);
+    const floor = s.platforms[s.checkpoint], x = platformX(floor, s.tick);
     floor.brokenUntil = 0; floor.touched = -1;
     Object.assign(s.player, { x: x + 25, y: floor.y, vy: 0, ground: floor.i });
+    s.camera = Math.max(s.camera, floor.y - (HEIGHT - 100));
+    s.jumpBuffer = 0; s.coyote = 6;
     s.hitUntil = s.tick + 120;
   }
   function step(s, input = 0) {
@@ -74,6 +76,14 @@
     if (direction) p.face = direction;
     p.x = clamp(p.x + direction * 3.15, 12, WIDTH - 12);
     p.vy = Math.min(10, p.vy + 0.34); p.y += p.vy; p.ground = -1;
+    // Check before landing: an invisible lower platform must not rescue the fall
+    // or replace the last stable checkpoint. This camera belongs to this player.
+    if (p.y - PLAYER_HEIGHT > s.camera + HEIGHT) {
+      damage(s, true);
+      s.previous = input;
+      if (!s.done && s.tick >= s.cfg.duration_seconds * 60) { s.done = true; s.reason = "timeout"; }
+      return s;
+    }
     for (const floor of s.platforms) {
       const x = platformX(floor, s.tick);
       if (floor.fragile && floor.touched >= 0 && s.tick - floor.touched > 58) {
@@ -83,6 +93,7 @@
       if (p.vy >= 0 && oldY <= floor.y + 0.1 && p.y >= floor.y && p.x + 8 > x && p.x - 8 < x + floor.w) {
         p.y = floor.y; p.vy = 0; p.ground = floor.i;
         s.highest = Math.max(s.highest, floor.i);
+        if (!floor.fragile && floor.y <= s.camera + HEIGHT) s.checkpoint = floor.i;
         if (floor.fragile && floor.touched < 0) floor.touched = s.tick;
         break;
       }
@@ -105,7 +116,6 @@
       if (hammer && hits(enemy.x, floor.y - 12)) { enemy.alive = false; s.charge = Math.min(3, s.charge + 1); s.breaks++; }
       else if (Math.abs(p.x - enemy.x) < 20 && Math.abs(p.y - floor.y) < 23) damage(s);
     }
-    if (p.y > s.platforms[Math.max(0, s.highest - 2)].y + 65) damage(s);
     if (!s.done && p.ground === s.cfg.floors && Math.abs(p.x - 180) < 28) { s.done = true; s.won = true; s.reason = "summit"; }
     if (!s.done && s.tick >= s.cfg.duration_seconds * 60) { s.done = true; s.reason = "timeout"; }
     s.camera = Math.min(s.camera, p.y - 300);
