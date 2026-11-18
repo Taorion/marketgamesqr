@@ -104,3 +104,30 @@ test('after an off-screen fall the HUD loses one heart and the character is draw
   assert.ok(hat.y>=0&&hat.y+40<480,'respawn must actually draw inside the local canvas');
   game.destroy();env.close();
 });
+
+test('confirmed hits reconcile pending local controls once and survive an older HTTP response',()=>{
+ const env=setup(),{w,host}=env,core=w.QoriSummitCore,initial=core.create({floors:8},'combat-view'),poses=[];
+ const game=w.QoriSummit.mount(host,{initialState:initial,race:{startsAt:0,now:env.now},onPose:p=>poses.push(p)});
+ w.dispatchEvent(new w.KeyboardEvent('keydown',{code:'ArrowRight'}));for(let i=0;i<20;i++)env.frame();
+ const anchor=structuredClone(initial);for(let i=0;i<10;i++)core.step(anchor,2);game.reconcile(anchor);
+ const impact={id:'a:1:me',attacker_id:'a',target_id:'me',tick:11,direction:-1};
+ game.combatEvent(impact,'me');env.frame();
+ const expected=structuredClone(anchor);expected.impacts=[impact];while(expected.tick<poses.at(-1).tick)core.step(expected,2);
+ assert.equal(poses.at(-1).x,expected.player.x);assert.equal(poses.at(-1).y,expected.player.y);assert.equal(poses.at(-1).lives,3);
+ game.combatEvent(impact,'me');game.reconcile(anchor);for(let i=0;i<3;i++)env.frame();
+ while(expected.tick<poses.at(-1).tick)core.step(expected,2);
+ assert.equal(poses.at(-1).x,expected.player.x,'no duplicate push or stale response rollback');
+ assert.match(host.querySelector('.cumbre-status').textContent,/Te golpearon/);
+ game.destroy();env.close();
+});
+
+test('a delayed confirmed hit cancels a predicted finish and resumes play before any prize is claimed',()=>{
+ const env=setup(),{w,host}=env,initial=w.QoriSummitCore.create({floors:8},'finish-hit');
+ initial.highest=8;initial.checkpoint=8;initial.player.x=180;initial.player.y=initial.platforms[8].y;initial.player.ground=8;initial.camera=initial.player.y-300;
+ let finished=0;
+ const game=w.QoriSummit.mount(host,{initialState:initial,race:{startsAt:0,now:env.now},onFinish:()=>finished++});
+ env.frame();assert.equal(finished,1);assert.equal(env.frames.size,0);
+ game.reconcile({...initial,impacts:[{id:'a:1:me',attacker_id:'a',target_id:'me',tick:1,direction:1}]});
+ assert.equal(host.querySelector('.cumbre-cover').hidden,true);assert.ok(env.frames.size>0);
+ env.frame();assert.equal(finished,1);game.destroy();env.close();
+});

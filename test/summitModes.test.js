@@ -89,6 +89,7 @@ test('HTTP clock estimates cannot pause or accelerate a running race',async()=>{
   try{
     await tick();const game=env.mounts[0],before=game.options.race.now();
     monotonic=100;state.server_now=new Date(Date.now()+10000).toISOString();
+    await new Promise(resolve=>setTimeout(resolve,320));
     game.options.onFinish();await tick();
     assert.equal(game.options.race.now()-before,100);
   }finally{env.close();}

@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  function connect(access, onPose) {
+  function connect(access, onPose, onImpact) {
     let socket, retry, stopped = false, ready = false, attempts = 0;
     function open() {
       if (stopped || !root.WebSocket || Date.now() >= Date.parse(access.expires_at)) return;
@@ -16,6 +16,7 @@
             const data = JSON.parse(event.data);
             if (data.type === 'ready') { ready = true; attempts = 0; }
             if (data.type === 'pose' && ready) onPose(data.id, data.pose);
+            if (data.type === 'impact' && ready) onImpact?.(data.impact);
           } catch (_) {}
         };
         socket.onerror = () => {}; // HTTP snapshots continue throughout reconnects.

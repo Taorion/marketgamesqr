@@ -13,7 +13,7 @@ La demo permite cambiar el texto del premio, la altura y la dificultad. Usa un p
 - Tres bloques o criaturas golpeados cargan el supersalto: salto + golpe.
 - Sonido opcional, apagado inicialmente. En individual, ocultar la pestaña pausa la simulación. En multijugador el reloj común continúa.
 - Si el personaje desaparece por debajo de su propia pantalla, pierde una vida y reaparece en la última plataforma estable donde estuvo apoyado. Una plataforma frágil no cambia ese punto de retorno; las móviles estables conservan su posición actual. La cámara vuelve a mostrar al personaje y recibe dos segundos de protección frente a enemigos; una nueva caída sigue restando vida. Sin vidas, termina el ascenso.
-- La simulación v2 aplica esta regla tanto en individual como en multijugador y en la validación del servidor. Las salas abiertas con las reglas anteriores vencen al actualizarse; al recargar se permite iniciar una nueva participación, sin mezclar recorridos de distintas versiones ni perder un premio ya confirmado.
+- La simulación v3 aplica estas reglas tanto en el cliente como en la validación del servidor. Las salas abiertas con las reglas anteriores vencen al actualizarse; al recargar se permite iniciar una nueva participación, sin mezclar recorridos de distintas versiones ni perder un premio ya confirmado.
 
 ## Carrera familiar: individual y multijugador
 
@@ -26,9 +26,13 @@ La activación integrada ofrece ambos modos después de registrar la participaci
 
 ### Movimiento de los rivales
 
+En multijugador, **GOLPE** (X/J en teclado) alcanza a rivales situados delante, a un máximo de 55 píxeles horizontales y 31 verticales. Empuja, aturde durante 12 pasos (0,2 s) y da 45 pasos de protección contra nuevos impactos. Cada martillazo alcanza una sola vez a cada rival. No resta vida directamente: si el empujón termina en una caída fuera de la pantalla, se pierde la vida y se vuelve al último punto estable. Se respetan los dos segundos de protección al reaparecer.
+
+El servidor compara posiciones reconstruidas del mismo paso de simulación, con un historial acotado y una ventana máxima de compensación de un segundo. Guarda los impactos en el estado de la sala bajo su bloqueo transaccional y los incluye al reproducir el recorrido para verificar el premio. Los mensajes visuales del cliente no pueden crear impactos. Una notificación de impacto sale por WebSocket únicamente después de confirmar la transacción; también se recupera por HTTP. El cliente vuelve a simular sus controles pendientes con ese evento para corregir la posición, incluso si había mostrado una llegada aún sin confirmar. La captura de controles mantiene un intervalo mínimo de 300 ms por jugador.
+
 Durante la carrera, `/api/public/summit-live` transmite posiciones visuales por WebSocket a 20 Hz. El canvas interpola entre mensajes con un pequeño búfer de 90 ms y dibuja al rival en cada cuadro; las respuestas HTTP atrasadas no lo hacen retroceder. Cada rival conserva su color, apodo, animación de caminar y martillo.
 
-El controlador entrega un permiso firmado y temporal únicamente después de autenticar una participación en una carrera iniciada. El canal limita tamaño y frecuencia, fija la identidad y sala desde ese permiso, reemplaza conexiones duplicadas y se reconecta automáticamente. No acepta resultados, premios ni saldos: la simulación de controles, el ganador y el QR siguen siendo responsabilidad exclusiva de la transacción existente.
+El controlador entrega un permiso firmado y temporal únicamente después de autenticar una participación en una carrera iniciada. El canal limita tamaño y frecuencia, fija la identidad y sala desde ese permiso, reemplaza conexiones duplicadas y se reconecta automáticamente. No acepta impactos, resultados, premios ni saldos enviados por clientes: la simulación de controles, los impactos confirmados, el ganador y el QR siguen siendo responsabilidad exclusiva de la transacción existente.
 
 Si WebSocket no está disponible, continúan los controles y la validación por HTTP, con movimiento visual suavizado desde esas respuestas. El canal visual distribuye mensajes entre conexiones de la misma instancia Node; antes de escalar a varias instancias se requiere un distribuidor compartido. Entre instancias distintas se conserva el respaldo HTTP, con mayor retraso visual.
 5. Todos recorren la misma montaña, con las mismas condiciones. Se ven los otros escaladores y una lista de avance, actualizados aproximadamente cada medio segundo. Los personajes no se empujan ni comparten colisiones.

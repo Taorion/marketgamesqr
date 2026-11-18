@@ -18,7 +18,7 @@ async function fixture() {
   }
   return {client,url,clients,async close(){for(const ws of clients)ws.terminate();stop();await new Promise(resolve=>server.close(resolve));}};
 }
-const pose=tick=>({tick,x:86+tick,y:1124,face:1,lives:3,walking:true,hammer:false});
+const pose=tick=>({tick,x:86+tick,y:1124,face:1,lives:3,walking:true,hammer:false,stunned:false});
 const send=(c,tick,extra={})=>c.ws.send(JSON.stringify({type:'pose',pose:pose(tick),...extra}));
 function until(c,predicate) {
   if(predicate(c.messages))return Promise.resolve();
@@ -92,4 +92,16 @@ test('browser client authenticates, reconnects after a dropped socket and stops 
     const closed=once(replacement,'close');client.destroy();await closed;
     assert.equal(sockets.length,2);
   }finally{client.destroy();w.close();await f.close();}
+});
+
+test('only committed server notifications can broadcast impacts to their own room',async()=>{
+ const f=await fixture();
+ try{
+  const a=await f.client(access('a')),b=await f.client(access('b')),outside=await f.client(access('c','room-b'));
+  const impact={id:'a:1:b',attacker_id:'a',target_id:'b',tick:2,direction:1};
+  a.ws.send(JSON.stringify({type:'impact',impact}));send(a,1);await until(b,m=>m.some(v=>v.type==='pose'));
+  assert.equal(b.messages.some(m=>m.type==='impact'),false);
+  live.notify('room-a',[impact]);await until(a,m=>m.some(v=>v.type==='impact'));await until(b,m=>m.some(v=>v.type==='impact'));
+  assert.deepEqual(b.messages.at(-1),{type:'impact',impact});assert.equal(outside.messages.length,1);
+ }finally{await f.close();}
 });

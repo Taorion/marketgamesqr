@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   function mount(host, options) {
-    let game, live, timer, destroyed = false, busy = false, pendingStart = false, checked = false, room, ack = 0, offset = 0, delivered = false;
+    let game, live, timer, destroyed = false, busy = false, pendingStart = false, pendingPoll = false, lastSent = 0, checked = false, room, ack = 0, offset = 0, delivered = false;
     host.innerHTML = `<section class="cumbre-lobby"><h3>¿Cómo quieres subir?</h3>
       <p>Juega a tu ritmo o compite con tu familia por el premio de la cima.</p>
       <div class="cumbre-mode-buttons"><button type="button" data-action="solo">Individual</button><button type="button" data-action="family">Multijugador · 2 a 8</button></div>
@@ -19,7 +19,11 @@
     const message = host.querySelector('.cumbre-network'), roomPanel = host.querySelector('.cumbre-room');
     const buttons = name => host.querySelector(`[data-action="${name}"]`);
     const say = value => { message.textContent = value; };
-    function schedule() { clearTimeout(timer); if (!destroyed && room && !['finished','expired'].includes(room.status)) timer = setTimeout(poll, room.status === 'racing' ? 500 : 1000); }
+    function schedule() { clearTimeout(timer); if (!destroyed && room && !['finished','expired'].includes(room.status)) timer = setTimeout(poll, room.status === 'racing' ? Math.max(25, 300 - (Date.now() - lastSent)) : 1000); }
+    function impact(event) {
+      if (room?.status !== 'racing' || !event) return;
+      game?.combatEvent?.(event, room.own.id);
+    }
     function render(next, access) {
       if (destroyed) return;
       room = next;
@@ -46,10 +50,12 @@
         game = root.QoriSummit.mount(playHost, { config: room.config, seed: room.seed, prize: room.prize,
           initialState: room.own.state, race: { startsAt: new Date(room.starts_at).getTime(), now: () => synchronizedAt + performance.now() - monotonicAt },
           onPose: pose => live?.send(pose),
+          onAttack: poll,
           onFinish: () => { clearTimeout(timer); poll(); } });
       }
       game?.opponents(room.members.filter(m => m.id !== room.own.id));
-      if (room.status === 'racing' && access && !live) live = root.QoriSummitLive?.connect(access, (id, pose) => game?.remotePose(id, pose));
+      game?.reconcile?.(room.own.state);
+      if (room.status === 'racing' && access && !live) live = root.QoriSummitLive?.connect(access, (id, pose) => game?.remotePose(id, pose), impact);
       ack = room.own.state.tick;
       if (room.status === 'finished' || room.status === 'expired') {
         live?.destroy(); live = null;
@@ -69,7 +75,7 @@
       if (destroyed || busy) return;
       busy = true;
       host.querySelectorAll('[data-action]').forEach(b => { if (b.dataset.action !== 'start') b.disabled = true; });
-      const sent = Date.now();
+      const sent = Date.now(); lastSent = sent;
       try {
         const result = await options.request({ action, ...extra });
         if (destroyed) return;
@@ -77,6 +83,7 @@
         if (result.room) offset = new Date(result.room.server_now).getTime() - (sent + Date.now()) / 2;
         buttons('resume').hidden = true;
         render(result.room, result.live);
+        result.impacts?.forEach(impact);
       } catch (error) {
         if (destroyed) return;
         say(`${error.message} Puedes volver a conectar sin cambiar de jugador.`);
@@ -88,9 +95,12 @@
           pendingStart = false;
           if (!destroyed && room?.status === 'waiting' && room.host_id === room.own.id) send('start');
         }
+        if (pendingPoll) { pendingPoll = false; schedule(); }
       }
     }
     function poll() {
+      if (busy) { pendingPoll = true; return; }
+      if (room?.status === 'racing' && Date.now() - lastSent < 300) { schedule(); return; }
       const packet = room?.status === 'racing' ? game?.packet(ack) : null;
       if (packet?.runs.length) send('input', packet); else send('state');
     }

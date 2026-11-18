@@ -7,6 +7,10 @@ const { env } = require('../config/env');
 const PATH = '/api/public/summit-live';
 const key = crypto.createHmac('sha256', env.jwtSecret).update('qori-summit-visual-v1').digest();
 const audience = 'qori-summit-visual';
+const confirmedRelays = new Set();
+function notify(seed, impacts = []) {
+  for (const relay of confirmedRelays) relay(seed, impacts);
+}
 
 function ticket(room) {
   if (room?.status !== 'racing' || !room.own) return null;
@@ -20,6 +24,14 @@ function ticket(room) {
 function attach(server) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 2048, perMessageDeflate: false });
   const rooms = new Map();
+  const relay = (seed, impacts) => {
+    const peers = rooms.get(seed);
+    if (!peers) return;
+    for (const impact of impacts) for (const peer of peers.values()) if (peer.readyState === WebSocket.OPEN && peer.bufferedAmount < 16384) {
+      peer.send(JSON.stringify({ type: 'impact', impact }));
+    }
+  };
+  confirmedRelays.add(relay);
   function upgrade(req, socket, head) {
     let sameOrigin = false;
     try { sameOrigin = new URL(req.headers.origin).host === req.headers.host; } catch (_) {}
@@ -66,6 +78,7 @@ function attach(server) {
         const message = JSON.stringify({ type: 'pose', id: claims.sub, pose: {
           tick: p.tick, x: p.x, y: p.y, face: p.face, lives: p.lives,
           walking: p.walking === true, hammer: p.hammer === true,
+          stunned: p.stunned === true,
         } });
         for (const peer of members.values()) if (peer !== ws && peer.readyState === WebSocket.OPEN && peer.bufferedAmount < 16384) peer.send(message);
       } catch (_) { ws.close(1008, 'Invalid session'); }
@@ -85,9 +98,10 @@ function attach(server) {
   }, 15000);
   heartbeat.unref();
   return function stop() {
+    confirmedRelays.delete(relay);
     clearInterval(heartbeat); server.off('upgrade', upgrade);
     for (const ws of wss.clients) ws.terminate();
     rooms.clear(); wss.close();
   };
 }
-module.exports = { ticket, attach, PATH };
+module.exports = { ticket, attach, notify, PATH };

@@ -17,10 +17,13 @@
     const canvas = host.querySelector("canvas"), ctx = canvas.getContext("2d"), cover = host.querySelector(".cumbre-cover");
     const status = host.querySelector(".cumbre-status"), removers = [], pressed = new Map();
     const s = options.initialState ? structuredClone(options.initialState) : core.create(options.config, options.seed), trace = [];
-    const baseTick = s.tick, inputs = [];
+    let baseTick = s.tick;
+    const inputs = [];
     let opponents = [];
     const remoteTracks = new Map();
     let lastPoseTick = -3;
+    let authoritative = options.initialState ? structuredClone(options.initialState) : null, serverFinished = false;
+    const confirmedImpacts = new Map((s.impacts || []).map(impact => [impact.id, impact])), seenCombat = new Set();
     let running = false, destroyed = false, raf = 0, last = 0, accumulator = 0, sound = false, audio;
     ctx.imageSmoothingEnabled = false;
     function on(target, name, callback, settings) { target.addEventListener(name, callback, settings); removers.push(() => target.removeEventListener(name, callback, settings)); }
@@ -109,6 +112,7 @@
         const hammerX = x + p.face * (t < s.hammerUntil ? 25 : 13);
         rect(hammerX - 2, y - 28, 4, 17, "#ac7854"); rect(hammerX - 8, y - 31, 16, 7, "#d3e6ed");
         if (t < s.hammerUntil) text("✦", hammerX + p.face * 13, y - 22, 15, "#fff0a4", "center");
+        if (t < s.stunUntil) text('✦ ✦', x, y - 48, 13, '#fff0a4', 'center');
       }
       opponents.forEach((other, i) => {
         const pose = remotePosition(other, performance.now());
@@ -123,6 +127,7 @@
         const hammerX = x + face * (pose.hammer ? 25 : 13);
         rect(hammerX - 2, y - 28, 4, 17, '#ac7854'); rect(hammerX - 8, y - 31, 16, 7, '#d3e6ed');
         ctx.globalAlpha = 1; text(String(other.alias).slice(0, 12), x, y - 46, 9, color, 'center');
+        if (pose.stunned || performance.now() < (remoteTracks.get(other.id)?.flashUntil || 0)) text('✦', x + 18, y - 35, 15, '#fff0a4', 'center');
       });
       for (let i = 0; i < 20; i++) rect((i * 67 + t * .32) % 360, (i * 41 + t * .56) % 480, 2, 2, "#b9d9e4");
       for (let y = 0; y < 480; y += 4) rect(0, y, 360, 1, "rgba(0,0,0,.06)");
@@ -141,6 +146,21 @@
       cover.append(title, copy);
       status.textContent = s.won ? "Cima alcanzada. Comprobando el premio…" : "Partida terminada sin premio.";
       options.onFinish?.({ won: s.won, floor: s.highest, trace, duration_ms: Math.round(s.tick * 1000 / 60), reason: s.reason });
+    }
+    function correctPrediction() {
+      if (!authoritative || serverFinished || destroyed) return;
+      const until = s.tick, wasDone = s.done;
+      Object.assign(s, structuredClone(authoritative));
+      if (s.tick > until) { baseTick = s.tick; inputs.length = 0; }
+      s.impacts = [...confirmedImpacts.values()].sort((a,b) => a.tick-b.tick);
+      for (let tick=s.tick; tick<until && !s.done; tick++) core.step(s, inputs[tick-baseTick] || 0);
+      inputs.length = Math.max(0, s.tick-baseTick);
+      trace.length = 0;
+      for (const mask of inputs) { const tail=trace.at(-1); if(tail?.[0]===mask)tail[1]++;else trace.push([mask,1]); }
+      lastPoseTick = Math.min(lastPoseTick, s.tick-3);
+      if (s.done && !wasDone) { cancelAnimationFrame(raf); end(); }
+      else if (!s.done && wasDone) { running=true; cover.hidden=true; last=performance.now(); raf=requestAnimationFrame(frame); }
+      draw();
     }
     function frame(now) {
       if (destroyed || !running) return;
@@ -163,10 +183,11 @@
       while (accumulator >= 1000 / 60 && !s.done) {
         let mask = 0; for (const bit of pressed.values()) mask |= bit;
         if (catchup) mask = 0;
-        const previousY = s.player.vy, breaks = s.breaks, lives = s.lives;
+        const previousY = s.player.vy, breaks = s.breaks, lives = s.lives, swing = s.hammerUntil;
         core.step(s, mask);
         inputs.push(mask);
         const tail = trace[trace.length - 1]; if (tail && tail[0] === mask) tail[1]++; else trace.push([mask, 1]);
+        if (options.race && !catchup && s.hammerUntil !== swing) options.onAttack?.();
         if (previousY >= 0 && s.player.vy < 0) tone(440);
         if (s.breaks > breaks) tone(660);
         if (s.lives < lives) {
@@ -179,7 +200,7 @@
       if (options.race && (s.tick - lastPoseTick >= 3 || s.done)) {
         lastPoseTick = s.tick;
         options.onPose?.({ tick: s.tick, x: s.player.x, y: s.player.y, face: s.player.face, lives: s.lives,
-          walking: s.player.ground >= 0 && Boolean(s.previous & 3), hammer: s.tick < s.hammerUntil });
+          walking: s.player.ground >= 0 && Boolean(s.previous & 3), hammer: s.tick < s.hammerUntil, stunned: s.tick < s.stunUntil });
       }
       if (s.done) end(); else raf = requestAnimationFrame(frame);
     }
@@ -201,8 +222,27 @@
     if (options.race) {
       running = true; last = performance.now(); raf = requestAnimationFrame(frame);
       host.querySelector('.cumbre-prize small').textContent = 'Un solo premio: gana quien llegue primero.';
+      host.querySelector('.cumbre-hint').textContent = 'Acércate al rival, mira hacia él y pulsa GOLPE para empujarlo. Si cae fuera de su pantalla, pierde una vida.';
     }
     return {
+      reconcile(state) {
+        if (!options.race || !state || state.tick < (authoritative?.tick || baseTick)) return;
+        authoritative = structuredClone(state);
+        let changed = false;
+        for (const event of state.impacts || []) if (!confirmedImpacts.has(event.id)) { confirmedImpacts.set(event.id, event); changed = true; }
+        if (changed || (state.done && !s.done)) correctPrediction();
+      },
+      combatEvent(event, ownId) {
+        if (!event?.id || seenCombat.has(event.id) || serverFinished) return;
+        seenCombat.add(event.id);
+        if (event.target_id === ownId) {
+          if (!confirmedImpacts.has(event.id)) { confirmedImpacts.set(event.id,event); correctPrediction(); }
+          if (!s.done) { status.textContent='¡Te golpearon! Recupera el equilibrio y sigue subiendo.'; tone(140,.12); }
+        } else {
+          const track=remoteTracks.get(event.target_id); if(track)track.flashUntil=performance.now()+300;
+          if (event.attacker_id === ownId) { status.textContent='¡Golpe al rival!'; tone(520,.08); }
+        }
+      },
       packet(from) {
         if (from < baseTick || from > s.tick) return null;
         const runs = [];
@@ -229,7 +269,7 @@
         if (track.samples.length > 16) track.samples.shift();
         if (!running) draw();
       },
-      finish(message) { running = false; pressed.clear(); cancelAnimationFrame(raf); cover.hidden = false; cover.textContent = message; status.textContent = message; },
+      finish(message) { serverFinished = true; running = false; pressed.clear(); cancelAnimationFrame(raf); cover.hidden = false; cover.textContent = message; status.textContent = message; },
       destroy() { destroyed = true; cancelAnimationFrame(raf); pressed.clear(); removers.forEach(fn => fn()); audio?.close(); }
     };
   }

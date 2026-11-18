@@ -140,6 +140,39 @@ test('tables deny direct anonymous reads and have RLS enabled',async()=>{
   const grants=(await query("select has_table_privilege('anon','qori_summit_rooms','SELECT') allowed")).rows[0];assert.equal(grants.allowed,false);
 });
 
+test('verified hammer impacts persist with the room, replay once and survive reconnects',async()=>{
+ const {p,q,room}=await pair();
+ await query("update qori_summit_rooms set starts_at=now()-interval '200 milliseconds' where activation_id=$1 and status='racing'",[activation.id]);
+ await call(p,'input',{from:0,runs:[[8,1]],impacts:[{tick:1,direction:-1}]});
+ const hit=await call(q,'input',{from:0,runs:[[0,1]]});
+ assert.equal(hit.impacts.length,1);assert.equal(hit.impacts[0].attacker_id,p.participant_id);assert.equal(hit.impacts[0].target_id,q.participant_id);
+ const resumed=(await call(q,'resume')).room;assert.equal(resumed.own.state.impacts.length,1);
+ const pushed=(await call(q,'input',{from:1,runs:[[0,3]]})).room;
+ assert.ok(pushed.own.state.player.x>86);assert.equal(pushed.own.state.lives,3);
+ const retry=await call(q,'input',{from:1,runs:[[0,3]]});assert.equal(retry.impacts.length,0);assert.deepEqual(retry.room.own.state,pushed.own.state);
+ assert.equal((await query('select count(*)::int n from test_awards')).rows[0].n,0);
+});
+
+test('simultaneous attacks remain single impacts per target and cannot affect another room',async()=>{
+ const {p,q,room}=await pair(),outsider=await player('Otra sala');await call(outsider,'create');
+ await query("update qori_summit_rooms set starts_at=now()-interval '200 milliseconds' where activation_id=$1 and status='racing'",[activation.id]);
+ const results=await Promise.all([call(p,'input',{from:0,runs:[[8,1]]}),call(q,'input',{from:0,runs:[[8,1]]})]);
+ assert.equal(results.flatMap(r=>r.impacts).length,2);
+ const states=await Promise.all([call(p,'resume'),call(q,'resume'),call(outsider,'resume')]);
+ assert.equal(states[0].room.own.state.impacts.length,1);assert.equal(states[1].room.own.state.impacts.length,1);assert.equal(states[2].room.own.state.impacts.length,0);
+});
+
+test('a failed state write rolls back both the attack and its peer impact',async()=>{
+ const {p,q}=await pair();await query("update qori_summit_rooms set starts_at=now()-interval '200 milliseconds' where activation_id=$1 and status='racing'",[activation.id]);
+ await call(p,'input',{from:0,runs:[[8,1]]});
+ const transaction=handler=>require('../backend/src/config/db').withTransaction(client=>handler({query(sql,params){
+  if(sql.includes('jsonb_to_recordset'))throw new Error('Simulated write failure');return client.query(sql,params);
+ }}));
+ await assert.rejects(call(q,'input',{from:0,runs:[[0,1]]},{transaction}),/Simulated write failure/);
+ const unchanged=(await call(q,'resume')).room.own.state;assert.equal(unchanged.tick,0);assert.equal(unchanged.impacts.length,0);
+ const retry=await call(q,'input',{from:0,runs:[[0,1]]});assert.equal(retry.impacts.length,1);
+});
+
 test('two HTTP clients create, join and directly start then resume their shared room',async()=>{
   const express=require('express'),app=express();app.use(express.json());
   app.post('/api/public/activations/:slug/summit',require('../backend/src/controllers/summitRaceController').action);
@@ -167,6 +200,12 @@ test('two HTTP clients create, join and directly start then resume their shared 
       const delivered=once(liveQ,'message'),s=started.data.room.own.state;
       liveP.send(JSON.stringify({type:'pose',pose:{tick:0,x:s.player.x,y:s.player.y,face:1,lives:s.lives}}));
       const movement=JSON.parse((await delivered)[0]);assert.equal(movement.id,p.participant_id);assert.equal(movement.type,'pose');
+      await query("update qori_summit_rooms set starts_at=now()-interval '200 milliseconds' where activation_id=$1",[activation.id]);
+      await post({...p,action:'input',from:0,runs:[[8,1]]});
+      const confirmed=once(liveQ,'message');
+      const struck=await post({...q,action:'input',from:0,runs:[[0,1]]});assert.equal(struck.status,200);
+      const impact=JSON.parse((await confirmed)[0]);assert.equal(impact.type,'impact');assert.equal(impact.impact.target_id,q.participant_id);
+      assert.equal((await query('select state from qori_summit_members where participant_id=$1',[q.participant_id])).rows[0].state.impacts[0].id,impact.impact.id);
     }finally{liveP.terminate();liveQ.terminate();}
     const denied=await post({...p,action:'state',game_session_token:crypto.randomUUID()});assert.equal(denied.status,403);
     const malformed=await post({...p,action:'input',runs:[[99,1]],from:0});assert.equal(malformed.status,400);

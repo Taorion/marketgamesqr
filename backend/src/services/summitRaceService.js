@@ -52,6 +52,7 @@ async function act(slug, body, { customerId, transaction = withTransaction, comp
     }
     let members = (await client.query('select * from qori_summit_members where room_id=$1 order by participant_id', [room.id])).rows;
     let own = members.find(m => m.participant_id === p.id);
+    const impacts = [];
     const now = Date.now();
     const deadline = room.starts_at ? new Date(room.starts_at).getTime() + room.config.duration_seconds * 1000 + 2000 : new Date(room.expires_at).getTime();
     if (['waiting', 'racing'].includes(room.status) && (now > deadline || room.signature !== policy.signature(a))) {
@@ -98,13 +99,19 @@ async function act(slug, body, { customerId, transaction = withTransaction, comp
     }
     if (body.action === 'input' && room.status === 'racing') {
       assertOpen(a);
-      const won = rules.advance(room, own, body, now);
-      await client.query('update qori_summit_members set state=$2::jsonb,trace=$3::jsonb where participant_id=$1', [p.id, JSON.stringify(own.state), JSON.stringify(own.trace)]);
+      const won = rules.advance(room, own, body, now, members, impacts);
+      const changed = new Set([p.id, ...impacts.map(impact => impact.target_id)]);
+      const updates = members.filter(member => changed.has(member.participant_id)).map(member => ({
+        participant_id: member.participant_id, state: member.state, trace: member.trace,
+      }));
+      await client.query(`update qori_summit_members m set state=u.state,trace=u.trace
+        from jsonb_to_recordset($2::jsonb) as u(participant_id uuid,state jsonb,trace jsonb)
+        where m.room_id=$1 and m.participant_id=u.participant_id`, [room.id, JSON.stringify(updates)]);
       if (won) {
         // A trusted internal argument authorizes the shared seed. HTTP bodies cannot supply it.
         const finish = complete || require('./interactiveActivationService').completeInteractiveParticipant;
         const result = await finish(slug, { participant_id: p.id, game_session_token: p.game_session_token, summit_trace: own.trace },
-          { client, allowIdentityRecovery: false, summitRace: { roomId: room.id, seed: room.seed, startsAt: room.starts_at } });
+          { client, allowIdentityRecovery: false, summitRace: { roomId: room.id, seed: room.seed, startsAt: room.starts_at, impacts: own.state.impacts } });
         delete result.credit_account;
         own.result = result;
         room.status = 'finished'; room.winner_id = p.id;
@@ -125,7 +132,7 @@ async function act(slug, body, { customerId, transaction = withTransaction, comp
     }
     own.updated_at = new Date(now).toISOString();
     await client.query('update qori_summit_members set updated_at=now() where participant_id=$1', [p.id]);
-    return { room: rules.snapshot(room, members, p.id, now) };
+    return { room: rules.snapshot(room, members, p.id, now), impacts };
   });
 }
 module.exports = { act };

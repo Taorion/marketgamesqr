@@ -1,8 +1,9 @@
 const core = require('../../../activacion/cumbre-core');
 const { badRequest } = require('../utils/http');
+const combat = require('./summitCombatRules');
 
 // Only controls are accepted. Positions, scores and finish flags are derived here.
-function advance(room, member, packet, now = Date.now()) {
+function advance(room, member, packet, now = Date.now(), members = [member], events = []) {
   const state = member.state;
   if (room.status !== 'racing' || state.done) return false;
   const elapsed = now - new Date(room.starts_at).getTime();
@@ -19,11 +20,15 @@ function advance(room, member, packet, now = Date.now()) {
   if (count > 600 || state.tick + count > Math.floor(elapsed * 60 / 1000) + 6 || state.tick + count > state.cfg.duration_seconds * 60) throw badRequest('El recorrido supera el tiempo de la carrera.');
   // Validate the entire packet before changing the persisted simulation.
   const next = structuredClone(state);
+  member.state = next;
+  const accepted = [];
   for (const [mask, frames] of packet.runs) for (let i = 0; i < frames; i++) {
-    if (next.done) throw badRequest('La partida ya terminó.');
+    if (next.done) break;
     core.step(next, mask);
+    const tail=accepted.at(-1);if(tail?.[0]===mask)tail[1]++;else accepted.push([mask,1]);
+    combat.resolve(room,member,members,now,events);
   }
-  for (const [mask, frames] of packet.runs) {
+  for (const [mask, frames] of accepted) {
     const tail = member.trace.at(-1);
     if (tail?.[0] === mask) tail[1] += frames; else member.trace.push([mask, frames]);
   }
@@ -40,6 +45,7 @@ function snapshot(room, members, ownId, now = Date.now()) {
     members: members.map(m => ({ id: m.participant_id, alias: m.alias, ready: m.ready,
       floor: m.state.highest, x: m.state.player.x, y: m.state.player.y,
       tick: m.state.tick, face: m.state.player.face, lives: m.state.lives,
+      stunned: m.state.tick < m.state.stunUntil,
       done: m.state.done, connected: now - new Date(m.updated_at).getTime() < 8000 })),
     own: own ? { id: ownId, state: own.state, result: own.result || null } : null,
   };

@@ -20,7 +20,7 @@ function verify(activation, participant, body, now = Date.now(), race) {
   if (participant.game_session_completed_at || participant.completed_at) throw badRequest("Esta partida de Cumbre ya finalizó.");
   if (participant.metadata?.summit_signature !== signature(activation)) throw badRequest("El premio o la montaña cambió. Inicia una nueva participación.");
   let result;
-  try { result = core.replay(activation.game_config, race?.seed || participant.game_session_token, body.summit_trace); }
+  try { result = core.replay(activation.game_config, race?.seed || participant.game_session_token, body.summit_trace, race?.impacts || []); }
   catch (error) { throw badRequest(error.message); }
   const elapsed = now - new Date(race?.startsAt || participant.game_session_started_at || participant.started_at).getTime();
   if (!Number.isFinite(elapsed) || elapsed < result.duration_ms - 1500 || elapsed > 30 * 60 * 1000) throw badRequest("El tiempo de esta sesión de Cumbre no es válido.");

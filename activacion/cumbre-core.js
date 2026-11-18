@@ -5,7 +5,7 @@
   else root.QoriSummitCore = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
-  const VERSION = 2, WIDTH = 360, HEIGHT = 480, GAP = 88, PLAYER_HEIGHT = 40;
+  const VERSION = 3, WIDTH = 360, HEIGHT = 480, GAP = 88, PLAYER_HEIGHT = 40;
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const integer = (n, fallback, a, b) => Number.isFinite(Number(n)) ? clamp(Math.round(Number(n)), a, b) : fallback;
   function normalize(config = {}) {
@@ -37,8 +37,9 @@
       .map(p => ({ floor: p.i, x: p.x + 55, dir: seedValue % 2 ? 1 : -1, alive: true }));
     const blocks = platforms.filter(p => p.i > 1 && p.i % 4 === 2 && p.i < cfg.floors)
       .map(p => ({ floor: p.i, x: p.x + p.w / 2, alive: true }));
-    return { cfg, platforms, enemies, blocks, tick: 0, player: { x: 86, y: base, vy: 0, face: 1, ground: 0 },
+    return { cfg, platforms, enemies, blocks, tick: 0, player: { x: 86, y: base, vy: 0, face: 1, ground: 0, pushX: 0 },
       highest: 0, checkpoint: 0, lives: cfg.lives, hitUntil: 0, hammerUntil: 0, hammerReady: 0, charge: 0,
+      impacts: [], stunUntil: 0, rivalHitUntil: 0,
       previous: 0, coyote: 6, jumpBuffer: 0, done: false, won: false, reason: "", breaks: 0, camera: base - 420 };
   }
   function damage(s, falling = false) {
@@ -47,15 +48,25 @@
     if (s.lives <= 0) { s.done = true; s.reason = "lives"; return; }
     const floor = s.platforms[s.checkpoint], x = platformX(floor, s.tick);
     floor.brokenUntil = 0; floor.touched = -1;
-    Object.assign(s.player, { x: x + 25, y: floor.y, vy: 0, ground: floor.i });
+    Object.assign(s.player, { x: x + 25, y: floor.y, vy: 0, ground: floor.i, pushX: 0 });
     s.camera = Math.max(s.camera, floor.y - (HEIGHT - 100));
     s.jumpBuffer = 0; s.coyote = 6;
+    s.stunUntil = 0;
     s.hitUntil = s.tick + 120;
   }
   function step(s, input = 0) {
     if (s.done) return s;
     s.tick++;
     const p = s.player, oldY = p.y;
+    // Only the server creates impacts. Client prediction and prize replay consume
+    // the same persisted events; an HTTP input body cannot supply this list.
+    for (const impact of s.impacts) if (impact.tick === s.tick && s.tick >= s.hitUntil && s.tick >= s.rivalHitUntil) {
+      p.pushX = impact.direction * 7.5; p.vy = -3.2; p.ground = -1;
+      s.stunUntil = s.tick + 12; s.rivalHitUntil = s.tick + 45;
+      s.jumpBuffer = 0; s.coyote = 0;
+    }
+    const stunned = s.tick < s.stunUntil;
+    if (stunned) input = 0;
     if ((input & 4) && !(s.previous & 4)) s.jumpBuffer = 7;
     else s.jumpBuffer = Math.max(0, s.jumpBuffer - 1);
     if ((input & 8) && s.tick >= s.hammerReady) {
@@ -74,7 +85,8 @@
     }
     const direction = (input & 2 ? 1 : 0) - (input & 1 ? 1 : 0);
     if (direction) p.face = direction;
-    p.x = clamp(p.x + direction * 3.15, 12, WIDTH - 12);
+    p.x = clamp(p.x + direction * 3.15 + p.pushX, 12, WIDTH - 12);
+    p.pushX = Math.abs(p.pushX) < .1 ? 0 : p.pushX * .88;
     p.vy = Math.min(10, p.vy + 0.34); p.y += p.vy; p.ground = -1;
     // Check before landing: an invisible lower platform must not rescue the fall
     // or replace the last stable checkpoint. This camera belongs to this player.
@@ -122,9 +134,9 @@
     s.previous = input;
     return s;
   }
-  function replay(config, seed, trace) {
+  function replay(config, seed, trace, impacts = []) {
     if (!Array.isArray(trace) || !trace.length || trace.length > 10800) throw new Error("Recorrido de Cumbre inválido.");
-    const s = create(config, seed); let frames = 0;
+    const s = create(config, seed); s.impacts = structuredClone(impacts); let frames = 0;
     for (const run of trace) {
       if (!Array.isArray(run) || run.length !== 2 || !Number.isInteger(run[0]) || run[0] < 0 || run[0] > 15 || !Number.isInteger(run[1]) || run[1] < 1) throw new Error("Controles de Cumbre inválidos.");
       frames += run[1];
