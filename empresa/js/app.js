@@ -19998,7 +19998,7 @@ const GAMING_ACTIVATION_CATEGORY_TYPES = {
   recommended: ["TRIVIA", "SCRATCH_DIGITAL", "ROULETTE_SPIN", "SPIN_DISCOVER", "PRODUCT_VOTE", "PRIVATE_INVITATION"],
   capture: ["OPEN_QUESTION", "PRODUCT_VOTE", "TRIVIA"],
   reveal: ["SPIN_DISCOVER", "THERMOMETER", "SEALED_LETTER", "PRIVATE_INVITATION", "SCRATCH_DIGITAL", "ROULETTE_SPIN"],
-  games: ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "MEMORY_PAIRS", "WHACK_A_MOLE", "DODGE_RUNNER", "ROULETTE_SPIN", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
+  games: ["QORI_SUMMIT", "SPACE_SHOOTER", "BREAKOUT", "SNAKE", "MEMORY_PAIRS", "WHACK_A_MOLE", "DODGE_RUNNER", "ROULETTE_SPIN", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
 };
 
 function ensureGamingCenterUxStyles() {
@@ -29974,6 +29974,7 @@ function updateTriviaQuestionVisibility() {
 
 function activationTypeLabel(type) {
   return {
+    QORI_SUMMIT: "Cumbre Qori",
     TRIVIA: "Trivia",
     TRIVIA_QUIZ: "Trivia",
     OPEN_QUESTION: "Pregunta abierta",
@@ -30037,6 +30038,7 @@ function interactiveTypeForLegacyType(type) {
 
 function interactiveCategoryForType(type) {
   return {
+    QORI_SUMMIT: "minigame",
     TRIVIA: "commercial",
     OPEN_QUESTION: "commercial",
     SURVEY: "survey",
@@ -30803,10 +30805,21 @@ function updatePrivateInvitationScheduleFields() {
 }
 
 function isMinigameActivation(type) {
-  return ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "ROULETTE_SPIN", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"].includes(type);
+  return ["QORI_SUMMIT", "SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "ROULETTE_SPIN", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"].includes(type);
 }
 
 const MINIGAME_SPECIFIC_CONFIG = {
+  QORI_SUMMIT: {
+    title: "Cumbre Qori · premio fijo en la cima",
+    summary: "Ascenso retro individual o carrera familiar de 2 a 8 personas desde el mismo QR. El premio del bloque Beneficio aparece en la cima.",
+    help: "Individual: llegar al cofre desbloquea el premio. Multijugador: un solo premio por sala para la primera llegada validada. Cada sala usa el mismo premio y la disponibilidad general de la activación.",
+    fields: [
+      { key: "floors", label: "Pisos hasta el premio", type: "number", min: 8, max: 16, value: 12 },
+      { key: "duration_seconds", label: "Tiempo de ascenso (segundos)", type: "number", min: 45, max: 180, value: 90 },
+      { key: "lives", label: "Vidas por partida", type: "number", min: 1, max: 5, value: 3 },
+      { key: "summit_difficulty", label: "Dificultad", type: "select", value: "normal", options: [["easy", "Amable"], ["normal", "Clásica"], ["hard", "Experta"]] },
+    ],
+  },
   SPACE_SHOOTER: {
     title: "Marcianitos",
     summary: "Dinámica: moverse lateralmente, disparar automaticamente y sobrevivir a enemigos que bajan y disparan.",
@@ -30980,6 +30993,7 @@ const MINIGAME_SPECIFIC_CONFIG = {
 
 function minigameInstructionForType(type) {
   return {
+    QORI_SUMMIT: "Salta entre plataformas, usa el martillo y llega al cofre de la cima para desbloquear el premio indicado.",
     SPACE_SHOOTER: "Arrastra el dedo a izquierda o derecha. La nave no salta al touch, se mueve lateralmente, recibe dano y dispara con cadencia controlada.",
     BREAKOUT: "Rompe tantos bloques como puedas antes de que termine el tiempo.",
     SNAKE: "Captura elementos, evita errores y supera el score mínimo.",
@@ -31109,6 +31123,7 @@ function renderMinigameSpecificConfig(type) {
 }
 
 function syncMinigameSharedFieldLabels(type) {
+  [minigameDurationInput, minigameMinScoreInput, minigameMaxScoreInput, minigamePointsInput, minigamePenaltyInput, minigameLivesInput].forEach(input => input?.closest("label")?.classList.toggle("hidden", type === "QORI_SUMMIT"));
   const whackMode = type === "WHACK_A_MOLE";
   const basketMode = type === "DODGE_RUNNER";
   const setLabel = (input, label) => {
@@ -31118,7 +31133,7 @@ function syncMinigameSharedFieldLabels(type) {
   setLabel(minigamePointsInput, whackMode ? "Puntos por topo" : basketMode ? "Puntos por fruta fresca" : "Puntos por objetivo");
   setLabel(minigamePenaltyInput, whackMode ? "Penalización por hueco vacío" : basketMode ? "Puntos descontados por fruta dañada" : "Penalizacion");
   setLabel(minigameLivesInput, whackMode ? "Vidas ante trampas" : basketMode ? "Vidas ante frutas dañadas" : "Vidas del juego");
-  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode || basketMode);
+  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode || basketMode || type === "QORI_SUMMIT");
 }
 
 function minigameFieldValue(key) {
@@ -31709,6 +31724,13 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     };
   }
 
+  if (type === "QORI_SUMMIT") {
+    return { ...base, category: "minigame", reward_mode: "fixed", score_rewards: [],
+      game_config: { ...collectMinigameSpecificConfig(type), game_type: type, min_duration_ms: 0, max_score: 16 },
+      interaction_config: { minigame: type, commercial_goal: "summit_fixed_reward" },
+    };
+  }
+
   if (isMinigameActivation(type)) {
     const durationSeconds = Math.max(10, Math.min(180, Number(minigameDurationInput?.value || 30)));
     const minScore = Math.max(1, Number(minigameMinScoreInput?.value || 100));
@@ -32034,6 +32056,7 @@ function validateTriviaLauncherForm() {
   if (isMinigameActivation(type)) {
     const specificConfig = validateMinigameSpecificConfig(type);
     if (!specificConfig) return null;
+    if (type === "QORI_SUMMIT") return specificConfig;
     const durationSeconds = Number(minigameDurationInput?.value || 30);
     const minScore = Number(minigameMinScoreInput?.value || 100);
     const maxScore = Number(minigameMaxScoreInput?.value || 2500);

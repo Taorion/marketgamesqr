@@ -44,6 +44,8 @@ router.post("/trivias/:slug/attempts", publicActionLimit, publicSubmitTrivia);
 router.get("/activations/:slug", publicReadLimit, publicReadCache, publicGetInteractiveActivation);
 router.post("/activations/:slug/participants", publicActionLimit, publicStartInteractiveActivation);
 router.post("/activations/:slug/complete", publicActionLimit, publicCompleteInteractiveActivation);
+// A shared family Wi-Fi must support eight concurrent players (2 input requests/s each).
+router.post("/activations/:slug/summit", rateLimit({ keyPrefix: 'summit-race', max: 1800, windowMs: 60_000 }), require('../controllers/summitRaceController').action);
 router.get("/activations/download/:downloadToken", publicDownloadLimit, publicDownloadInteractiveActivationAsset);
 router.get("/lead-captures/:token", publicReadLimit, publicReadCache, publicGetLeadCapture);
 router.post("/lead-captures/:token/submissions", publicActionLimit, publicSubmitLeadCapture);

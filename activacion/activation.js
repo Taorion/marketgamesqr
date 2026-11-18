@@ -32,6 +32,7 @@ let selectedPosition = null;
 let gameState = null;
 
 const minigameTypes = new Set([
+  "QORI_SUMMIT",
   "SPACE_SHOOTER",
   "BREAKOUT",
   "SNAKE",
@@ -136,7 +137,7 @@ async function api(path, options = {}) {
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
-    throw new Error(apiErrorMessage(data));
+    const error = new Error(apiErrorMessage(data)); error.status = response.status; throw error;
   }
   return data;
 }
@@ -502,6 +503,9 @@ async function loadActivation() {
     if (!slug) throw new Error("Link de activacion incompleto.");
     const data = await api(`/api/public/activations/${encodeURIComponent(slug)}`);
     renderActivation(data.activation);
+    if (currentActivation.activation_type === 'QORI_SUMMIT' && activationCollectsParticipantData()) {
+      await resumeSummitSession().catch(error => setStatus(error.message, 'error'));
+    }
   } catch (error) {
     activationTitle.textContent = "Activacion no disponible";
     activationDescription.textContent = "Revisa el link o solicita uno nuevo al negocio.";
@@ -523,6 +527,25 @@ async function handleParticipantSubmit(event) {
   renderExperience();
 }
 
+async function resumeSummitSession() {
+  let saved;
+  const key = 'qori-summit:' + location.pathname + location.search;
+  try { saved = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (_) {}
+  if (!saved?.participant_id || !saved?.game_session_token) return false;
+  let resumed;
+  try {
+    resumed = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
+      method: 'POST', body: JSON.stringify({ action: 'resume', ...saved }),
+    });
+  } catch (error) {
+    if ([400,403,404].includes(error.status)) { try { sessionStorage.removeItem(key); } catch (_) {} return false; }
+    throw error;
+  }
+  if (!resumed.room) return false;
+  participant = { id: saved.participant_id }; gameSessionToken = saved.game_session_token;
+  participantForm.classList.add('hidden'); renderMinigame(); return true;
+}
+
 async function startGameSession() {
   const button = participantForm.querySelector("button[type='submit']");
   if (button) {
@@ -530,6 +553,7 @@ async function startGameSession() {
     button.textContent = "Preparando...";
   }
   try {
+    if (currentActivation.activation_type === 'QORI_SUMMIT' && await resumeSummitSession()) return;
     const data = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
       method: "POST",
       body: JSON.stringify(participantPayload()),
@@ -542,6 +566,9 @@ async function startGameSession() {
     }
     participant = data.participant;
     gameSessionToken = data.game_session_token;
+    if (currentActivation.activation_type === 'QORI_SUMMIT') {
+      try { sessionStorage.setItem('qori-summit:' + location.pathname + location.search, JSON.stringify({ participant_id: participant.id, game_session_token: gameSessionToken })); } catch (_) {}
+    }
     participantForm.classList.add("hidden");
     renderMinigame();
   } catch (error) {
@@ -1237,6 +1264,27 @@ function renderThermometer() {
 }
 
 function renderMinigame() {
+  if (currentActivation.activation_type === "QORI_SUMMIT") {
+    cleanupGameState();
+    experienceStage.classList.remove("hidden");
+    experienceTitle.textContent = "Cumbre Qori";
+    experienceCopy.textContent = "El premio está en la cima. Llega al cofre antes de que se agote el tiempo.";
+    const mounted = QoriSummitModes.mount(experienceBody, { solo: {
+      config: currentActivation.game_config, seed: gameSessionToken,
+      prize: currentActivation.reward_config?.reward_label,
+      onFinish(result) {
+        completeActivation({ participant_id: participant?.id, game_session_token: gameSessionToken,
+          summit_trace: result.trace, duration_ms: result.duration_ms });
+      },
+    },
+      request: body => api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
+        method: 'POST', body: JSON.stringify({ ...body, participant_id: participant.id, game_session_token: gameSessionToken }),
+      }),
+      onResult: async data => { setStatus(data.message, data.rewarded ? 'success' : 'info'); await renderResult(data); },
+    });
+    gameState = { cleanupFns: [() => mounted.destroy()] };
+    return;
+  }
   const config = currentActivation.game_config || {};
   const rouletteMode = currentActivation.activation_type === "ROULETTE_SPIN";
   const whackMode = currentActivation.activation_type === "WHACK_A_MOLE";

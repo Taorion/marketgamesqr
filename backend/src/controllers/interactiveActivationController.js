@@ -219,10 +219,19 @@ async function publicStart(req, res, next) {
 async function publicComplete(req, res, next) {
   try {
     const body = validate(publicInteractiveCompleteSchema, req.body);
+    // Reject race completion before taking Customer/participant locks. Only the room can award it.
+    if (body.participant_id && (await query('select 1 from qori_summit_members where participant_id=$1', [body.participant_id])).rowCount) {
+      throw forbidden('Termina la carrera desde tu sala multijugador.');
+    }
+    if (req.customer && (await query(`select 1 from qori_summit_members m
+      join customer_activation_participations cp on cp.participant_id=m.participant_id
+      join interactive_activations a on a.id=cp.activation_id where cp.customer_id=$1 and a.public_slug=$2`, [req.customer.id, req.params.slug])).rowCount) {
+      throw forbidden('Termina la carrera desde tu sala multijugador.');
+    }
     if(!req.customer){
       const result=await require('../config/db').withTransaction(async client=>{
         if(body.participant_id){
-          const p=(await client.query('select p.game_session_token from interactive_activation_participants p join interactive_activations a on a.id=p.activation_id where p.id=$1 and a.public_slug=$2 for update of p',[body.participant_id,req.params.slug])).rows[0];
+          const p=(await client.query('select p.game_session_token from interactive_activation_participants p join interactive_activations a on a.id=p.activation_id where p.id=$1 and a.public_slug=$2',[body.participant_id,req.params.slug])).rows[0];
           if(!p?.game_session_token||p.game_session_token!==body.game_session_token)throw forbidden('Esta sesión de participación no es válida. Abre la actividad y comienza de nuevo.');
         }
         const r=await completeInteractiveParticipant(req.params.slug,body,{client,allowIdentityRecovery:false});delete r.credit_account;return r;

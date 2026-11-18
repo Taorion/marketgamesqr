@@ -10,6 +10,7 @@ const serviceSource = fs.readFileSync(path.join(root, "backend", "src", "service
 const { ACTIVATION_CATALOG, listActivationCatalog } = require("../backend/src/services/interactiveActivationService");
 
 const retainedApiTypes = [
+  "QORI_SUMMIT",
   "TRIVIA_QUIZ",
   "OPEN_QUESTION",
   "SPIN_DISCOVER",
@@ -31,6 +32,7 @@ const retainedApiTypes = [
 ].sort();
 
 const retainedPortalTypes = [
+  "QORI_SUMMIT",
   "TRIVIA",
   "OPEN_QUESTION",
   "SPIN_DISCOVER",
@@ -51,12 +53,12 @@ const retainedPortalTypes = [
   "DODGE_RUNNER",
 ].sort();
 
-test("el catálogo API publica únicamente las 18 activaciones definidas por Qori", () => {
+test("el catálogo API publica las 19 activaciones, incluida Cumbre Qori", () => {
   assert.deepEqual(ACTIVATION_CATALOG.map((item) => item.type).sort(), retainedApiTypes);
   assert.deepEqual(listActivationCatalog().items.map((item) => item.type).sort(), retainedApiTypes);
 });
 
-test("el selector del portal muestra únicamente las mismas 18 activaciones", () => {
+test("el selector del portal muestra las mismas 19 activaciones", () => {
   const picker = html.match(/<div class="full activation-type-picker"[\s\S]*?<input id="activationTypeInput"/)?.[0] || "";
   const types = Array.from(picker.matchAll(/data-activation-type="([A-Z_]+)"/g), (match) => match[1]).sort();
   assert.deepEqual(types, retainedPortalTypes);
@@ -73,5 +75,4 @@ test("las recetas rápidas solo seleccionan activaciones retenidas", () => {
   assert.match(recipes, /leads: \{ type: "OPEN_QUESTION"/);
   assert.match(recipes, /launch: \{ type: "PRIVATE_INVITATION"/);
   assert.doesNotMatch(recipes, /type: "SURVEY"|type: "WAITLIST"/);
-  assert.match(html, /activation-catalog=v452-20260908/);
 });

@@ -189,6 +189,7 @@ const interactiveRewardModes = [
 ];
 
 const interactiveActivationTypes = [
+  "QORI_SUMMIT",
   "TRIVIA_QUIZ",
   "OPEN_QUESTION",
   "FLEX_SURVEY",
@@ -383,6 +384,7 @@ const publicInteractiveParticipantSchema = z.object({
 });
 
 const publicInteractiveCompleteSchema = publicInteractiveParticipantSchema.partial().extend({
+  summit_trace: z.array(z.tuple([z.number().int().min(0).max(15), z.number().int().min(1).max(10800)])).min(1).max(10800).optional(),
   participant_id: z.string().uuid().optional(),
   game_session_token: z.string().trim().optional().nullable(),
   answers: z.record(z.string(), z.unknown()).optional().default({}),

@@ -6,6 +6,7 @@ const { createSecureToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 const { registerActivityQrInCollector } = require("./rmsCollectorIntakeService");
+const summitGame = require("./summitGamePolicy");
 
 const DIGITAL_ASSET_MAX_BYTES = 5 * 1024 * 1024;
 const DIGITAL_ASSET_TYPES = new Set([
@@ -18,6 +19,7 @@ const DIGITAL_ASSET_TYPES = new Set([
 ]);
 
 const RETAINED_ACTIVATION_TYPES = new Set([
+  "QORI_SUMMIT",
   "TRIVIA_QUIZ",
   "OPEN_QUESTION",
   "SPIN_DISCOVER",
@@ -39,6 +41,7 @@ const RETAINED_ACTIVATION_TYPES = new Set([
 ]);
 
 const ALL_ACTIVATION_CATALOG = [
+  { type: "QORI_SUMMIT", label: "Cumbre Qori", category: "minigame", group: "Minijuegos con score", reward_modes: ["fixed"] },
   { type: "TRIVIA_QUIZ", label: "Trivia", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_score", "fixed"] },
   { type: "OPEN_QUESTION", label: "Pregunta abierta", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "manual_approval"] },
   { type: "FLEX_SURVEY", label: "Encuesta flexible", category: "survey", group: "Encuestas y formularios inteligentes", reward_modes: ["fixed", "by_answer"] },
@@ -744,6 +747,11 @@ async function requiredGameId(client, businessId, campaign = null) {
 }
 
 async function createInteractiveActivation(businessId, user, body) {
+  if (body.activation_type === summitGame.TYPE) {
+    if (!String(body.reward_config?.reward_label || body.benefit?.benefit_label || "").trim()) throw badRequest("Define el premio fijo de la cima.");
+    body.game_config ||= {};
+    summitGame.prepare(body);
+  }
   return withTransaction(async (client) => {
     const catalogItem = CATALOG_BY_TYPE.get(body.activation_type);
     if (!catalogItem || !RETAINED_ACTIVATION_TYPES.has(body.activation_type)) {
@@ -951,6 +959,10 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     [activationId, businessId]
   );
   if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
+  if ((body.activation_type || currentResult.rows[0].activation_type) === summitGame.TYPE) {
+    body.activation_type = summitGame.TYPE;
+    summitGame.prepare(body);
+  }
   if (Object.prototype.hasOwnProperty.call(body, "campaign_id")) {
     await assertCampaign({ query }, businessId, body.campaign_id || null);
   }
@@ -1317,6 +1329,7 @@ async function startInteractiveParticipant(slug, body, {client:transactionClient
     const gameSessionToken = createSecureToken();
     const contact = await resolveActivationContact(client, activation, body, { status: "started", ...attributionMetadata });
     const metadata = activationFormMetadata(activation, body, { status: "started", ...attributionMetadata });
+    if (activation.activation_type === summitGame.TYPE) metadata.summit_signature = summitGame.signature(activation);
     const participantResult = await client.query(
       `insert into interactive_activation_participants
         (activation_id, company_id, player_id, source_type, source_id, seller_user_id, name, document, phone, email, metadata, status,
@@ -1355,7 +1368,7 @@ async function startInteractiveParticipant(slug, body, {client:transactionClient
   });
 }
 
-async function completeInteractiveParticipant(slug, body, {client:transactionClient,allowIdentityRecovery=true}={}) {
+async function completeInteractiveParticipant(slug, body, {client:transactionClient,allowIdentityRecovery=true,summitRace}={}) {
   const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
   return transaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
@@ -1374,7 +1387,16 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
       ? await lockParticipant(client, activation, body.participant_id)
       : await createParticipantInsideCompletion(client, activation, body);
 
-    validateGameSession(activation, participant, body);
+    if (activation.activation_type === summitGame.TYPE) {
+      const membership = (await client.query('select room_id from qori_summit_members where participant_id=$1', [participant.id])).rows[0];
+      if (membership && membership.room_id !== summitRace?.roomId) throw badRequest('El premio multijugador se confirma dentro de la sala.');
+      if (summitRace && membership?.room_id !== summitRace.roomId) throw badRequest('Sala de Cumbre inválida.');
+    }
+    const summitResult = activation.activation_type === summitGame.TYPE
+      ? summitGame.verify(activation, participant, body, Date.now(), summitRace)
+      : null;
+    if (summitResult) { body.score = summitResult.floor; body.duration_ms = summitResult.duration_ms; }
+    else validateGameSession(activation, participant, body);
 
     const answers = body.answers || {};
     const diagnosticActivation = isDiagnosticActivation(activation);
@@ -1395,6 +1417,7 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
       ? rouletteChoiceOutcome(activation.reward_config?.choices, body.selected_choice)
       : null;
     const rewardPayload = await resolveRewardPayload(client, activation, {
+      summit_won: summitResult?.won === true,
       answers,
       score,
       selected_choice: body.selected_choice,
@@ -1407,6 +1430,8 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
     const status = pendingReview ? "pending_review" : rewardPayload ? "rewarded" : "completed";
     const metadata = activationFormMetadata(activation, body, {
       anti_abuse: antiAbuseSummary(activation, participant, body, score),
+      ...(summitResult ? { summit_result: summitResult } : {}),
+      ...(summitRace ? { summit_room_id: summitRace.roomId, summit_mode: 'multiplayer' } : {}),
     });
     const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token || participant.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source || participant.metadata?.communication_tracking_source);
     if (attribution) Object.assign(metadata, communicationAttributionMetadata(attribution));
@@ -1468,7 +1493,9 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
             label: rouletteOutcome.reveal_label,
           },
         } : {}),
-        message: pendingReview
+        message: summitResult
+          ? `Llegaste al piso ${summitResult.floor}. El premio se desbloquea al alcanzar el cofre de la cima.`
+          : pendingReview
           ? "Participacion registrada. El beneficio queda pendiente de aprobacion."
           : scratchOutcome && !scratchOutcome.is_winner
             ? scratchOutcome.reveal_label
@@ -2317,6 +2344,8 @@ function resolveProfile(activation, answers) {
 }
 
 async function resolveRewardPayload(client, activation, context) {
+  if (activation.activation_type === summitGame.TYPE) return context.summit_won === true
+    ? fixedRewardPayload(activation.reward_config, "fixed", { summit_reached: true }) : null;
   if (activation.reward_mode === "manual_approval") return null;
   if (activation.reward_mode === "by_score") {
     return resolveScoreReward(client, activation, context.score);
