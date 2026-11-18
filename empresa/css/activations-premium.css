@@ -39,6 +39,8 @@ html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[d
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card table {
   width: 100% !important; min-width: 920px !important; table-layout: fixed !important;
 }
+/* Column proportions belong to the desktop table, not mobile cards. */
+@media (min-width: 641px) {
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:first-child,
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:first-child { width: 52px !important; padding-inline: 8px !important; text-align: center !important; }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:nth-child(2),
@@ -53,6 +55,7 @@ html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[d
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card thead th:nth-child(1),
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card thead th:nth-child(n + 3) { text-align: center !important; }
+}
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-summary-premium {
   grid-template-columns: 44px minmax(0,1fr) !important; align-items: center !important; gap: 12px !important;
 }
@@ -285,11 +288,13 @@ html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qo
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
   width: 100% !important; min-width: 920px !important; table-layout: fixed !important;
 }
+@media (min-width: 641px) {
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(1) { width: 52px !important; min-width: 52px !important; max-width: 52px !important; text-align: center !important; }
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(2) { width: 36% !important; text-align: left !important; }
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(3) { width: 15% !important; text-align: center !important; }
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(4) { width: 25% !important; text-align: center !important; }
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(5) { width: 190px !important; min-width: 190px !important; text-align: center !important; }
+}
 html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell :is(.activation-status-cell,.activation-outcome-premium) { justify-items: center !important; text-align: center !important; }
 
 @media (max-width: 640px) {

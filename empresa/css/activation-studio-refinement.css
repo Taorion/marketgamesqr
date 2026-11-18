@@ -233,3 +233,22 @@ html body:not(#activationRefineA#activationRefineB#activationRefineC#activationR
     min-height: 76px !important;
   }
 }
+
+/* On phones, text and actions use complete rows instead of narrow desktop tracks. */
+@media (max-width: 640px) {
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow ol,
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow-copy,
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow :is(li,li > div),
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-copy {
+    min-width: 0 !important;
+  }
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions button {
+    width: 100% !important; white-space: normal !important;
+  }
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(.activation-title,.activation-summary-copy small,.activation-status-cell small) {
+    word-break: normal !important; overflow-wrap: break-word !important;
+  }
+}

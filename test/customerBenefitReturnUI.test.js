@@ -21,3 +21,19 @@ test('outside destinations and normalized path traversal are never followed',()=
 test('arriving at the protected benefit clears the attempt marker',()=>{
  const h=setup({pathname:'/sellos/inscripcion.html',stored:{'qori-benefit-attempt':'previous'}});try{assert.equal(h.stored['qori-benefit-attempt'],undefined);}finally{h.w.close();}
 });
+
+test('the benefit notice stays inside the login form rather than shrinking it as a sibling',async()=>{
+ const h=setup();
+ try{
+  const app=h.w.document.getElementById('app');
+  const render=()=>{app.innerHTML='<main class="auth-side"><div class="auth-form-wrap"><h2>Bienvenido a Qori</h2><form><label>Correo<input type="email"></label><button>Iniciar sesión</button></form></div></main>';};
+  render();await new Promise(resolve=>setImmediate(resolve));
+  const side=h.w.document.querySelector('.auth-side'),wrap=side.querySelector('.auth-form-wrap');
+  assert.equal(h.w.document.getElementById('benefitWelcome').parentElement,wrap);
+  assert.equal(side.children.length,1);assert.ok(wrap.querySelector('form input'));
+  assert.equal(wrap.querySelector('#benefitWelcome a').getAttribute('href'),target);
+  render();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(h.w.document.querySelectorAll('#benefitWelcome').length,1);
+  assert.equal(h.w.document.getElementById('benefitWelcome').parentElement.className,'auth-form-wrap');
+ }finally{h.w.close();}
+});
