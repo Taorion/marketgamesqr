@@ -117,7 +117,7 @@ test('Monthly card renewal: authorization, provider verification, recovery and c
     denyCancel=true;await assert.rejects(renewal.cancel(f.u));assert.equal((await business(f.b.id)).subscription_auto_renew_enabled,true);
     denyCancel=false;const before=(await business(f.b.id)).subscription_current_period_ends_at;await renewal.cancel(f.u);
     const b=await business(f.b.id);assert.equal(m.status,'cancelled');assert.equal(b.subscription_auto_renew_enabled,false);assert.equal(b.subscription_auto_renew_status,'CANCELLED');assert.equal(+b.subscription_current_period_ends_at,+before);
-    await renewal.cancel(f.u);assert.equal(+((await business(f.b.id)).subscription_current_period_ends_at),+before);
+    await renewal.cancel(f.u);const after=await business(f.b.id);assert.equal(+after.subscription_current_period_ends_at,+before);assert.equal(+after.subscription_auto_renew_cancelled_at,+b.subscription_auto_renew_cancelled_at);
   });
   await t.test('cancelled mandate can be replaced and stale notifications stay isolated',async()=>{
     const created=await renewal.create(f.u,{plan_code:'STARTER'});assert.notEqual(created.auto_renewal.mercado_pago_preapproval_id,m.id);

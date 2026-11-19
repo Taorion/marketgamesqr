@@ -1037,7 +1037,7 @@ async function processPreapprovalWebhook(preapprovalId) {
            mercado_pago_preapproval_id = $4,
            subscription_auto_renew_checkout_url = coalesce($5, subscription_auto_renew_checkout_url),
            subscription_auto_renew_authorized_at = case when $2 then coalesce(subscription_auto_renew_authorized_at, now()) else subscription_auto_renew_authorized_at end,
-           subscription_auto_renew_cancelled_at = case when not $2 and $3 in ('CANCELLED', 'PAUSED') then now() else subscription_auto_renew_cancelled_at end,
+           subscription_auto_renew_cancelled_at = case when not $2 and $3 in ('CANCELLED', 'PAUSED') then coalesce(subscription_auto_renew_cancelled_at, now()) else subscription_auto_renew_cancelled_at end,
            settings = jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription}', coalesce(settings->'subscription','{}') || $6::jsonb, true),
            updated_at = now()
        where id = $1`,
