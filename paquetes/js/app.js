@@ -28,12 +28,14 @@ let linkedAdvisorLoading = false;
 const DESPEGA_PLAN = {
   code: "DESPEGA",
   name: "Despega",
+  limits: { gift_cards_month: 5 },
   monthly_price_cop: 75000,
   mode: "Suscripción",
   access_summary: "Entrada para activar experiencias, validar QR y administrar tu cuenta con 25 tickets iniciales.",
   snapshot: ["25 tickets iniciales", "Validador QR", "Activaciones interactivas"],
   included: [
     "25 tickets de bienvenida",
+    "5 tarjetas regalo al mes",
     "Cuenta y perfil del negocio",
     "Seguridad y gestión del plan",
     "Atracción con activaciones interactivas",
@@ -45,6 +47,7 @@ const FALLBACK_PLANS = [
   {
     code: "STARTER",
     name: "Crece",
+    limits: { gift_cards_month: 12 },
     monthly_price_cop: 229000,
     mode: "Suscripción",
     access_summary: "Operación comercial con Revenue, Máquina GOS, productos, contactos y vitrina.",
@@ -57,12 +60,13 @@ const FALLBACK_PLANS = [
       "1 GB para branding y activos digitales",
       "Hasta 20 productos y 2 medios de adquisición",
       "Reciclaje, ventas atribuidas y una vitrina web",
-      "10 tarjetas regalo al mes y hasta 10 afiliados",
+      "12 tarjetas regalo al mes y hasta 10 afiliados",
     ],
   },
   {
     code: "GROWTH",
     name: "Escala",
+    limits: { gift_cards_month: 30 },
     monthly_price_cop: 999000,
     mode: "Suscripción",
     recommended: true,
@@ -75,13 +79,14 @@ const FALLBACK_PLANS = [
       "5 GB, 50 productos, 5 medios y 5 vitrinas",
       "Inteligencia GOS y controles de calidad 1 y 2",
       "3 campañas y 3.000 emails al mes, máximo 100 diarios",
-      "Agenda, 25 tarjetas regalo al mes y equipo de 2 usuarios",
+      "Agenda, 30 tarjetas regalo al mes y equipo de 2 usuarios",
       "Hasta 50 afiliados",
     ],
   },
   {
     code: "PRO",
     name: "Expande",
+    limits: { gift_cards_month: 70 },
     monthly_price_cop: 1999000,
     mode: "Suscripción",
     access_summary: "Operación completa con Radar, Ranking, afiliados, sedes, vendedores y valorización.",
@@ -92,7 +97,7 @@ const FALLBACK_PLANS = [
       "Hasta 5.000 redenciones y 5.000 contactos",
       "15 GB, 300 productos, 10 medios y 15 vitrinas",
       "15 campañas y 50.000 emails al mes sin límite diario",
-      "250 tarjetas regalo al mes y equipo de 5 usuarios",
+      "70 tarjetas regalo al mes y equipo de 5 usuarios",
       "Radar, Ranking, valorización y 100 afiliados",
       "Hasta 10 vendedores y 3 sedes",
     ],
@@ -161,6 +166,10 @@ function publicPlansFromApi(data) {
 
 function renderPlans() {
   if (!planGrid) return;
+  document.querySelectorAll('#giftCardPlanLimits td').forEach((cell, index) => {
+    const limit = plans[index]?.limits?.gift_cards_month;
+    if (Number.isFinite(limit)) cell.textContent = `${limit}/mes`;
+  });
   planGrid.innerHTML = plans.map((plan) => {
     const benefits = plan.included || [];
     const primaryBenefits = benefits.slice(0, 5);

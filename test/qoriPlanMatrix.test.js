@@ -35,9 +35,10 @@ test("la matriz canonica aplica los tickets iniciales y limites de Planes.csv", 
   assert.equal(plans.get("GROWTH").limits.communication_emails_day, 100);
   assert.equal(plans.get("PRO").limits.communication_emails_month, 50000);
   assert.equal(plans.get("PRO").limits.communication_emails_day, null);
-  assert.equal(plans.get("STARTER").limits.gift_cards_month, 10);
-  assert.equal(plans.get("GROWTH").limits.gift_cards_month, 25);
-  assert.equal(plans.get("PRO").limits.gift_cards_month, 250);
+  assert.equal(plans.get("DESPEGA").limits.gift_cards_month, 5);
+  assert.equal(plans.get("STARTER").limits.gift_cards_month, 12);
+  assert.equal(plans.get("GROWTH").limits.gift_cards_month, 30);
+  assert.equal(plans.get("PRO").limits.gift_cards_month, 70);
   assert.equal(plans.get("GROWTH").limits.users, 2);
   assert.equal(plans.get("PRO").limits.users, 5);
   assert.equal(plans.get("PRO").limits.branches, 3);
@@ -47,8 +48,9 @@ test("cada modulo se abre desde el plan indicado por la matriz", () => {
   const featureAt = (feature) => ["DESPEGA", "STARTER", "GROWTH", "PRO"].filter((code) => plans.get(code).features[feature]);
 
   assert.deepEqual(featureAt("interactive_activations"), ["DESPEGA", "STARTER", "GROWTH", "PRO"]);
+  assert.deepEqual(featureAt("gift_cards"), ["DESPEGA", "STARTER", "GROWTH", "PRO"]);
   assert.deepEqual(featureAt("qr_validator"), ["DESPEGA", "STARTER", "GROWTH", "PRO"]);
-  for (const feature of ["revenue_center", "rms_core", "redemptions", "brand_assets", "products", "contact_directory", "acquisition_channels", "recycling", "showcase", "sales_tracker", "gift_cards", "affiliates"]) {
+  for (const feature of ["revenue_center", "rms_core", "redemptions", "brand_assets", "products", "contact_directory", "acquisition_channels", "recycling", "showcase", "sales_tracker", "affiliates"]) {
     assert.deepEqual(featureAt(feature), ["STARTER", "GROWTH", "PRO"], feature);
   }
   for (const feature of ["rms_intelligence", "email_marketing", "rms_quality_control", "campaigns", "communications", "agenda", "team_management"]) {

@@ -84,7 +84,7 @@ test('Un regalo personal: signup, issuance, packages, verified payment and tenan
   await withTransaction(db=>require('../backend/src/services/adminProvisioningService').ensureBaseBusinessRecords(db,b.id,b.name));
   const r=await api('/api/pense-en-ti/giftcards/checkout',{package_code:'GF10',idempotency_key:uuid()},'POST',other);assert.equal(r.status,200,JSON.stringify(r));await approve(r.data.id);
   const issued=await api('/api/business/reward-passes',pass(),'POST',other);assert.equal(issued.status,201,JSON.stringify(issued));
-  const summary=(await require('../backend/src/services/adminBusinessBalances').businessBalances([b.id])).get(b.id);assert.equal(summary.giftcards.monthly_remaining,10);assert.equal(summary.giftcards.credit_balance,9);
+  const summary=(await require('../backend/src/services/adminBusinessBalances').businessBalances([b.id])).get(b.id);assert.equal(summary.giftcards.monthly_remaining,12);assert.equal(summary.giftcards.credit_balance,9);
  });
  await t.test('signed provider webhook leaves pending/rejected payments uncredited and credits approved payment once',async()=>{
   const r=await api('/api/pense-en-ti/giftcards/checkout',{package_code:'GF10',idempotency_key:uuid()});assert.equal(r.status,200);

@@ -23,7 +23,7 @@ test('Admin balances use real credits, plan caps and canonical giftcard money wi
  await t.test('Freemium total quota and monthly quota remain distinct; paid issuance is ticket limited',async()=>{
   const b=await balances(trial);assert.equal(b.giftcards.total_remaining,8);assert.equal(b.giftcards.monthly_remaining,9);assert.equal(b.giftcards.available,8);
   const p=await balances(paid);assert.equal(p.giftcards.available,1);assert.equal(p.giftcards.tickets_per_card,2);
-  await query("update businesses set plan_code='DESPEGA' where id=$1",[paid.id]);assert.equal((await balances(paid)).giftcards.available,0);
+  await query("update businesses set plan_code='DESPEGA' where id=$1",[paid.id]);assert.equal((await balances(paid)).giftcards.available,1);assert.equal((await balances(paid)).giftcards.monthly_limit,5);
  });
  await t.test('missing accounts stay zero and reads do not create or recharge balances',async()=>{
   const b=await balances(empty);assert.equal(b.tickets.available,0);assert.equal(b.giftcards.available,0);

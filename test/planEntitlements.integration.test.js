@@ -91,7 +91,7 @@ test('Paid signup, payment, complete module access matrix and plan transitions',
       const { id, user, plan } = accounts[code]; const failures = [];
       for (const [feature, pattern] of routes) {
         const path = pattern.replace('ID', id); const result = await api(path, user);
-        const expected = plan.features[feature] ? 200 : 403;
+        const expected = (plan.features[feature] || (path === '/api/business/branches' && plan.features.gift_cards)) ? 200 : 403;
         if (result.status !== expected) failures.push({ feature, path, expected, ...result });
       }
       assert.deepEqual(failures, []);
@@ -121,7 +121,8 @@ test('Paid signup, payment, complete module access matrix and plan transitions',
     await query("update businesses set plan_code='DESPEGA' where id=$1", [id]);
     assert.equal((await api('/api/business/qr/batches', user)).status, 200, 'Despega includes QR batches');
     assert.equal((await api('/api/business/communications', user)).status, 403);
-    assert.equal((await api('/api/business/reward-passes', user, {})).status, 403);
+    assert.equal((await api('/api/business/reward-passes', user)).status, 200, 'Despega includes Gift Cards after downgrade');
+    assert.equal((await api('/api/business/reward-passes', user, {})).status, 400, 'Gift Card payload validation still applies');
     await query("update businesses set plan_code='PRO' where id=$1", [id]);
     assert.equal((await api('/api/business/communications', user)).status, 200);
     await query("update businesses set subscription_status='SUSPENDED' where id=$1", [id]);

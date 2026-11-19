@@ -17,8 +17,8 @@ function loadService(relativePath, mocks) {
   return module.exports;
 }
 
-for (const [code, affiliateLimit, giftLimit] of [['STARTER', 10, 10], ['GROWTH', 50, 25], ['PRO', 100, 250]]) {
-  test(`${code}: allows the last affiliate and rejects the next without crossing tenants`, async () => {
+for (const [code, affiliateLimit, giftLimit] of [['DESPEGA', null, 5], ['STARTER', 10, 12], ['GROWTH', 50, 30], ['PRO', 100, 70]]) {
+  if (affiliateLimit !== null) test(`${code}: allows the last affiliate and rejects the next without crossing tenants`, async () => {
     let used = affiliateLimit - 1;
     const calls = [];
     const client = { async query(sql, params) {
@@ -87,6 +87,6 @@ test('all affiliate creation paths enforce the same transactional quota', () => 
 
 test('Activar Qori advertises the enforced monthly and total limits', () => {
   const html = fs.readFileSync(path.join(root, 'paquetes/index.html'), 'utf8');
-  assert.match(html, /Tarjetas regalo<\/th><td>No<\/td><td>10\/mes<\/td><td>25\/mes<\/td><td>250\/mes<\/td>/);
+  assert.match(html, /Tarjetas regalo<\/th><td>5\/mes<\/td><td>12\/mes<\/td><td>30\/mes<\/td><td>70\/mes<\/td>/);
   assert.match(html, /Afiliados<\/th><td>No<\/td><td>10<\/td><td>50<\/td><td>100<\/td>/);
 });

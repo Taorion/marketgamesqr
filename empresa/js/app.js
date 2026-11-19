@@ -5975,7 +5975,7 @@ const featureRequiredPlanFallback = {
   referrals: "PRO",
   multi_branch: "PRO",
   ticket_branding: "GROWTH",
-  gift_cards: "STARTER",
+  gift_cards: "DESPEGA",
   gift_inventory: "GROWTH",
   dashboard_full: "GROWTH",
   campaign_comparison: "GROWTH",
@@ -6179,6 +6179,7 @@ function renderSubscriptionBanner() {
     ["Campañas", limits.active_campaigns],
     ["Exportaciones", limits.lead_exports_month],
     ["Afiliados", limits.affiliates],
+    ...(plan.features?.gift_cards && Number.isFinite(limits.gift_cards_month) ? [["Tarjetas regalo/mes", limits.gift_cards_month]] : []),
   ].map(([label, value]) => `<span class="subscription-limit-chip">${label}: ${formatLimitValue(value)}</span>`).join("");
   syncActivationTypeAccess();
 }
@@ -6188,37 +6189,34 @@ function publicSubscriptionPlan(code) {
   const plan = (state.subscriptionPlans || []).find((item) => item.code === planCode);
   if (plan) return plan;
   const fallback = {
+    DESPEGA: {
+      code: "DESPEGA", name: "Despega", monthly_price_cop: 75000,
+      features: { gift_cards: true }, limits: { gift_cards_month: 5 },
+      included: ["5 tarjetas regalo al mes", "25 tickets iniciales", "Activaciones interactivas", "Validador QR"],
+    },
     STARTER: {
       code: "STARTER",
-      name: "Started",
-      monthly_price_cop: 1000000,
+      name: "Crece",
+      monthly_price_cop: 229000,
+      features: { gift_cards: true }, limits: { gift_cards_month: 12 },
       included: [
-        "Acceso al portal",
-        "Gráficas de redención",
-        "Visualización de últimos 50 leads",
-        "2 exportaciones mensuales",
-        "Validador de tickets",
-        "Creación de campañas",
-        "Ver capacidad completa",
-        "1 campaña activa en línea",
-        "1 sede",
-        "1 usuario",
-        "Gaming center: trivia y pregunta abierta sin historial de tickets",
-        "Agenda para programar tareas",
-        "10 tickets de cortesía en primera suscripción",
+        "12 tarjetas regalo al mes", "50 tickets iniciales", "Hasta 100 contactos",
+        "Hasta 20 productos", "Una vitrina web", "Hasta 10 afiliados",
       ],
     },
     GROWTH: {
       code: "GROWTH",
-      name: "Medium",
-      monthly_price_cop: 2500000,
-      included: ["3 campañas activas", "2 sedes", "Dashboard completo", "10 afiliados"],
+      name: "Escala",
+      monthly_price_cop: 999000,
+      features: { gift_cards: true }, limits: { gift_cards_month: 30 },
+      included: ["30 tarjetas regalo al mes", "100 tickets iniciales", "3 campañas activas", "Dashboard completo", "Hasta 50 afiliados"],
     },
     PRO: {
       code: "PRO",
-      name: "Premium",
-      monthly_price_cop: 4500000,
-      included: ["Todo el portal habilitado", "Uso y cantidad ilimitados", "Afiliados ilimitados + Carnet digital", "Analítica predictiva"],
+      name: "Expande",
+      monthly_price_cop: 1999000,
+      features: { gift_cards: true }, limits: { gift_cards_month: 70 },
+      included: ["70 tarjetas regalo al mes", "200 tickets iniciales", "Hasta 100 afiliados", "Hasta 10 vendedores y 3 sedes"],
     },
     GLOBAL: {
       code: "GLOBAL",
@@ -6347,7 +6345,12 @@ function showPlanGateFromApiError(error = {}) {
 
 function planBenefitList(plan) {
   if (Array.isArray(plan?.included) && plan.included.length) {
-    return plan.included.slice(0, plan.code === "GLOBAL" ? 8 : 7);
+    const included = plan.included.slice(0, plan.code === "GLOBAL" ? 8 : 7);
+    if (["DESPEGA", "STARTER", "GROWTH", "PRO"].includes(plan.code) && plan.features?.gift_cards && Number.isFinite(plan.limits?.gift_cards_month)) {
+      const giftBenefit = `${plan.limits.gift_cards_month} tarjetas regalo al mes`;
+      return [giftBenefit, ...included.filter(text => !/tarjetas regalo al mes/i.test(text))].slice(0, 7);
+    }
+    return included;
   }
   const limits = plan.limits || {};
   const features = plan.features || {};
@@ -6386,7 +6389,7 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "Cada plan muestra una parte del siguiente: Base prueba valor con tickets, Growth activa operación mensual, Premium desbloquea RMS completo y Enterprise escala sedes, API y soporte.";
+    subscriptionPricingNote.textContent = "Compara Despega, Crece, Escala y Expande: cada plan indica sus herramientas, cupos mensuales y capacidad. Global se configura por cotización.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotización" : "tickets por recarga";
@@ -46447,6 +46450,9 @@ function renderRewardPassContext() {
     rewardPassTicketContext.textContent = context.giftcard_balance!=null
       ? `${context.demo_mode?'Demo Qori':(context.program_name||'Gift Cards')}: ${Number(context.giftcard_balance)} emisiones de Gift Card disponibles. Cada Gift Card usa una emisión de este saldo independiente.`
       : `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
+    if (Number.isFinite(context.giftcard_monthly_limit)) {
+      rewardPassTicketContext.textContent += ` Plan ${context.giftcard_plan_name}: quedan ${context.giftcard_monthly_remaining} de ${context.giftcard_monthly_limit} tarjetas regalo del cupo mensual.`;
+    }
   }
 }
 

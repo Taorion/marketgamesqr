@@ -480,8 +480,16 @@ async function getTicketContext(user) {
   };
   const giftBalance=Number((await query('select balance from qori_giftcard_credit_accounts where business_id=$1',[businessId])).rows[0]?.balance||0);
   const prepaid=business.plan_code==='UN_REGALO_PERSONAL'||business.is_seller_demo||giftBalance>0;
+  const {plan}=await getBusinessSubscription(businessId);
+  const monthlyLimit=['DESPEGA','STARTER','GROWTH','PRO'].includes(plan.code)?plan.limits?.gift_cards_month:null;
+  const monthlyUsed=Number.isFinite(monthlyLimit)?Number((await query(`select count(*)::int as total from reward_passes
+    where company_id=$1 and not giftcard_credit_used
+      and created_at>=date_trunc('month',now()) and created_at<date_trunc('month',now())+interval '1 month'`,[businessId])).rows[0].total):null;
   return {
     business_name: business.name,
+    giftcard_plan_name: plan.name,
+    giftcard_monthly_limit: monthlyLimit??null,
+    giftcard_monthly_remaining: monthlyUsed===null?null:Math.max(0,monthlyLimit-monthlyUsed),
     demo_mode: Boolean(business.is_seller_demo),
     program_name: business.plan_code==='UN_REGALO_PERSONAL'?'Un regalo personal':'Gift Cards',
     reward_pass_ticket_cost: prepaid?0:getRewardPassTicketCostFromSettings(business.settings || {}),
