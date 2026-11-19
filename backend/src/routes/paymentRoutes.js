@@ -22,4 +22,10 @@ router.post("/subscriptions/checkout", authRequired, requireBillingAdmin, create
 router.post("/storage/checkout", authRequired, requireBillingAdmin, createStorageCheckout);
 router.post("/subscriptions/auto-renewal", authRequired, requireBillingAdmin, createSubscriptionAutoRenewalCheckout);
 
+for (const [path, action] of [['refresh','refresh'],['cancel','cancel']]) {
+  router.post('/subscriptions/auto-renewal/'+path, authRequired, requireBillingAdmin, async (req,res,next) => {
+    try { res.json({subscription:await require('../services/subscriptionAutoRenewalService')[action](req.user)}); }
+    catch(error) { next(error); }
+  });
+}
 module.exports = router;

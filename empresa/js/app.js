@@ -1669,6 +1669,8 @@ const subscriptionRenewalForm = document.getElementById("subscriptionRenewalForm
 const subscriptionRenewalPlanSelect = document.getElementById("subscriptionRenewalPlanSelect");
 const subscriptionRenewalButton = document.getElementById("subscriptionRenewalButton");
 const subscriptionAutoRenewButton = document.getElementById("subscriptionAutoRenewButton");
+const subscriptionAutoRenewRefreshButton = document.getElementById("subscriptionAutoRenewRefreshButton");
+const subscriptionAutoRenewCancelButton = document.getElementById("subscriptionAutoRenewCancelButton");
 const subscriptionAutoRenewStatus = document.getElementById("subscriptionAutoRenewStatus");
 const subscriptionAutoRenewClarity = document.getElementById("subscriptionAutoRenewClarity");
 const subscriptionRenewalMessage = document.getElementById("subscriptionRenewalMessage");
@@ -6450,6 +6452,10 @@ function renderSubscriptionRenewal() {
   const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop && !item.testing_plan && item.public_signup_available !== false);
   const hasMonthlyPlan = ["subscription", "ticket_base", "growth_temporal"].includes(plan.category);
   const autoRenew = plan.auto_renew || {};
+  const hasMandate = Boolean(autoRenew.mercado_pago_preapproval_id);
+  const openMandate = hasMandate && !["CANCELLED","EXPIRED"].includes(autoRenew.status);
+  if (subscriptionAutoRenewRefreshButton) subscriptionAutoRenewRefreshButton.hidden = !hasMandate;
+  if (subscriptionAutoRenewCancelButton) subscriptionAutoRenewCancelButton.hidden = !openMandate;
   const dueAt = plan.official_payment_due_at || plan.current_period_ends_at;
   const renewalDate = dueAt ? new Date(dueAt) : null;
   const hasFutureRenewalDate = renewalDate && !Number.isNaN(renewalDate.getTime()) && renewalDate > new Date();
@@ -6468,14 +6474,14 @@ function renderSubscriptionRenewal() {
   const firstChargeDate = selectedRenewalPlan
     ? autoRenewFirstChargeDate(selectedRenewalPlan, hasFutureRenewalDate, renewalDate)
     : null;
-  const firstChargeLabel = firstChargeDate ? formatDateOnly(firstChargeDate) : "próxima renovación";
-  const selectedPlanChargeLabel = selectedRenewalPlan?.monthly_price_cop ? copMoney(selectedRenewalPlan.monthly_price_cop) : "el valor del plan";
+  const firstChargeLabel = autoRenew.enabled && autoRenew.next_payment_at ? formatDateOnly(autoRenew.next_payment_at) : firstChargeDate ? formatDateOnly(firstChargeDate) : "próxima renovación";
+  const selectedPlanChargeLabel = autoRenew.enabled && autoRenew.amount_cop ? copMoney(autoRenew.amount_cop) : selectedRenewalPlan?.monthly_price_cop ? copMoney(selectedRenewalPlan.monthly_price_cop) : "el valor del plan";
   const isPlanChange = Boolean(selectedRenewalPlan?.code && selectedRenewalPlan.code !== plan.code);
 
   const prepaidSelection = selectedRenewalPlan?.billing_period === "prepaid";
   if (subscriptionAutoRenewClarity) subscriptionAutoRenewClarity.hidden = prepaidSelection;
   if (prepaidSelection) {
-    subscriptionRenewalButton.disabled = !isPlanChange;
+    subscriptionRenewalButton.disabled = !isPlanChange || openMandate;
     subscriptionRenewalButton.textContent = isPlanChange ? "Cambiar a Despega prepago" : "Despega no requiere mensualidad";
     if (subscriptionAutoRenewButton) {
       subscriptionAutoRenewButton.disabled = true;
@@ -6492,35 +6498,35 @@ function renderSubscriptionRenewal() {
     return;
   }
 
-  subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
+  subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length || openMandate;
   if (!subscriptionRenewalButton.classList.contains("button-loading")) {
     subscriptionRenewalButton.textContent = isPlanChange
       ? `Cambiar a ${selectedRenewalPlan.name}`
       : "Renovar mensualidad";
   }
   if (subscriptionAutoRenewButton) {
-    subscriptionAutoRenewButton.disabled = !plans.length || autoRenew.enabled || (!isTestingRenewalPlan && (plan.category !== "subscription" || !hasFutureRenewalDate));
-    subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Inscribir tarjeta para cobro automatico";
+    subscriptionAutoRenewButton.disabled = !plans.length || autoRenew.enabled || isPlanChange || plan.billing_period !== "monthly" || (!isTestingRenewalPlan && (plan.category !== "subscription" || !hasFutureRenewalDate));
+    subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automático activo" : openMandate ? "Continuar autorización de tarjeta" : "Inscribir tarjeta para cobro automático";
   }
   if (subscriptionAutoRenewClarity) {
     subscriptionAutoRenewClarity.innerHTML = `
       <div>
-        <span>Hoy</span>
-        <strong>No se cobra el plan</strong>
-        <small>Solo se autoriza la tarjeta.</small>
+        <span>${autoRenew.enabled ? "Autorización" : "Al inscribir la tarjeta"}</span>
+        <strong>${autoRenew.enabled ? "Tarjeta autorizada" : "No se cobra el plan"}</strong>
+        <small>${autoRenew.enabled ? "Mercado Pago gestiona el cobro mensual." : "El plan se cobra desde la fecha programada."}</small>
       </div>
       <div>
         <span>Validación Mercado Pago</span>
-        <strong>$1.600 temporal</strong>
-        <small>Mercado Pago lo devuelve enseguida si el banco aprueba.</small>
+        <strong>Puede aparecer una validación</strong>
+        <small>El importe y su reversión dependen de Mercado Pago y del banco.</small>
       </div>
       <div>
-        <span>Cuotas</span>
-        <strong>Continua en un pago</strong>
-        <small>Si Mercado Pago no muestra cuotas, no bloquea la autorización recurrente.</small>
+        <span>Frecuencia</span>
+        <strong>Un cobro cada mes</strong>
+        <small>Puedes cancelar la autorización desde esta sección.</small>
       </div>
       <div>
-        <span>Primer cobro real</span>
+        <span>${autoRenew.enabled ? "Próximo cobro" : "Primer cobro real"}</span>
         <strong>${escapeHtml(firstChargeLabel)}</strong>
         <small>${escapeHtml(selectedPlanChargeLabel)} ${escapeHtml(selectedRenewalPlan?.billing_label || "mensual")}.</small>
       </div>
@@ -6536,7 +6542,7 @@ function renderSubscriptionRenewal() {
         : plan.category === "subscription" && !hasFutureRenewalDate
           ? "Define una fecha de renovación futura antes de inscribir la tarjeta."
         : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
-    subscriptionAutoRenewStatus.textContent = autoRenewLabel;
+    subscriptionAutoRenewStatus.textContent = autoRenewLabel + (autoRenew.enabled && autoRenew.next_payment_at ? ` Próximo cobro: ${formatDateOnly(autoRenew.next_payment_at)}.` : "") + (autoRenew.sync_error ? ` ${autoRenew.sync_error}` : "");
   }
   if (accountBillingStatus) {
     accountBillingStatus.textContent = hasMonthlyPlan ? subscriptionAccessLabel(plan) : "Portal no activado";
@@ -6550,7 +6556,7 @@ function renderSubscriptionRenewal() {
         : plan.category === "subscription" && !hasFutureRenewalDate
         ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovación."
         : "Inscribir tarjeta solo crea la autorización; el primer cobro queda programado para la siguiente fecha de renovación.";
-      const actionGuidance = isPlanChange
+      const actionGuidance = openMandate ? "Tienes una autorización de cobro. Cancélala antes de renovar manualmente o cambiar de plan para evitar dos cobros." : isPlanChange
         ? `Cambiarás de ${plan.name || plan.code || "tu plan actual"} a ${selectedRenewalPlan.name}. El cambio se aplicará cuando Mercado Pago apruebe el pago.`
         : `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo.`;
       setInlineMessage(subscriptionRenewalMessage, `${actionGuidance} ${autoRenewGuidance}`, "info");
@@ -8179,6 +8185,14 @@ function applyInitialRouteParams() {
     setView("validator");
     validatorQrTokenInput.value = urlToken;
     validateValidatorToken(urlToken);
+    return;
+  }
+
+  if (urlParams.get("subscription") === "automatic" && canManageBusinessBilling()) {
+    openAccountSection("billing");
+    refreshSubscriptionAutoRenewal();
+    urlParams.delete("subscription");
+    window.history.replaceState({}, "", window.location.pathname + (urlParams.size ? "?" + urlParams.toString() : ""));
     return;
   }
 
@@ -25828,6 +25842,7 @@ async function submitSubscriptionAutoRenewal() {
         idempotency_key: paymentCheckoutIdempotencyKey("auto-renewal", planCode),
       }),
     });
+    if (data.auto_renewal?.enabled) { await refreshSubscriptionAutoRenewal(); setButtonLoading(subscriptionAutoRenewButton, false); return; }
     const checkoutUrl = data.auto_renewal?.checkout_url
       || data.auto_renewal?.sandbox_checkout_url
       || data.order?.checkout_url
@@ -25844,6 +25859,19 @@ async function submitSubscriptionAutoRenewal() {
     showFeedback(error.message, "error", { title: "No se pudo activar cobro automatico" });
     setButtonLoading(subscriptionAutoRenewButton, false);
   }
+}
+
+async function refreshSubscriptionAutoRenewal(action = "refresh") {
+  if (action === "cancel" && !window.confirm("¿Cancelar los próximos cobros automáticos? Conservarás el acceso hasta terminar el periodo pagado. Un cobro ya en proceso debe revisarse con Mercado Pago.")) return;
+  const buttons = [subscriptionAutoRenewRefreshButton, subscriptionAutoRenewCancelButton];
+  buttons.forEach(b => { if (b) b.disabled = true; });
+  try {
+    const data = await api("/api/payments/subscriptions/auto-renewal/" + action, {method:"POST",headers:authHeaders(),body:"{}"});
+    state.subscription = data.subscription;
+    renderSubscriptionRenewal();
+    setInlineMessage(subscriptionRenewalMessage, action === "cancel" ? "Cobro automático cancelado. Tu periodo pagado conserva su vigencia." : "Estado actualizado con Mercado Pago. Solo los pagos aprobados renuevan el plan.", "success");
+  } catch(error) { setInlineMessage(subscriptionRenewalMessage,error.message,"error"); }
+  finally { buttons.forEach(b => { if (b) b.disabled = false; }); }
 }
 
 function customerSaleIdempotencyKey() {
@@ -64700,6 +64728,8 @@ subscriptionPlansGrid?.addEventListener("click", (event) => {
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
+subscriptionAutoRenewRefreshButton?.addEventListener("click", () => refreshSubscriptionAutoRenewal());
+subscriptionAutoRenewCancelButton?.addEventListener("click", () => refreshSubscriptionAutoRenewal("cancel"));
 featureUpgradeCloseButton?.addEventListener("click", closeFeatureUpgradeInterstitial);
 featureUpgradeSecondaryButton?.addEventListener("click", closeFeatureUpgradeInterstitial);
 featureUpgradePrimaryLink?.addEventListener("click", (event) => {

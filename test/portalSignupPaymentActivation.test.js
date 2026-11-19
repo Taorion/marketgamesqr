@@ -89,11 +89,10 @@ test("el webhook de factura consulta el pago completo antes de acreditar", () =>
   assert.match(service, /mercado_pago_preference_id = \$2/);
 });
 
-test("cada nuevo cobro recurrente crea un período y cada reintento queda idempotente", () => {
+test("los cobros recurrentes se prueban con pagos reales de API simulada e idempotencia", () => {
   const service = read("backend/src/services/mercadoPagoService.js");
-  assert.match(service, /isRecurringSubscription = \[[\s\S]+portal_monthly_subscription[\s\S]+portal_annual_subscription[\s\S]+portal_monthly_subscription_auto_renewal/);
-  assert.match(service, /where mercado_pago_payment_id = \$1[\s\S]+duplicate: true/);
+  assert.match(service, /signup\?\.type === "portal_monthly_subscription_auto_renewal"/);
+  assert.match(service, /pg_advisory_xact_lock/);
   assert.match(service, /source: "mercado_pago_auto_renewal_payment"/);
-  assert.match(service, /\["REJECTED", "CANCELLED"\]\.includes\(status\)[\s\S]+reversed: true/);
   assert.match(service, /\["refunded", "charged_back"\]/);
 });

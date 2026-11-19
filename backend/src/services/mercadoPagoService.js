@@ -106,7 +106,11 @@ function addPlanBillingPeriod(date, plan, billingCycle = "monthly") {
     next.setUTCDate(next.getUTCDate() + frequency);
     return next;
   }
+  const day = next.getUTCDate();
+  next.setUTCDate(1);
   next.setUTCMonth(next.getUTCMonth() + frequency);
+  const lastDay = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
+  next.setUTCDate(Math.min(day, lastDay));
   return next;
 }
 
@@ -397,7 +401,8 @@ function verifyWebhookSignature(req) {
   }, {});
   const ts = parts.ts;
   const hash = parts.v1;
-  const dataId = req.query["data.id"] || req.body?.data?.id || req.body?.id || "";
+  const dataId = String(req.query["data.id"] || req.body?.data?.id || req.body?.id || "").toLowerCase();
+  if (!/^\d+$/.test(String(ts || "")) || !dataId || (req.query["data.id"] && req.body?.data?.id && String(req.query["data.id"]).toLowerCase() !== String(req.body.data.id).toLowerCase())) throw forbidden("Firma Mercado Pago invalida.");
   const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
   const expected = crypto
     .createHmac("sha256", env.mercadoPagoWebhookSecret)
@@ -548,12 +553,14 @@ async function createSubscriptionRenewalCheckout(user, body) {
   }
 
   const currentBusiness = await query(
-    `select plan_code, settings, subscription_current_period_ends_at, subscription_auto_renew_enabled
+    `select plan_code, settings, subscription_current_period_ends_at, subscription_auto_renew_enabled, mercado_pago_preapproval_id, subscription_auto_renew_status
      from businesses
      where id = $1`,
     [user.business_id]
   );
   const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
+  const mandate = currentBusiness.rows[0];
+  if (mandate?.mercado_pago_preapproval_id && !["CANCELLED", "EXPIRED"].includes(mandate.subscription_auto_renew_status)) throw badRequest("Cancela el cobro automático antes de pagar manualmente o cambiar de plan para evitar dos cobros.");
   if (plan.billing_period === "prepaid") {
     if (currentPlan?.code === PLAN_CODES.DESPEGA) throw badRequest("Despega no requiere renovar mensualidad. Recarga tickets desde tu cuenta.");
     if (currentBusiness.rows[0]?.subscription_auto_renew_enabled) throw badRequest("Cancela el cobro automatico vigente antes de cambiar a Despega prepago.");
@@ -713,6 +720,7 @@ async function createSubscriptionAutoRenewal(user, body) {
           billing_frequency: frequency,
           billing_frequency_type: frequencyType,
           auto_renew: true,
+          first_charge_at: chargeStartDate.toISOString(),
         },
       },
   }, body);
@@ -732,10 +740,13 @@ async function createSubscriptionAutoRenewal(user, body) {
 
   let preapproval;
   try {
-    preapproval = await mpRequest("/preapproval", {
+    const recovered = await mpRequest("/preapproval/search?" + new URLSearchParams({ external_reference: purchaseOrder.external_reference }));
+    const matches = (recovered.results || []).filter(item => item.external_reference === purchaseOrder.external_reference && !["cancelled", "expired"].includes(item.status));
+    if (matches.length > 1) throw badRequest("Hay varias autorizaciones asociadas. Se requiere revisión antes de continuar.");
+    preapproval = matches[0] || await mpRequest("/preapproval", {
       method: "POST",
       body: JSON.stringify({
-      reason: `${plan.name} - portal Sales Machine (${periodLabel})`,
+      reason: `${plan.name} - renovación Qori (${periodLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: user.email,
       back_url: appUrl("/empresa/?subscription=automatic"),
@@ -764,10 +775,8 @@ async function createSubscriptionAutoRenewal(user, body) {
          mercado_pago_preapproval_id = $3,
          subscription_auto_renew_checkout_url = $4,
          subscription_auto_renew_cancelled_at = null,
-         settings = jsonb_set(
-           jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription,auto_renew_status}', to_jsonb($2::text), true),
-           '{subscription,auto_renew_plan_code}', to_jsonb($5::text), true
-         ),
+         settings = jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription}',
+           coalesce(settings->'subscription', '{}'::jsonb) || jsonb_build_object('auto_renew_status',$2::text,'auto_renew_plan_code',$5::text),true),
          updated_at = now()
      where id = $1`,
     [
@@ -975,6 +984,7 @@ async function processPreapprovalWebhook(preapprovalId) {
     return { ignored: true, reason: "missing_preapproval_id" };
   }
   const preapproval = await mpRequest(`/preapproval/${encodeURIComponent(preapprovalId)}`, { method: "GET" });
+  if (String(preapproval.id) !== String(preapprovalId)) throw badRequest("La autorización recibida no coincide con la solicitada.");
   const status = String(preapproval.status || "pending").toUpperCase();
   const externalReference = preapproval.external_reference;
 
@@ -982,8 +992,8 @@ async function processPreapprovalWebhook(preapprovalId) {
     const orderResult = await client.query(
       `select *
        from qr_credit_purchase_orders
-       where mercado_pago_preference_id = $1
-          or external_reference = $2
+       where (mercado_pago_preference_id = $1 or external_reference = $2)
+         and metadata->'signup'->>'type' = 'portal_monthly_subscription_auto_renewal'
        order by created_at desc
        limit 1
        for update`,
@@ -993,6 +1003,24 @@ async function processPreapprovalWebhook(preapprovalId) {
     if (!order) {
       return { ignored: true, reason: "auto_renewal_order_not_found", preapproval_id: preapprovalId };
     }
+
+    if (preapproval.external_reference !== order.external_reference
+      || (order.mercado_pago_preference_id && order.mercado_pago_preference_id !== preapproval.id)) throw badRequest("La autorización no corresponde a esta orden.");
+    if (status === "AUTHORIZED" && (preapproval.auto_recurring?.currency_id !== 'COP'
+      || Number(preapproval.auto_recurring?.transaction_amount) !== Number(order.price_cop)
+      || Number(preapproval.auto_recurring?.frequency) !== 1 || preapproval.auto_recurring?.frequency_type !== 'months')) {
+      throw badRequest("La autorización no coincide con el importe y la frecuencia mensual contratados.");
+    }
+    const locked = (await client.query('select plan_code,mercado_pago_preapproval_id,settings from businesses where id=$1 for update', [order.business_id])).rows[0];
+    if (locked.mercado_pago_preapproval_id && locked.mercado_pago_preapproval_id !== preapproval.id) {
+      return { ignored: true, reason: 'superseded_preapproval' };
+    }
+    if (status === 'AUTHORIZED' && (order.package_code === PLAN_CODES.DESPEGA || locked.plan_code !== order.package_code)) {
+      throw badRequest('La autorización corresponde a otro plan o a Despega prepago. Cancélala antes de continuar.');
+    }
+    const previousVersion = optionsDate(locked.settings?.subscription?.auto_renew_provider_updated_at);
+    const remoteVersion = optionsDate(preapproval.last_modified || preapproval.date_created);
+    if (previousVersion && remoteVersion && remoteVersion < previousVersion) return { ignored: true, reason: 'older_preapproval' };
 
     await client.query(
       `update qr_credit_purchase_orders
@@ -1010,7 +1038,7 @@ async function processPreapprovalWebhook(preapprovalId) {
            subscription_auto_renew_checkout_url = coalesce($5, subscription_auto_renew_checkout_url),
            subscription_auto_renew_authorized_at = case when $2 then coalesce(subscription_auto_renew_authorized_at, now()) else subscription_auto_renew_authorized_at end,
            subscription_auto_renew_cancelled_at = case when not $2 and $3 in ('CANCELLED', 'PAUSED') then now() else subscription_auto_renew_cancelled_at end,
-           settings = jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription,auto_renew_status}', to_jsonb($3::text), true),
+           settings = jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription}', coalesce(settings->'subscription','{}') || $6::jsonb, true),
            updated_at = now()
        where id = $1`,
       [
@@ -1019,6 +1047,10 @@ async function processPreapprovalWebhook(preapprovalId) {
         status,
         preapproval.id || preapprovalId,
         preapproval.init_point || preapproval.sandbox_init_point || null,
+        JSON.stringify({ auto_renew_status: status, auto_renew_plan_code: order.package_code,
+          auto_renew_next_payment_at: preapproval.next_payment_date || null,
+          auto_renew_amount_cop: Number(preapproval.auto_recurring?.transaction_amount || order.price_cop),
+          auto_renew_provider_updated_at: remoteVersion?.toISOString() || null }),
       ]
     );
 
@@ -1064,11 +1096,15 @@ async function processMercadoPagoWebhook(req) {
   const rawTopic = req.query.type || req.query.topic || req.body?.type || req.body?.topic;
   const topic = normalizeMercadoPagoWebhookTopic(rawTopic);
   const resourceId = req.query["data.id"] || req.body?.data?.id || req.body?.id;
+  return processMercadoPagoResource(topic, resourceId);
+}
+
+async function processMercadoPagoResource(topic, resourceId) {
   if (topic === "subscription_preapproval") {
     return processPreapprovalWebhook(resourceId);
   }
   if (topic && !["payment", "subscription_authorized_payment"].includes(topic)) {
-    return { ignored: true, topic: rawTopic };
+    return { ignored: true, topic };
   }
 
   let paymentId = resourceId;
@@ -1078,7 +1114,7 @@ async function processMercadoPagoWebhook(req) {
       return { ignored: true, reason: "missing_authorized_payment_id" };
     }
     authorizedInvoice = await mpRequest(`/authorized_payments/${encodeURIComponent(resourceId)}`, { method: "GET" });
-    paymentId = approvedPaymentIdFromAuthorizedInvoice(authorizedInvoice);
+    paymentId = approvedPaymentIdFromAuthorizedInvoice(authorizedInvoice) || (authorizedInvoice?.payment?.id ? String(authorizedInvoice.payment.id) : null);
     if (!paymentId) {
       return {
         authorized_payment: {
@@ -1095,13 +1131,25 @@ async function processMercadoPagoWebhook(req) {
   }
 
   const payment = await mpRequest(`/v1/payments/${encodeURIComponent(paymentId)}`, { method: "GET" });
+  if (!authorizedInvoice && payment.external_reference) {
+    const source = (await query("select mercado_pago_preference_id from qr_credit_purchase_orders where external_reference=$1 and metadata->'signup'->>'type'='portal_monthly_subscription_auto_renewal'", [payment.external_reference])).rows[0];
+    if (source) {
+      const found = await mpRequest('/authorized_payments/search?' + new URLSearchParams({payment_id: String(payment.id)}));
+      const matches = (found.results || []).filter(item => String(item.payment?.id) === String(payment.id) && String(item.preapproval_id) === String(source.mercado_pago_preference_id));
+      if (matches.length !== 1) throw badRequest('La factura del cobro todavía no está disponible. Se verificará nuevamente.');
+      authorizedInvoice = matches[0];
+    }
+  }
   const externalReference = payment.external_reference || authorizedInvoice?.external_reference;
   const preapprovalId = authorizedInvoice?.preapproval_id || "";
   if (!externalReference && !preapprovalId) {
     return { ignored: true, reason: "missing_external_reference" };
   }
 
+  if (String(payment.id) !== String(paymentId)) throw badRequest("La respuesta de pago no coincide con el recurso solicitado.");
+  if (payment.live_mode === false && env.isProduction) throw badRequest("Un pago de prueba no puede activar una suscripción de producción.");
   return withTransaction(async (client) => {
+    await client.query("select pg_advisory_xact_lock(hashtextextended($1,0))", ["qori-mp-payment:" + String(payment.id)]);
     const storageOrderResult = await client.query(
       `select * from business_storage_addon_orders where external_reference = $1 for update`,
       [externalReference || ""]
@@ -1137,56 +1185,31 @@ async function processMercadoPagoWebhook(req) {
     let payableOrder = order;
     const signup = order.metadata?.signup;
     const status = mapPaymentStatus(payment.status);
-    const isRecurringSubscription = [
-      "portal_monthly_subscription",
-      "portal_annual_subscription",
-      "portal_monthly_subscription_auto_renewal",
-    ].includes(signup?.type) && signup?.plan_code !== PLAN_CODES.DESPEGA;
-    if (isRecurringSubscription && order.credited_at) {
-      const existingPayment = await client.query(
-        `select *
-         from qr_credit_purchase_orders
-         where mercado_pago_payment_id = $1
-         limit 1`,
-        [String(payment.id)]
-      );
-      if (existingPayment.rowCount) {
+    const isRecurringSubscription = (signup?.type === "portal_monthly_subscription_auto_renewal"
+      || signup?.auto_renew === true) && signup?.plan_code !== PLAN_CODES.DESPEGA;
+    if (authorizedInvoice && (String(authorizedInvoice.preapproval_id) !== String(order.mercado_pago_preference_id)
+      || (authorizedInvoice.external_reference && authorizedInvoice.external_reference !== order.external_reference))) {
+      throw badRequest("La factura no corresponde a la autorización de esta orden.");
+    }
+    if (isRecurringSubscription && (!payment.currency_id || payment.currency_id !== "COP")) throw badRequest("El cobro recurrente debe estar expresado en COP.");
+    const previous = await client.query('select * from qr_credit_purchase_orders where mercado_pago_payment_id=$1 limit 1 for update', [String(payment.id)]);
+    if (previous.rows[0]) {
+      payableOrder = previous.rows[0];
+      if (payableOrder.business_id !== order.business_id || (payableOrder.id !== order.id && payableOrder.metadata?.parent_order_id !== order.id)) throw badRequest("El pago ya pertenece a otra orden.");
+      if (payableOrder.credited_at) {
         if (["REJECTED", "CANCELLED"].includes(status)) {
-          const reversed = await client.query(
-            `update qr_credit_purchase_orders
-             set status = $2,
-                 payment_payload = $3,
-                 updated_at = now()
-             where id = $1
-             returning *`,
-            [existingPayment.rows[0].id, status, payment]
-          );
-          await syncSignupAttributionStatus(client, existingPayment.rows[0].id, status, payment.id);
-          return { order: mapPurchaseOrder(reversed.rows[0]), credited: false, duplicate: true, reversed: true };
+          const reversed = await client.query('update qr_credit_purchase_orders set status=$2,payment_payload=$3,updated_at=now() where id=$1 returning *', [payableOrder.id,status,payment]);
+          await syncSignupAttributionStatus(client,payableOrder.id,status,payment.id);
+          return {order:mapPurchaseOrder(reversed.rows[0]),credited:false,duplicate:true,reversed:true};
         }
-        return { order: mapPurchaseOrder(existingPayment.rows[0]), credited: false, duplicate: true };
+        return {order:mapPurchaseOrder(payableOrder),credited:false,duplicate:true};
       }
+    } else if (order.credited_at) {
+      if (!isRecurringSubscription) throw badRequest("La orden ya fue pagada. El pago adicional requiere revisión.");
       const recurringOrder = await client.query(
-        `insert into qr_credit_purchase_orders
-          (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
-         returning *`,
-        [
-          order.business_id,
-          order.created_by_user_id,
-          order.package_code,
-          order.package_size,
-          `${order.package_title} - ${String(payment.id)}`,
-          order.price_cop,
-          `${order.external_reference}:${payment.id}`,
-          {
-            ...order.metadata,
-            source: "mercado_pago_auto_renewal_payment",
-            parent_external_reference: order.external_reference,
-            parent_order_id: order.id,
-          },
-        ]
-      );
+        'insert into qr_credit_purchase_orders (business_id,created_by_user_id,package_code,package_size,package_title,price_cop,external_reference,metadata) values($1,$2,$3,$4,$5,$6,$7,$8) returning *',
+        [order.business_id,order.created_by_user_id,order.package_code,order.package_size,order.package_title + ' - ' + payment.id,order.price_cop,
+          order.external_reference + ':' + payment.id,{...order.metadata,source: "mercado_pago_auto_renewal_payment",parent_external_reference:order.external_reference,parent_order_id:order.id}]);
       payableOrder = recurringOrder.rows[0];
     }
 
@@ -1205,6 +1228,12 @@ async function processMercadoPagoWebhook(req) {
       return { order: mapPurchaseOrder(updated.rows[0]), credited: false };
     }
 
+    if (isRecurringSubscription && authorizedInvoice?.debit_date) {
+      const debit = optionsDate(authorizedInvoice.debit_date);
+      if (!debit || debit > new Date(Date.now()+5*60*1000)) throw badRequest("La fecha del cobro recurrente no es válida.");
+      payableOrder.metadata = {...payableOrder.metadata, recurring_debit_date: debit.toISOString()};
+      await client.query("update qr_credit_purchase_orders set metadata=$2 where id=$1", [payableOrder.id,payableOrder.metadata]);
+    }
     return finalizeApprovedCreditPurchase(client, payableOrder, payment, {
       publicLabel: `${payableOrder.package_title} comprado en Mercado Pago`,
       notes: `Recarga automatica Mercado Pago. Payment ID ${payment.id}.`,
@@ -1276,6 +1305,7 @@ function mapPaymentStatus(status) {
 }
 
 function validateApprovedPayment(order, payment) {
+  if (payment.status && payment.status !== "approved") throw badRequest("El pago todavía no está aprobado.");
   const amount = Number(payment.transaction_amount || 0);
   if (!Number.isFinite(amount) || amount < Number(order.price_cop)) {
     throw badRequest("El pago aprobado no cubre el valor de la orden.");
@@ -1354,6 +1384,8 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
   };
 }
 
+function optionsDate(value) { const date = value ? new Date(value) : null; return date && Number.isFinite(date.getTime()) ? date : null; }
+
 async function finalizeApprovedPortalSubscription(client, order, payment, signup) {
   if (order.credited_at) {
     return { order: mapPurchaseOrder(order), credited: false, duplicate: true };
@@ -1372,7 +1404,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     throw badRequest("La orden aprobada no coincide con un plan canonico activable.");
   }
   const currentPeriod = await client.query(
-    `select subscription_current_period_ends_at
+    `select plan_code, subscription_current_period_ends_at
      from businesses
      where id = $1
      for update`,
@@ -1382,9 +1414,15 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     ? new Date(currentPeriod.rows[0].subscription_current_period_ends_at)
     : null;
   const now = new Date();
-  const periodEnd = plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now;
+  if (signup.type === 'portal_monthly_subscription_auto_renewal' && currentPeriod.rows[0]?.plan_code !== planCode) {
+    throw badRequest('El plan del negocio cambió. El cobro de la autorización anterior requiere revisión administrativa.');
+  }
+  const scheduled = optionsDate(order.metadata?.recurring_debit_date);
+  const periodEnd = scheduled || (plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now);
   const billingCycle = plan.billing_period === "prepaid" ? "prepaid" : normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
-  const nextPeriodEnd = addPlanBillingPeriod(periodEnd, plan, billingCycle);
+  let nextPeriodEnd = addPlanBillingPeriod(periodEnd, plan, billingCycle);
+  const advancesPeriod = !scheduled || !currentEnd || nextPeriodEnd > currentEnd;
+  if (scheduled && currentEnd && nextPeriodEnd < currentEnd) nextPeriodEnd = currentEnd;
 
   await ensureCreditAccount(client, order.business_id);
   let account = null;
@@ -1398,10 +1436,10 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       created_by_user_id: order.created_by_user_id,
     });
   }
-  const included = await resetIncludedTickets(client, {
+  const included = advancesPeriod ? await resetIncludedTickets(client, {
     business_id:order.business_id, quantity:Number(plan.limits?.welcome_courtesy_tickets||0),
     period_key:order.id,created_by_user_id:order.created_by_user_id
-  });
+  }) : {account: await ensureCreditAccount(client, order.business_id), granted:false};
   account=included.account; courtesyTicketsGranted=included.granted;
   const updated = await client.query(
     `update qr_credit_purchase_orders
@@ -1500,6 +1538,7 @@ module.exports = {
     finalizeApprovedCreditPurchase,
     finalizeApprovedPortalSubscription,
     monthlyChargeForBusiness,
+    addPlanBillingPeriod,
     approvedPaymentIdFromAuthorizedInvoice,
     normalizeMercadoPagoWebhookTopic,
     validateApprovedPayment,
@@ -1515,4 +1554,7 @@ module.exports = {
   createSubscriptionRenewalCheckout,
   listCreditOrders,
   processMercadoPagoWebhook,
+  processMercadoPagoResource,
+  processPreapprovalWebhook,
+  mpRequest,
 };

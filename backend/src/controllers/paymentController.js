@@ -58,7 +58,7 @@ async function listQrCreditOffers(req, res, next) {
 async function createSubscriptionCheckout(req, res, next) {
   try {
     const body = validate(subscriptionRenewalSchema, req.body);
-    const order = await createSubscriptionRenewalCheckout(req.user, body);
+    const order = await require('../services/subscriptionAutoRenewalService').withBusinessLock(req.user.business_id, () => createSubscriptionRenewalCheckout(req.user, body));
     res.status(201).json({ order });
   } catch (error) {
     next(error);
@@ -78,7 +78,7 @@ async function createStorageCheckout(req, res, next) {
 async function createSubscriptionAutoRenewalCheckout(req, res, next) {
   try {
     const body = validate(subscriptionRenewalSchema, req.body);
-    const result = await createSubscriptionAutoRenewal(req.user, body);
+    const result = await require('../services/subscriptionAutoRenewalService').create(req.user, body);
     res.status(201).json(result);
   } catch (error) {
     next(error);

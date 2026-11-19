@@ -1052,6 +1052,10 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
     checkout_url: row.subscription_auto_renew_checkout_url || null,
     authorized_at: row.subscription_auto_renew_authorized_at || null,
     cancelled_at: row.subscription_auto_renew_cancelled_at || null,
+    next_payment_at: row.settings?.subscription?.auto_renew_next_payment_at || null,
+    amount_cop: row.settings?.subscription?.auto_renew_amount_cop || null,
+    checked_at: row.settings?.subscription?.auto_renew_checked_at || null,
+    sync_error: row.settings?.subscription?.auto_renew_sync_error || null,
   };
 
   if (hasLifetimeAccess(row)) {

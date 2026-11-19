@@ -8,7 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const { env } = require("../backend/src/config/env");
 const { createPortalSignupCheckout } = require("../backend/src/services/mercadoPagoService");
 
-test("Despega is a public monthly subscription backed by Mercado Pago", () => {
+test("Despega is a public prepaid plan backed by Mercado Pago", () => {
   const subscriptions = read("backend/src/services/subscriptionService.js");
   const controller = read("backend/src/controllers/packageSalesController.js");
   const page = read("paquetes/js/app.js");
@@ -26,16 +26,16 @@ test("Despega is a public monthly subscription backed by Mercado Pago", () => {
   assert.match(html, /Tarjetas, saldo Mercado Pago y PSE/);
 });
 
-test("all public plan checkouts are monthly-only", () => {
+test("public checkout distinguishes prepaid from monthly plans", () => {
   const controller = read("backend/src/controllers/packageSalesController.js");
   const payments = read("backend/src/services/mercadoPagoService.js");
   const page = read("paquetes/js/app.js");
 
-  assert.match(controller, /billing_cycle:\s*z\.literal\("monthly"\)/);
-  assert.match(page, /billing_cycle:\s*"monthly"/);
+  assert.match(controller, /billing_cycle:\s*z\.enum\(\["monthly", "prepaid"\]\)/);
+  assert.match(page, /billing_cycle: selectedPlan\.billing_period === "prepaid" \? "prepaid" : "monthly"/);
   assert.doesNotMatch(page, /annual_price_cop/);
   assert.match(payments, /payload\.billing_cycle && payload\.billing_cycle !== "monthly"/);
-  assert.match(payments, /const billingCycle = "monthly"/);
+  assert.match(payments, /const billingCycle = plan\.billing_period === "prepaid" \? "prepaid" : "monthly"/);
   assert.match(payments, /const subscriptionType = "portal_monthly_subscription"/);
   assert.match(payments, /activation_flow:\s*"checkout_preference"/);
   assert.match(payments, /requires_card_enrollment:\s*false/);

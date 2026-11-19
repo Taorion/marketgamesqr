@@ -182,7 +182,9 @@ app.use(express.json({ limit: "26mb", verify: (req, _res, buffer) => { req.rawBo
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, database_configured: env.databaseConfigured });
+  res.json({ ok: true, database_configured: env.databaseConfigured,
+    billing: {automatic_renewal_configured:Boolean(env.mercadoPagoAccessToken && env.mercadoPagoWebhookSecret),
+      reconciliation_enabled:Boolean(env.mercadoPagoAccessToken && env.mercadoPagoWebhookSecret && process.env.SUBSCRIPTION_RECONCILIATION_ENABLED !== 'false')} });
 });
 
 app.get('/api/ready', async (_req,res,next) => {

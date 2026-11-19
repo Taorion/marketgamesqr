@@ -7,6 +7,7 @@ const stopAgendaPushWorker = startAgendaPushWorker();
 const stopCustomerBenefits = require('./services/customerBenefitNotificationService').start();
 const stopCustomerPayments = require('./services/customerPaymentPushService').start();
 const stopGiftDelivery = require('./services/giftDeliveryService').start();
+const stopSubscriptionRenewals = require('./services/subscriptionAutoRenewalService').start();
 const stopSellerCommissions = require('./services/sellerCommissionWorker').startSellerCommissionWorker();
 
 const server = app.listen(env.port, () => {
@@ -17,6 +18,7 @@ const stopSummitLive = require('./services/summitLiveService').attach(server);
 
 async function shutdown() {
   stopSummitLive();
+  await stopSubscriptionRenewals();
   await stopSellerCommissions();
   await stopAgendaPushWorker();
   await stopCustomerPayments();
