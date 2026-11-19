@@ -36,7 +36,7 @@ Los reembolsos y contracargos conservan el historial y pasan por los ajustes
 existentes de atribución/comisiones; este cambio no introduce reembolsos automáticos.
 
 El proceso de conciliación corre al iniciar el servidor y cada cinco minutos,
-en lotes de veinte negocios, con páginas de veinte facturas (límite verificado en producción). Consulta al proveedor;
+en lotes de veinte negocios, con la paginación predeterminada del proveedor y avance por el número de facturas recibidas. Consulta al proveedor;
 no ejecuta cargos adicionales. Guarda en `businesses.settings.subscription` la
 fecha de intento, de verificación y el aviso de error. Los fallos se reintentan.
 No necesita migración ni datos de tarjeta nuevos.

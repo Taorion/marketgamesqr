@@ -42,7 +42,7 @@ test('Monthly card renewal: authorization, provider verification, recovery and c
     }
     if(url.pathname==='/authorized_payments/search'){
       const rows=[...invoices.values()].filter(i=>url.searchParams.has('payment_id')?String(i.payment?.id)===url.searchParams.get('payment_id'):i.preapproval_id===url.searchParams.get('preapproval_id'));
-      const offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||20);if(limit>20)return json({message:'Invalid value for limit'},400);invoiceOffsets.push(offset);return json({results:rows.slice(offset,offset+limit),paging:{total:rows.length}});
+      const offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||20);if(url.searchParams.has('limit'))return json({message:'Invalid value for limit'},400);invoiceOffsets.push(offset);return json({results:rows.slice(offset,offset+limit),paging:{total:rows.length}});
     }
     if(url.pathname.startsWith('/authorized_payments/'))return json(invoices.get(url.pathname.split('/').pop()));
     if(url.pathname.startsWith('/v1/payments/'))return json(payments.get(url.pathname.split('/').pop()));
@@ -96,7 +96,7 @@ test('Monthly card renewal: authorization, provider verification, recovery and c
     const before=(await business(f.b.id)).subscription_current_period_ends_at;await renewal.refresh(f.u);assert.equal(+((await business(f.b.id)).subscription_current_period_ends_at),+before);
     assert.ok((await business(f.b.id)).settings.subscription.auto_renew_checked_at);
   });
-  await t.test('reconciliation paginates with the provider limit of twenty invoices',async()=>{
+  await t.test('reconciliation uses provider pagination without an unsupported limit parameter',async()=>{
     invoiceOffsets.length=0;for(let i=0;i<21;i++){const id=uuid();invoices.set(id,{id,preapproval_id:m.id});}
     await renewal.refresh(f.u);assert.ok(invoiceOffsets.includes(20));
   });

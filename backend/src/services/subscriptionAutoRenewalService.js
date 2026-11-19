@@ -77,8 +77,8 @@ async function reconcile(businessId) {
     // Pagination prevents a missed notification from disappearing behind newer
     // invoices. Only the provider's fully verified payment can extend access.
     let invoiceError;
-    for (let offset = 0; ; offset += 20) {
-      const page = await payments().mpRequest('/authorized_payments/search?' + new URLSearchParams({ preapproval_id: id, offset, limit: 20 }));
+    for (let offset = 0; ;) {
+      const page = await payments().mpRequest('/authorized_payments/search?' + new URLSearchParams({ preapproval_id: id, offset }));
       const invoices = page.results || [];
       for (const invoice of invoices) {
         if (String(invoice.preapproval_id) !== String(id)) throw badRequest('La factura no corresponde a esta autorización.');
@@ -88,7 +88,8 @@ async function reconcile(businessId) {
         }
       }
       if (!invoices.length || offset + invoices.length >= Number(page.paging?.total || invoices.length)) break;
-      if (offset >= 4950) throw badRequest('Hay más facturas por verificar. Requiere revisión administrativa.');
+      offset += invoices.length;
+      if (offset >= 5000) throw badRequest('Hay más facturas por verificar. Requiere revisión administrativa.');
     }
     if (invoiceError) throw invoiceError;
     await query(`update businesses set settings=jsonb_set(coalesce(settings,'{}'),'{subscription}',
