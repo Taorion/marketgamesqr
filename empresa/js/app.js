@@ -13041,7 +13041,7 @@ function renderSmartCatalogTables() {
         <tr class="${active ? "is-selected-row" : ""}">
           <td><strong>${escapeHtml(catalog.title)}</strong><small>${escapeHtml(catalog.public_url || catalog.slug || "")}</small></td>
           <td><span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span></td>
-          <td>${escapeHtml(catalog.whatsapp_number || "-")}</td>
+          <td>${catalog.metadata?.redemption_mode === 'ACTIVATIONS' ? `${catalog.metadata.activation_ids?.length || 0} activaciones` : catalog.metadata?.redemption_mode === 'STAMP_PROGRAMS' ? `${catalog.metadata.stamp_program_ids?.length || 0} programas de sellos` : escapeHtml(catalog.whatsapp_number || "-")}</td>
           <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
           <td><div class="table-actions smart-catalog-row-actions">
             <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Gestionar</button>
@@ -13329,7 +13329,10 @@ function renderSmartCatalogView() {
   normalizeSmartCatalogWorkspace();
   renderSmartCatalogCampaignOptions();
   renderSmartCatalogCatalogOptions();
+  const directory = ['STAMP_PROGRAMS','ACTIVATIONS'].includes(smartCatalogSelectedCatalog()?.metadata?.redemption_mode);
+  if (directory && state.smartCatalogTab === 'products') state.smartCatalogTab = 'catalogs';
   smartCatalogTabButtons.forEach((button) => {
+    button.hidden = directory && button.dataset.smartCatalogTab === 'products';
     button.classList.toggle("active", button.dataset.smartCatalogTab === state.smartCatalogTab);
   });
   smartCatalogPanels.forEach((panel) => {
@@ -13597,7 +13600,7 @@ async function submitSmartCatalog(event) {
     const payload = smartCatalogFormPayload(smartCatalogForm);
     payload.metadata = {...((state.smartCatalogs || []).find(c=>c.id===editingCatalogId)?.metadata || {}), redemption_mode:payload.redemption_mode};
     Object.assign(payload.metadata,window.QoriCatalogShowcases?.formMetadata() || {});
-    if(payload.redemption_mode === "STAMP_PROGRAMS" && !payload.whatsapp_number) payload.whatsapp_number="00000000";
+    if(['STAMP_PROGRAMS','ACTIVATIONS'].includes(payload.redemption_mode) && !payload.whatsapp_number) payload.whatsapp_number="00000000";
     delete payload.redemption_mode;
     const data = await api(editingCatalogId ? `/api/business/catalogs/${encodeURIComponent(editingCatalogId)}` : "/api/business/catalogs", {
       method: editingCatalogId ? "PATCH" : "POST",
@@ -13607,10 +13610,10 @@ async function submitSmartCatalog(event) {
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     smartCatalogForm.reset();
     delete smartCatalogForm.dataset.editingCatalogId;
-    setInlineMessage(smartCatalogMessage, editingCatalogId ? "Vitrina web actualizada." : "Vitrina web creada. Agrega productos y comparte el enlace público.", "success");
+    setInlineMessage(smartCatalogMessage, editingCatalogId ? "Vitrina web actualizada." : ['STAMP_PROGRAMS','ACTIVATIONS'].includes(payload.metadata?.redemption_mode) ? "Vitrina creada. Comparte su enlace o QR de acceso." : "Vitrina web creada. Agrega productos y comparte el enlace público.", "success");
     await refreshSmartCatalogs({ quiet: true });
     closeSmartCatalogCreateModal();
-    setSmartCatalogTab(editingCatalogId || payload.metadata?.redemption_mode === "STAMP_PROGRAMS" ? "catalogs" : "products");
+    setSmartCatalogTab(editingCatalogId || ['STAMP_PROGRAMS','ACTIVATIONS'].includes(payload.metadata?.redemption_mode) ? "catalogs" : "products");
   } catch (error) {
     setInlineMessage(
       smartCatalogMessage,
@@ -65832,6 +65835,10 @@ smartCatalogTable?.addEventListener("click", async (event) => {
   const deleteButton = event.target.closest("[data-smart-catalog-delete]");
   if (selectButton) {
     await loadSmartCatalogDetail(selectButton.dataset.smartCatalogSelect, { quiet: false });
+    if (['STAMP_PROGRAMS','ACTIVATIONS'].includes(smartCatalogSelectedCatalog()?.metadata?.redemption_mode)) {
+      openSmartCatalogEditModal(selectButton.dataset.smartCatalogSelect);
+      return;
+    }
     setSmartCatalogTab("products");
     return;
   }

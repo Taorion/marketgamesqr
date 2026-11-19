@@ -799,6 +799,7 @@ async function createWhatsappIntent(slug, productId, body = {}, reqMeta = {}) {
     if (!catalogResult.rowCount) throw notFound("Catalogo no encontrado o no publicado.");
     const catalog = catalogResult.rows[0];
     if (require('./catalogShowcaseService').isStamps(catalog)) throw badRequest('Elige un programa e inscríbete desde esta vitrina.');
+    if (require('./activationShowcaseService').isActivations(catalog)) throw badRequest('Elige una activación y participa desde esta vitrina.');
     if (require('./affiliateCatalogService').isPoints(catalog)) throw badRequest('Usa el carrito de puntos para esta vitrina.');
     const product = productId
       ? (await client.query(

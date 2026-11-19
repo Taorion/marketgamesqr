@@ -21,6 +21,9 @@ test("cada apertura aplica el modo correcto", () => {
 });
 
 test("el HTML fuerza la actualizacion del JavaScript publicado", () => {
-  const markers = html.match(/catalog-edit-label=v492-20260914/g) || [];
-  assert.equal(markers.length, 2);
+  const script = html.match(/<script src="(js\/app\.js\?[^"\s]+)"/);
+  const preload = html.match(/<link rel="preload" as="script" href="(js\/app\.js\?[^"\s]+)"/);
+  assert.ok(script && preload, 'El script y su precarga deben tener una URL versionada');
+  assert.match(script[1], /[?&]v=[^&]+/);
+  assert.equal(preload[1], script[1], 'Precarga y ejecución deben usar la misma versión');
 });

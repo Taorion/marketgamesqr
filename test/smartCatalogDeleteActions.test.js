@@ -4,7 +4,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const html = fs.readFileSync(path.join(root, "empresa", "index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "empresa", "js", "app.js"), "utf8");
 const routes = fs.readFileSync(path.join(root, "backend", "src", "routes", "smartCatalogRoutes.js"), "utf8");
 const controller = fs.readFileSync(path.join(root, "backend", "src", "controllers", "smartCatalogController.js"), "utf8");
@@ -17,7 +16,6 @@ test("cada vitrina y producto muestra una accion de eliminar", () => {
   assert.match(app, /async function deleteSmartCatalogProduct\(productId\)/);
   assert.match(app, /deleteButton\.dataset\.smartCatalogDelete/);
   assert.match(app, /deleteButton\.dataset\.smartProductDelete/);
-  assert.match(html, /catalog-delete-actions=v489-20260914/g);
 });
 
 test("las eliminaciones usan rutas protegidas y conservan historial", () => {

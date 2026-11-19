@@ -7,6 +7,7 @@ const {snapshot,publicRules}=require('./stampCardService');
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isStamps=c=>c?.metadata?.redemption_mode==='STAMP_PROGRAMS';
 async function validateConfig(db,businessId,payload){
+ if(require('./activationShowcaseService').isActivations(payload))return require('./activationShowcaseService').validateConfig(db,businessId,payload);
  if(!isStamps(payload))return;
  const b=(await db.query('select * from businesses where id=$1',[businessId])).rows[0];
  if(!b||!planFromBusiness(b).features.stamp_cards)throw forbidden('Tu plan no incluye programas de sellos.');
@@ -41,4 +42,4 @@ async function accessQr(businessId,id){
  return qrFor(c);
 }
 async function publicAccessQr(slug){return qrFor(await publicCatalog(slug));}
-module.exports={isStamps,validateConfig,stampPrograms,accessQr,publicAccessQr};
+module.exports={isStamps,validateConfig,stampPrograms,accessQr,publicAccessQr,publicCatalog};
