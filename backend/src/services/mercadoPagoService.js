@@ -95,6 +95,7 @@ function billingPeriodLabel(plan, fallback = "mensualidad") {
 }
 
 function addPlanBillingPeriod(date, plan, billingCycle = "monthly") {
+  if (plan.billing_period === "prepaid") return null;
   const next = new Date(date.getTime());
   const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan || {});
   if (billingCycle === "annual") {
@@ -168,7 +169,7 @@ function isBaseAccessPackage(packageSize) {
 async function assertActiveSubscriptionForTicketPurchase(user) {
   const subscription = await getBusinessSubscription(user.business_id);
   const plan = subscription.plan || {};
-  if (plan.category !== "subscription" || plan.raw_status !== "ACTIVE" || !plan.portal_access_allowed) {
+  if (plan.category !== "subscription" || plan.raw_status !== "ACTIVE" || (!plan.portal_access_allowed && plan.access_status !== "TICKETS_EXHAUSTED")) {
     throw badRequest("Para comprar tickets internos primero debes activar un plan de suscripcion.");
   }
   return subscription;
@@ -351,7 +352,7 @@ async function createPublicPlanPaymentPreference(payload, plan, purchaseOrder, p
       items: [
         {
           id: plan.code,
-          title: `${plan.name} - suscripcion ${billingLabel} Qori`,
+          title: `${plan.name} - ${plan.billing_period === "prepaid" ? "pago prepago" : `suscripcion ${billingLabel}`} Qori`,
           quantity: 1,
           unit_price: planPriceCop,
           currency_id: "COP",
@@ -547,12 +548,16 @@ async function createSubscriptionRenewalCheckout(user, body) {
   }
 
   const currentBusiness = await query(
-    `select plan_code, settings, subscription_current_period_ends_at
+    `select plan_code, settings, subscription_current_period_ends_at, subscription_auto_renew_enabled
      from businesses
      where id = $1`,
     [user.business_id]
   );
   const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
+  if (plan.billing_period === "prepaid") {
+    if (currentPlan?.code === PLAN_CODES.DESPEGA) throw badRequest("Despega no requiere renovar mensualidad. Recarga tickets desde tu cuenta.");
+    if (currentBusiness.rows[0]?.subscription_auto_renew_enabled) throw badRequest("Cancela el cobro automatico vigente antes de cambiar a Despega prepago.");
+  }
   if (!currentPlan || !["subscription", "ticket_base", "growth_temporal", "prepaid"].includes(currentPlan.category)) {
     throw badRequest("Este negocio no puede activar una mensualidad del portal.");
   }
@@ -584,6 +589,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
           plan_price_cop: charge.price_cop,
           standard_plan_price_cop: charge.standard_price_cop,
           billing_period: plan.billing_period || "monthly",
+          billing_cycle: plan.billing_period === "prepaid" ? "prepaid" : "monthly",
           billing_frequency: plan.billing_frequency || 1,
           billing_frequency_type: plan.billing_frequency_type || "months",
           renewal: true,
@@ -641,6 +647,9 @@ async function createSubscriptionRenewalCheckout(user, body) {
 }
 
 async function createSubscriptionAutoRenewal(user, body) {
+  if (body.plan_code === PLAN_CODES.DESPEGA) {
+    throw badRequest("Despega es prepago y no admite cobro mensual automatico.");
+  }
   if (!user.business_id) {
     throw badRequest("Este usuario no tiene negocio asignado.");
   }
@@ -882,14 +891,14 @@ async function createPortalSignupCheckout(client, payload) {
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para pago automatico.");
   }
-  if (payload.billing_cycle && payload.billing_cycle !== "monthly") {
+  if (payload.billing_cycle && payload.billing_cycle !== "monthly" && !(plan.billing_period === "prepaid" && payload.billing_cycle === "prepaid")) {
     throw badRequest("Los planes publicos de Qori se cobran exclusivamente por mensualidad.");
   }
 
-  const billingCycle = "monthly";
+  const billingCycle = plan.billing_period === "prepaid" ? "prepaid" : "monthly";
   const planPriceCop = Number(plan.monthly_price_cop);
   const subscriptionType = "portal_monthly_subscription";
-  const billingLabel = "mensualidad";
+  const billingLabel = plan.billing_period === "prepaid" ? "prepago" : "mensualidad";
   const order = await client.query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -900,7 +909,7 @@ async function createPortalSignupCheckout(client, payload) {
       payload.user_id,
       plan.code,
       0,
-      `${plan.name} - suscripcion ${billingLabel}`,
+      `${plan.name} - ${plan.billing_period === "prepaid" ? "pago prepago" : `suscripcion ${billingLabel}`}`,
       planPriceCop,
       JSON.stringify({
         source: "public_portal_signup",
@@ -1132,7 +1141,7 @@ async function processMercadoPagoWebhook(req) {
       "portal_monthly_subscription",
       "portal_annual_subscription",
       "portal_monthly_subscription_auto_renewal",
-    ].includes(signup?.type);
+    ].includes(signup?.type) && signup?.plan_code !== PLAN_CODES.DESPEGA;
     if (isRecurringSubscription && order.credited_at) {
       const existingPayment = await client.query(
         `select *
@@ -1373,8 +1382,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     ? new Date(currentPeriod.rows[0].subscription_current_period_ends_at)
     : null;
   const now = new Date();
-  const periodEnd = currentEnd && currentEnd > now ? currentEnd : now;
-  const billingCycle = normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
+  const periodEnd = plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now;
+  const billingCycle = plan.billing_period === "prepaid" ? "prepaid" : normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
   const nextPeriodEnd = addPlanBillingPeriod(periodEnd, plan, billingCycle);
 
   await ensureCreditAccount(client, order.business_id);
@@ -1404,7 +1413,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
          updated_at = now()
      where id = $1
      returning *`,
-    [order.id, String(payment.id), payment, JSON.stringify({starts_at:periodEnd.toISOString(),ends_at:nextPeriodEnd.toISOString()})]
+    [order.id, String(payment.id), payment, JSON.stringify({starts_at:periodEnd.toISOString(),ends_at:nextPeriodEnd?.toISOString() || null})]
   );
 
   await client.query(
@@ -1426,7 +1435,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
          ),
          updated_at = now()
      where id = $1`,
-    [order.business_id, planCode, nextPeriodEnd.toISOString(), billingCycle]
+    [order.business_id, planCode, nextPeriodEnd?.toISOString() || null, billingCycle]
   );
 
   await require('./sellerCommissionWorker').releaseDueCommissions(client, order.business_id);
@@ -1454,7 +1463,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       plan_code: planCode,
       status: "ACTIVE",
       billing_cycle: billingCycle,
-      current_period_ends_at: nextPeriodEnd.toISOString(),
+      current_period_ends_at: nextPeriodEnd?.toISOString() || null,
     },
     credit_account: account ? mapPublicCreditAccount(account) : null,
     courtesy_tickets_granted: courtesyTicketsGranted,

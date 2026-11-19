@@ -2,7 +2,7 @@ const {test,after}=require('node:test'),assert=require('node:assert/strict'),cry
 process.env.DATABASE_URL='postgresql://postgres@127.0.0.1:55441/qori_customer_qa';process.env.DB_SSL='false';process.env.NODE_ENV='test';process.env.JWT_SECRET='closure-test-secret-local-only';process.env.AGENDA_PUSH_WORKER_ENABLED='false';
 const {query,pool}=require('../backend/src/config/db'),{app}=require('../backend/src/app'),jwt=require('jsonwebtoken');
 const uid=()=>crypto.randomUUID();let server,base;
-async function user(role){return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Closure QA',$2) returning *",[uid()+'@example.test',role])).rows[0];}
+async function user(role){return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Closure QA',$2) on conflict(email) do update set role=excluded.role,is_active=true returning *",[role==='QORI_SUPERADMIN'?'cbotero@gosqori.com':uid()+'@example.test',role])).rows[0];}
 async function call(path,u,body,method=body?'POST':'GET'){const r=await fetch(base+'/api/admin/commercial'+path,{method,headers:{'Content-Type':'application/json',...(u?{Authorization:'Bearer '+jwt.sign({sub:u.id,password_version:0},process.env.JWT_SECRET)}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};}
 test('only admin closes after confirmed subscription payment and live access; enrollment alone never closes',async t=>{
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
@@ -17,8 +17,8 @@ test('only admin closes after confirmed subscription payment and live access; en
  await t.test('seller cannot close, forge closure metadata or mark lost through either UI API',async()=>{
   assert.equal((await call('/prospects',seller,patch)).status,403);
   assert.equal((await call('/prospects/'+open.id,seller,patch,'PATCH')).status,403);
-  assert.equal((await call('/prospects/'+open.id,seller,{...patch,stage:'WON'},'PATCH')).status,400);
-  assert.equal((await call('/prospects/'+open.id,seller,{...patch,stage:'NEW',closed_at:new Date().toISOString()},'PATCH')).status,400);
+  assert.equal((await call('/prospects/'+open.id,seller,{...patch,stage:'WON'},'PATCH')).status,403);
+  assert.equal((await call('/prospects/'+open.id,seller,{...patch,stage:'NEW',closed_at:new Date().toISOString()},'PATCH')).status,403);
   for(const [u,status] of [[null,401],[seller,403],[owner,403]]){assert.equal((await call(route,u)).status,status);assert.equal((await call(route,u,body)).status,status);}
   await query("update qori_sales_prospects set stage='LOST' where id=$1",[open.id]);assert.equal((await call('/prospects/'+open.id,seller,{...patch,stage:'NEW'},'PATCH')).status,403);
  });
@@ -44,13 +44,22 @@ test('only admin closes after confirmed subscription payment and live access; en
   await query("update businesses set plan_code='STARTER',settings=$2::jsonb where id=$1",[b.id,JSON.stringify({qori_commercial:{status:'ACTIVE',plan_code:'STARTER',approved_by:admin.id,deal_id:uid(),trial_ends_at:new Date(Date.now()+31*86400000).toISOString()}})]);assert.equal((await call(route,admin,body)).status,400);
   await query("update businesses set settings='{}' where id=$1",[b.id]);
  });
- await t.test('admin explicitly closes once and Seller can only read the audited result',async()=>{
+ await t.test('prepaid Despega requires payment and tickets but no monthly due date',async()=>{
+  await query("update businesses set plan_code='DESPEGA',subscription_current_period_ends_at=null where id=$1",[b.id]);
+  await query('insert into business_qr_credit_accounts(business_id,qr_balance) values($1,25) on conflict(business_id) do update set qr_balance=25',[b.id]);
+  assert.equal((await call(route,admin)).data.can_close,false,'a monthly payment for another plan cannot close Despega');
+  await payment('portal_monthly_subscription','APPROVED',75000,b.id,'DESPEGA');
+  assert.equal((await call(route,admin)).data.can_close,true);
+  await query('update business_qr_credit_accounts set qr_balance=0 where business_id=$1',[b.id]);assert.equal((await call(route,admin)).data.can_close,false);
+  await query("update businesses set plan_code='STARTER',subscription_current_period_ends_at=now()+interval '30 days' where id=$1",[b.id]);
+ });
+ await t.test('admin explicitly closes once and the audited result remains protected',async()=>{
   assert.equal((await call(route,admin)).data.can_close,true);
   const results=await Promise.all([call(route,admin,body),call(route,admin,body)]);assert.ok(results.every(r=>r.status===200));assert.equal(results.filter(r=>r.data.already_closed).length,1);
   const saved=(await query('select * from qori_sales_prospects where id=$1',[p.id])).rows[0];assert.equal(saved.closed_by,admin.id);assert.equal(saved.closed_payment_order_id,order.id);assert.ok(saved.closed_at);
   assert.equal((await query("select count(*)::int n from qori_commercial_audit where action='PROSPECT_CLOSURE_VALIDATED' and entity_id=$1",[p.id])).rows[0].n,1);
-  const visible=(await call('/prospects?search='+encodeURIComponent(p.email),seller)).data.rows[0];assert.ok(visible.closed_at);assert.equal((await call(route,admin)).data.can_close,false);
-  assert.equal((await call('/prospects/'+p.id,seller,{...patch,email:p.email,stage:'NEW'},'PATCH')).status,400);
+  const visible=(await call('/prospects?search='+encodeURIComponent(p.email),admin)).data.rows[0];assert.ok(visible.closed_at);assert.equal((await call(route,admin)).data.can_close,false);
+  assert.equal((await call('/prospects/'+p.id,seller,{...patch,email:p.email,stage:'NEW'},'PATCH')).status,403);
   assert.equal((await query("select count(*)::int n from qori_seller_commissions where order_id=$1",[order.id])).rows[0].n,0,'closing does not fabricate commissions or payments');
  });
 });

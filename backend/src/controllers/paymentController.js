@@ -40,7 +40,7 @@ async function listQrCreditOffers(req, res, next) {
     }
     const subscription = await getBusinessSubscription(req.user.business_id);
     const plan = subscription.plan || {};
-    if (plan.category !== "subscription" || plan.raw_status !== "ACTIVE" || !plan.portal_access_allowed) {
+    if (plan.category !== "subscription" || plan.raw_status !== "ACTIVE" || (!plan.portal_access_allowed && plan.access_status !== "TICKETS_EXHAUSTED")) {
       throw badRequest("Para comprar tickets internos primero debes activar un plan de suscripcion.");
     }
     res.json({

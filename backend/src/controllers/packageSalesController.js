@@ -22,7 +22,7 @@ const {publicSignupBaseSchema,assertUniqueSignupIdentity,uniqueBusinessSlug,sign
 
 const portalSignupSchema = publicSignupBaseSchema.extend({
   plan_code: z.string().trim().min(2).max(40),
-  billing_cycle: z.literal("monthly").default("monthly"),
+  billing_cycle: z.enum(["monthly", "prepaid"]).default("monthly"),
 });
 
 function requireMarketAdmin(user) {
@@ -122,8 +122,12 @@ async function createPortalSignup(req, res, next) {
     const planCode = normalizePlanCode(body.plan_code);
     const plan = listPlans().find((item) => item.code === planCode && item.category === "subscription" && item.monthly_price_cop && item.public_signup_available !== false);
     if (!plan) {
-      throw badRequest("Selecciona un plan mensual valido para el portal.");
+      throw badRequest("Selecciona un plan valido para el portal.");
     }
+    if (plan.billing_period !== "prepaid" && body.billing_cycle === "prepaid") {
+      throw badRequest("Este plan tiene vigencia mensual.");
+    }
+    body.billing_cycle = plan.billing_period === "prepaid" ? "prepaid" : "monthly";
 
     const result = await withTransaction(async (client) => {
       const commercialAdvisor = body.commercial_advisor_id ? await advisorById(body.commercial_advisor_id, client) : null;

@@ -310,13 +310,14 @@ const PLAN_CATALOG = {
     monthly_price_cop: DESPEGA_PORTAL_COP,
     display_currency: "COP",
     payment_currency: "COP",
-    price_label: "COP 75.000 / mes",
-    billing_period: "monthly",
+    price_label: "COP 75.000 · prepago",
+    billing_period: "prepaid",
+    billing_label: "prepago",
     portal_value_cop: PLAN_PRICING_NOTES.DESPEGA.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.DESPEGA.recommended_start_package,
     best_for: "Negocios que quieren comenzar con activaciones interactivas y validacion de tickets.",
-    access_summary: "Cuenta, seguridad, activaciones interactivas, 5 tarjetas regalo al mes y validador QR con 25 tickets incluidos por periodo de suscripción pagado.",
-    pricing_note: PLAN_PRICING_NOTES.DESPEGA.pricing_note,
+    access_summary: "Cuenta, seguridad, activaciones interactivas y validador QR con 25 tickets iniciales. Prepago, vigente hasta agotar los tickets, sin vencimiento por fecha.",
+    pricing_note: "Pago prepago de COP 75.000 con 25 tickets iniciales. Sin mensualidad ni cobro recurrente; vigente hasta agotar los tickets. Los cupos mensuales de herramientas no cambian la vigencia del plan.",
     included: [
       "25 tickets de bienvenida",
       "5 tarjetas regalo al mes",
@@ -975,7 +976,7 @@ for(const program of Object.values(FREE_PROGRAMS)) {
 for(const plan of Object.values(PLAN_CATALOG)) {
  if(!isFreeProgram(plan.code)){plan.features.stamp_cards=Boolean(plan.features.portal_access);plan.features.customer_network=Boolean(plan.features.portal_access);plan.features.quotes=Boolean(plan.features.products);}
  if(plan.features.qr_batch_generator) plan.features.product_gifts=true;
- if(['DESPEGA','STARTER','GROWTH','PRO'].includes(plan.code)) {
+ if(['STARTER','GROWTH','PRO'].includes(plan.code)) {
   plan.pricing_note += ' Los tickets incluidos se restablecen en cada periodo pagado; no acumulan sobrantes. Los paquetes comprados se conservan.';
   plan.included=plan.included.map(x=>x.replace('tickets de bienvenida','tickets incluidos por periodo pagado'));
  }
@@ -1067,6 +1068,22 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
       days_overdue: 0,
       days_until_lock: null,
       auto_renew: autoRenew,
+    };
+  }
+
+  // Keep the historical subscription category/price field for API compatibility.
+  // Despega is billed once and its operational access depends on ticket balance.
+  if (plan.code === PLAN_CODES.DESPEGA && plan.billing_period === "prepaid") {
+    const balance = row.qr_balance ?? row.ticket_account?.qr_balance;
+    const allowed = rawStatus === "ACTIVE" && row.portal_status !== "SUSPENDED"
+      && (balance === undefined || Number(balance) > 0);
+    return {
+      raw_status: rawStatus,
+      access_status: allowed ? "ACTIVE" : (row.portal_status === "SUSPENDED" ? "SUSPENDED" : rawStatus === "ACTIVE" ? "TICKETS_EXHAUSTED" : rawStatus),
+      access_allowed: allowed, portal_access_allowed: allowed, is_subscription: false,
+      official_payment_due_at: null, grace_period_days: 0, grace_period_ends_at: null,
+      days_until_due: null, days_overdue: 0, days_until_lock: null,
+      auto_renew: { ...autoRenew, enabled: false, status: "NOT_APPLICABLE", checkout_url: null },
     };
   }
 
@@ -1198,7 +1215,7 @@ function planFromBusiness(row = {}) {
     access_allowed: lifecycle.access_allowed,
     portal_access_allowed: lifecycle.portal_access_allowed,
     started_at: row.subscription_started_at || row.settings?.subscription?.started_at || null,
-    current_period_ends_at: row.subscription_current_period_ends_at || row.settings?.subscription?.current_period_ends_at || null,
+    current_period_ends_at: plan.billing_period === "prepaid" ? null : row.subscription_current_period_ends_at || row.settings?.subscription?.current_period_ends_at || null,
     growth_started_at: growthStartedAt,
     growth_expires_at: growthExpiresAt,
     growth_source: row.growth_source || row.settings?.access?.growth_source || null,
@@ -1211,7 +1228,7 @@ function planFromBusiness(row = {}) {
     days_until_lock: lifecycle.days_until_lock,
     auto_renew: lifecycle.auto_renew,
     lifetime_access: hasLifetimeAccess(row),
-    monthly_payment_required: !isFreeProgram(code) && code !== PLAN_CODES.DESCUBRE && row.settings?.subscription?.monthly_payment_required !== false,
+    monthly_payment_required: plan.billing_period !== "prepaid" && !isFreeProgram(code) && code !== PLAN_CODES.DESCUBRE && row.settings?.subscription?.monthly_payment_required !== false,
   };
 }
 
@@ -1227,7 +1244,8 @@ async function getBusinessSubscription(businessId) {
             subscription_started_at, subscription_current_period_ends_at,
             subscription_auto_renew_enabled, subscription_auto_renew_status,
             mercado_pago_preapproval_id, subscription_auto_renew_checkout_url,
-            subscription_auto_renew_authorized_at, subscription_auto_renew_cancelled_at
+            subscription_auto_renew_authorized_at, subscription_auto_renew_cancelled_at,
+            coalesce((select qr_balance from business_qr_credit_accounts where business_id = businesses.id), 0) as qr_balance
      from businesses
      where id = $1 and is_active = true`,
     [businessId]
@@ -1250,7 +1268,7 @@ async function setBusinessSubscription(businessId, payload, db = { query }) {
   }
   const status = payload.subscription_status || "ACTIVE";
   const current = await db.query(
-    `select id, name, settings
+    `select id, name, settings, subscription_auto_renew_enabled
      from businesses
      where id = $1 and is_active = true`,
     [businessId]
@@ -1259,6 +1277,9 @@ async function setBusinessSubscription(businessId, payload, db = { query }) {
     throw notFound("Business not found.");
   }
   const currentSettings = current.rows[0].settings || {};
+  if (planCode === PLAN_CODES.DESPEGA && current.rows[0].subscription_auto_renew_enabled) {
+    throw badRequest("Cancela el cobro automatico vigente antes de cambiar a Despega prepago.");
+  }
   const hasLifetimeAccess = Boolean(
     currentSettings.subscription?.lifetime_access
       || currentSettings.access?.lifetime_access
@@ -1297,7 +1318,7 @@ async function setBusinessSubscription(businessId, payload, db = { query }) {
       businessId,
       planCode,
       status,
-      payload.subscription_current_period_ends_at || null,
+      planCode === PLAN_CODES.DESPEGA ? null : payload.subscription_current_period_ends_at || null,
     ]
   );
   if (!result.rowCount) {
@@ -1376,7 +1397,9 @@ async function assertBusinessFeature(user, businessId, feature) {
   }
   if (!subscription.plan.portal_access_allowed) {
     throw forbidden(
-      `La mensualidad vencio y ya pasaron los ${SUBSCRIPTION_GRACE_DAYS} dias de gracia. Renueva para recuperar el acceso al portal; tus datos se conservan.`,
+      subscription.plan.access_status === "TICKETS_EXHAUSTED"
+        ? "Agotaste los tickets de Despega prepago. Recarga tickets desde tu cuenta para continuar; tus datos se conservan."
+        : `La mensualidad vencio y ya pasaron los ${SUBSCRIPTION_GRACE_DAYS} dias de gracia. Renueva para recuperar el acceso al portal; tus datos se conservan.`,
       planGateDetails(subscription.plan, {
         reason: "portal_locked",
         feature: "portal_access",

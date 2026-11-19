@@ -30,8 +30,9 @@ const DESPEGA_PLAN = {
   name: "Despega",
   limits: { gift_cards_month: 5 },
   monthly_price_cop: 75000,
-  mode: "Suscripción",
-  access_summary: "Entrada para activar experiencias, validar QR y administrar tu cuenta con 25 tickets iniciales.",
+  billing_period: "prepaid",
+  mode: "Prepago",
+  access_summary: "Activa experiencias y valida QR con 25 tickets iniciales. Sin vencimiento por fecha: vigente hasta agotar tus tickets.",
   snapshot: ["25 tickets iniciales", "Validador QR", "Activaciones interactivas"],
   included: [
     "25 tickets de bienvenida",
@@ -120,7 +121,7 @@ function copMoney(value) {
 
 function monthlyPlanLabel(plan) {
   if (!plan?.monthly_price_cop) return escapeHtml(plan?.price_label || "Cotización");
-  return `${copMoney(plan.monthly_price_cop)} / mes`;
+  return `${copMoney(plan.monthly_price_cop)}${plan.billing_period === "prepaid" ? " · prepago" : " / mes"}`;
 }
 
 function escapeHtml(value) {
@@ -151,6 +152,8 @@ function qoriPlanFromApi(apiPlan) {
     included: Array.isArray(apiPlan.included) && apiPlan.included.length ? apiPlan.included : fallback.included,
     limits: apiPlan.limits || fallback.limits,
     monthly_price_cop: Number(apiPlan.monthly_price_cop || fallback.monthly_price_cop),
+    billing_period: apiPlan.billing_period || fallback.billing_period || "monthly",
+    mode: (apiPlan.billing_period || fallback.billing_period) === "prepaid" ? "Prepago" : "Suscripción",
     recommended: Boolean(apiPlan.recommended || fallback.recommended),
   };
 }
@@ -184,7 +187,7 @@ function renderPlans() {
           <h3>${escapeHtml(plan.name)}</h3>
           <div class="plan-price-row">
             <strong>${monthlyPlanLabel(plan)}</strong>
-            <span>${plan.notSubscription ? "Entrada básica" : "Suscripción mensual"}</span>
+            <span>${plan.billing_period === "prepaid" ? "Vigente hasta agotar los tickets" : "Suscripción mensual"}</span>
           </div>
         </div>
         <p class="plan-summary">${escapeHtml(plan.access_summary || "")}</p>
@@ -216,8 +219,8 @@ function renderPlans() {
 function renderSelection() {
   if (!selectedPlan) return;
   const title = `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}`;
-  const copy = selectedPlan.notSubscription
-    ? "Despega es una entrada básica. Escríbenos para activarla sin flujo de suscripción automática."
+  const copy = selectedPlan.billing_period === "prepaid"
+    ? "Despega es prepago e incluye 25 tickets iniciales. No vence al finalizar el mes: permanece vigente hasta agotar tus tickets. Sin cobro mensual automático."
     : `Vas a activar ${selectedPlan.name}. Recibirás ${Number(selectedPlan.limits?.welcome_courtesy_tickets || selectedPlan.snapshot?.[0]?.match(/\d+/)?.[0] || 0)} tickets iniciales y podrás recargar más según tu volumen.`;
   if (signupPlanSummary) {
     signupPlanSummary.innerHTML = `
@@ -226,7 +229,7 @@ function renderSelection() {
       <p>${escapeHtml(copy)}</p>
     `;
   }
-  if (formEyebrow) formEyebrow.textContent = selectedPlan.notSubscription ? "Entrada Despega" : `Suscripción ${selectedPlan.name}`;
+  if (formEyebrow) formEyebrow.textContent = selectedPlan.billing_period === "prepaid" ? "Despega prepago" : `Suscripción ${selectedPlan.name}`;
   if (formTitle) formTitle.textContent = selectedPlan.notSubscription ? "Solicitar Despega" : `Activar ${selectedPlan.name}`;
   if (formCopy) {
     formCopy.textContent = selectedPlan.notSubscription
@@ -381,7 +384,7 @@ async function submitSignup(event) {
       body: JSON.stringify({
         ...payload,
         plan_code: selectedPlan.code,
-        billing_cycle: "monthly",
+        billing_cycle: selectedPlan.billing_period === "prepaid" ? "prepaid" : "monthly",
       }),
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;

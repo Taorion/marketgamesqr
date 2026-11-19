@@ -5227,6 +5227,7 @@ function packagePriceLabel(offer) {
 
 function planMonthlyLabel(plan) {
   if (!plan?.monthly_price_cop) return plan?.price_label || "Cotización";
+  if (plan.billing_period === "prepaid") return `${copMoney(plan.monthly_price_cop)} · prepago`;
   return `${copMoney(plan.monthly_price_cop)} / ${plan.billing_label || "mes"}`;
 }
 
@@ -5359,6 +5360,7 @@ function subscriptionAccessLabel(plan = {}) {
   const status = plan.access_status || plan.status || "-";
   const labels = {
     ACTIVE: "Activa",
+    TICKETS_EXHAUSTED: "Tickets agotados",
     GRACE: "En gracia",
     LOCKED: "Bloqueada",
     PREPAID: "Legacy",
@@ -5369,6 +5371,9 @@ function subscriptionAccessLabel(plan = {}) {
 }
 
 function subscriptionTimingText(plan = {}) {
+  if (plan.code === "DESPEGA" && plan.billing_period === "prepaid") return plan.access_status === "TICKETS_EXHAUSTED"
+    ? "Agotaste tus tickets de Despega prepago. Recarga tickets para continuar; tus datos se conservan."
+    : "Despega prepago: vigente hasta agotar los tickets, sin vencimiento por fecha ni cobro mensual automático.";
   if (plan.code === "DESCUBRE") return plan.portal_access_allowed ? `Descubre: muestra gratis hasta ${formatDateOnly(plan.current_period_ends_at)}. Quedan ${formatLimitValue(plan.days_until_due)} día(s). Sin cobro automático. Elige una suscripción para continuar después.` : "Tu muestra Descubre terminó. Tus datos están guardados; elige una suscripción y paga con Mercado Pago para continuar.";
   if (plan.category !== "subscription") {
     return "Portal Base: no tiene fecha mensual de renovación.";
@@ -6160,6 +6165,8 @@ function renderSubscriptionBanner() {
   subscriptionPlanName.textContent = plan.name || plan.code || "Plan";
   subscriptionPlanSummary.textContent = plan.code === "DESCUBRE"
     ? "Todos los módulos durante 30 días: 25 tickets iniciales, 10 afiliados, 10 Gift Cards y 100 MB de almacenamiento."
+    : plan.code === "DESPEGA" && plan.billing_period === "prepaid"
+    ? `Despega prepago: ${formatNumber(access.ticketBalance || state.qrCreditAccount?.qr_balance || 0)} tickets disponibles. Sin vencimiento por fecha; recarga desde Cuenta cuando necesites más.`
     : plan.category === "ticket_base"
     ? `Portal Base activo sin mensualidad. Saldo operativo: ${formatNumber(access.ticketBalance || state.qrCreditAccount?.qr_balance || 0)} tickets.`
     : plan.category === "growth_temporal"
@@ -6190,7 +6197,7 @@ function publicSubscriptionPlan(code) {
   if (plan) return plan;
   const fallback = {
     DESPEGA: {
-      code: "DESPEGA", name: "Despega", monthly_price_cop: 75000,
+      code: "DESPEGA", name: "Despega", monthly_price_cop: 75000, billing_period: "prepaid",
       features: { gift_cards: true }, limits: { gift_cards_month: 5 },
       included: ["5 tarjetas regalo al mes", "25 tickets iniciales", "Activaciones interactivas", "Validador QR"],
     },
@@ -6389,7 +6396,7 @@ function renderSubscriptionPricing() {
     return;
   }
   if (subscriptionPricingNote) {
-    subscriptionPricingNote.textContent = "Compara Despega, Crece, Escala y Expande: cada plan indica sus herramientas, cupos mensuales y capacidad. Global se configura por cotización.";
+    subscriptionPricingNote.textContent = "Despega es prepago, vigente hasta agotar los tickets. Crece, Escala y Expande son mensuales. Cada plan indica sus herramientas y cupos; Global se configura por cotización.";
   }
   subscriptionPlansGrid.innerHTML = plans.map((plan) => {
     const ticketPolicy = plan.code === "GLOBAL" ? "tickets por cotización" : "tickets por recarga";
@@ -6409,7 +6416,7 @@ function renderSubscriptionPricing() {
         </div>
         <div class="portal-plan-price">
           <strong>${escapeHtml(monthlyPrice)}</strong>
-          <span>${plan.monthly_price_cop ? "Pago mensual del portal" : "Cotización personalizada"}; ${escapeHtml(ticketPolicy)}</span>
+          <span>${plan.billing_period === "prepaid" ? "Prepago · sin vencimiento por fecha" : plan.monthly_price_cop ? "Pago mensual del portal" : "Cotización personalizada"}; ${escapeHtml(ticketPolicy)}</span>
         </div>
         <div class="portal-plan-economics">
           Valor portal: ${escapeHtml(portalValue)}. Paquete sugerido para iniciar: ${escapeHtml(recommendedPackage)}.
@@ -6464,6 +6471,26 @@ function renderSubscriptionRenewal() {
   const firstChargeLabel = firstChargeDate ? formatDateOnly(firstChargeDate) : "próxima renovación";
   const selectedPlanChargeLabel = selectedRenewalPlan?.monthly_price_cop ? copMoney(selectedRenewalPlan.monthly_price_cop) : "el valor del plan";
   const isPlanChange = Boolean(selectedRenewalPlan?.code && selectedRenewalPlan.code !== plan.code);
+
+  const prepaidSelection = selectedRenewalPlan?.billing_period === "prepaid";
+  if (subscriptionAutoRenewClarity) subscriptionAutoRenewClarity.hidden = prepaidSelection;
+  if (prepaidSelection) {
+    subscriptionRenewalButton.disabled = !isPlanChange;
+    subscriptionRenewalButton.textContent = isPlanChange ? "Cambiar a Despega prepago" : "Despega no requiere mensualidad";
+    if (subscriptionAutoRenewButton) {
+      subscriptionAutoRenewButton.disabled = true;
+      subscriptionAutoRenewButton.textContent = "Sin cobro mensual automático";
+    }
+    if (subscriptionAutoRenewStatus) subscriptionAutoRenewStatus.textContent = "Despega es prepago y no admite suscripción recurrente.";
+    if (accountBillingStatus) {
+      accountBillingStatus.textContent = subscriptionAccessLabel(plan);
+      accountBillingStatus.className = `status-chip ${plan.portal_access_allowed ? "ok" : "pending"}`;
+    }
+    setInlineMessage(subscriptionRenewalMessage, isPlanChange
+      ? "Despega cuesta $75.000 COP, incluye 25 tickets iniciales y permanece vigente hasta agotar los tickets. El cambio se aplica al confirmar el pago."
+      : `${subscriptionTimingText(plan)} Puedes comprar tickets en la sección de recargas de tu cuenta.`, "info");
+    return;
+  }
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
   if (!subscriptionRenewalButton.classList.contains("button-loading")) {
@@ -6981,7 +7008,7 @@ function renderAccountView() {
   setAccountText(accountUserBusiness, business.name || user.business_id);
   setAccountText(accountUserId, user.id);
   setAccountText(accountPlanName, plan.name || plan.code);
-  setAccountText(accountType, plan.category === "ticket_base" ? "Portal Base" : plan.category === "growth_temporal" ? "Growth temporal" : (plan.billing_period === "monthly" ? "Suscripcion mensual" : plan.category));
+  setAccountText(accountType, plan.code === "DESPEGA" && plan.billing_period === "prepaid" ? "Despega prepago" : plan.category === "ticket_base" ? "Portal Base" : plan.category === "growth_temporal" ? "Growth temporal" : (plan.billing_period === "monthly" ? "Suscripcion mensual" : plan.category));
   setAccountText(accountPlanStatus, subscriptionAccessLabel(plan));
   setAccountText(accountQrAvailable, availableQr, "0");
   setAccountText(accountQrUsed, Number(credit.qr_used_total || subscription.usage?.monthly_qr?.used || 0).toLocaleString("es-CO"), "0");
@@ -8441,11 +8468,14 @@ function requireCampaignAssociation(input, messageElement, actionLabel, options 
 
 async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   stopActivityPolling();
-  const [subscriptionPlansData, businessUsersData] = await Promise.all([
+  const [subscriptionPlansData, businessUsersData, profileData, packageData, creditData] = await Promise.all([
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
     apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
+    apiSafe("/api/business/profile", { headers: authHeaders() }, {}),
+    apiSafe("/api/payments/qr-credits/offers", { headers: authHeaders() }, { packages: [] }),
+    apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
   ]);
-  state.subscription = session.user?.subscription || state.subscription;
+  state.subscription = profileData.subscription || state.subscription || session.user?.subscription;
   state.subscriptionPlans = subscriptionPlansData.plans || [];
   state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
   state.pricing = subscriptionPlansData.pricing || state.pricing;
@@ -8458,7 +8488,8 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   state.contactFeed = [];
   state.contactFeedRetention = null;
   state.contactFeedGate = null;
-  state.qrCreditAccount = null;
+  state.qrCreditAccount = creditData.credit_account || null;
+  state.qrPackageOffers = packageData.packages || [];
   state.businessProfile = {
     id: session.user?.business_id,
     name: state.subscription?.business_name || session.user?.business_id || "Negocio",
@@ -8472,7 +8503,9 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   renderNoCampaignState();
   setView("account");
   showFeedback(
-    errorMessage || "La mensualidad superó la gracia de 15 días. Renueva para recuperar el portal; tus datos siguen guardados.",
+    errorMessage || (state.subscription?.plan?.billing_period === "prepaid"
+      ? "Agotaste tus tickets de Despega prepago. Recarga desde Cuenta para continuar."
+      : "La mensualidad superó la gracia de 15 días. Renueva para recuperar el portal; tus datos siguen guardados."),
     "error",
     { title: "Portal bloqueado" }
   );
