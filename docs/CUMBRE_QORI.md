@@ -52,6 +52,10 @@ Pruebas adicionales: `test/summitRace.integration.test.js` usa exclusivamente `1
 
 ## Volver a jugar en multijugador
 
+El control permanente **Nueva sesión**, en la parte superior, permite volver al selector **Individual / Multijugador** desde cualquier modo: antes de comenzar, durante una partida, en una sala en espera y después del resultado individual o multijugador. No depende de que la sala anterior termine. Al cambiar de sesión cancela las peticiones pendientes y descarta respuestas antiguas para que no oculten el selector nuevo. La creación y recuperación de participantes también tienen un límite de espera de 12 segundos; un fallo mantiene disponible el control para reintentar.
+
+La ampliación del 19 de noviembre pasó 75 pruebas. En Chrome se reprodujo la configuración pública de Demo Qori (12 pisos, 90 segundos, tres vidas, sin captura de datos) con PostgreSQL local: al terminar Individual se creó una nueva sala multijugador a 1440, 390 y 320 px; el control siguió accesible y no hubo desbordamiento horizontal. El reloj del navegador se aceleró y la antigüedad de sesión se ajustó exclusivamente en QA. También se comprobaron cambios de modo desde una sala en espera y desde Individual antes de finalizar.
+
 Al finalizar una sala (con ganador, sin ganador o vencida), cada jugador dispone de **Jugar otra vez**. El botón crea una participación nueva para crear otra sala o unirse a un código nuevo; no reutiliza el participante de la carrera finalizada. Si la activación solicita datos, primero vuelve al formulario para confirmarlos. Se mantienen las restricciones de intentos, identidad, premios disponibles y créditos del negocio.
 
 La sesión anterior cierra el juego, audio, temporizadores y conexión en vivo. Las respuestas pendientes no pueden modificar la siguiente partida. Una petición de sala que no responde en 12 segundos libera los controles y ofrece reconectar con el mismo jugador. Recargar una carrera terminada permite recuperar su resultado y volver a jugar, sin volver a emitir ni cobrar su premio.

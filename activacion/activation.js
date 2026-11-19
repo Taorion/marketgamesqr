@@ -30,6 +30,8 @@ let gameSessionToken = null;
 let selectedChoice = null;
 let selectedPosition = null;
 let gameState = null;
+let summitSessionVersion = 0;
+const summitPendingRequests = new Set();
 
 const minigameTypes = new Set([
   "QORI_SUMMIT",
@@ -415,6 +417,8 @@ function isPremium(activation) {
 
 function renderActivation(activation) {
   currentActivation = activation;
+  document.getElementById('summitSessionControls').hidden = activation.activation_type !== 'QORI_SUMMIT' || !activation.active;
+  card.parentElement.classList.toggle('has-summit-session', activation.activation_type === 'QORI_SUMMIT' && activation.active);
   const business = activation.business || {};
   const businessLabel = business.name || "Qori RMS";
   const logoUrl = String(business.logo_url || "").trim();
@@ -527,18 +531,41 @@ async function handleParticipantSubmit(event) {
   renderExperience();
 }
 
+function setSummitSessionBusy(busy, message = 'Vuelve a elegir Individual o Multijugador.') {
+  const button = document.getElementById('summitNewSession');
+  button.disabled = busy;
+  button.textContent = busy ? 'Preparando…' : 'Nueva sesión';
+  document.getElementById('summitSessionStatus').textContent = message;
+}
+
+async function summitSessionApi(path, options) {
+  const controller = new AbortController();
+  summitPendingRequests.add(controller);
+  let timedOut = false;
+  const cancelled = new Promise((_, reject) => controller.signal.addEventListener('abort', () => {
+    const error = new Error(timedOut ? 'La conexión tardó demasiado. Pulsa Nueva sesión para intentarlo de nuevo.' : 'Sesión anterior cancelada.');
+    error.name = timedOut ? 'TimeoutError' : 'AbortError';
+    reject(error);
+  }, { once: true }));
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 12000);
+  try { return await Promise.race([api(path, { ...options, signal: controller.signal }), cancelled]); }
+  finally { clearTimeout(timer); summitPendingRequests.delete(controller); }
+}
+
 async function restartSummitSession() {
-  try { sessionStorage.removeItem('qori-summit:' + location.pathname + location.search); } catch (_) {}
-  if (!activationCollectsParticipantData()) {
-    // Keep the completed room available for retry if creating the next session fails.
-    if (await startGameSession({ resume: false })) experienceStage.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
+  summitSessionVersion++;
+  summitPendingRequests.forEach(controller => controller.abort());
   cleanupGameState();
   participant = null;
   gameSessionToken = null;
   experienceStage.classList.add('hidden');
   experienceBody.replaceChildren();
+  try { sessionStorage.removeItem('qori-summit:' + location.pathname + location.search); } catch (_) {}
+  if (!activationCollectsParticipantData()) {
+    if (await startGameSession({ resume: false })) experienceStage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  setSummitSessionBusy(false);
   participantForm.classList.remove('hidden');
   setProgress(0, 2);
   setStatus('Confirma los datos de quien va a jugar. Se aplican los límites de participación del negocio.', 'info');
@@ -547,19 +574,22 @@ async function restartSummitSession() {
 }
 
 async function resumeSummitSession() {
+  const version = summitSessionVersion;
   let saved;
   const key = 'qori-summit:' + location.pathname + location.search;
   try { saved = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (_) {}
   if (!saved?.participant_id || !saved?.game_session_token) return false;
   let resumed;
   try {
-    resumed = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
+    resumed = await summitSessionApi(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
       method: 'POST', body: JSON.stringify({ action: 'resume', ...saved }),
     });
   } catch (error) {
+    if (version !== summitSessionVersion) return false;
     if ([400,403,404].includes(error.status)) { try { sessionStorage.removeItem(key); } catch (_) {} return false; }
     throw error;
   }
+  if (version !== summitSessionVersion) return false;
   if (!resumed.room) return false;
   if (resumed.room.status === 'expired' && !resumed.room.own?.result) {
     try { sessionStorage.removeItem(key); } catch (_) {}
@@ -570,21 +600,27 @@ async function resumeSummitSession() {
 }
 
 async function startGameSession({ resume = true } = {}) {
+  const summit = currentActivation.activation_type === 'QORI_SUMMIT', version = summitSessionVersion;
+  let sessionError;
+  if (summit) setSummitSessionBusy(true, 'Preparando tu sesión…');
   const button = participantForm.querySelector("button[type='submit']");
   if (button) {
     button.disabled = true;
     button.textContent = "Preparando...";
   }
   try {
-    if (resume && currentActivation.activation_type === 'QORI_SUMMIT' && await resumeSummitSession()) return;
-    const data = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
+    if (resume && summit && await resumeSummitSession()) return;
+    if (summit && version !== summitSessionVersion) return;
+    const data = await (summit ? summitSessionApi : api)(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
       method: "POST",
       body: JSON.stringify(participantPayload()),
     });
+    if (summit && version !== summitSessionVersion) return;
     if (data.rewarded) {
       participantForm.classList.add("hidden");
       setStatus(data.message || "QR recuperado.", "success");
-      await renderResult(data);
+      if (summit) setSummitSessionBusy(false);
+      await renderResult(data, () => !summit || version === summitSessionVersion);
       return;
     }
     participant = data.participant;
@@ -598,8 +634,12 @@ async function startGameSession({ resume = true } = {}) {
     if (currentActivation.activation_type === 'QORI_SUMMIT') setStatus('Elige cómo jugar o únete a una nueva sala.', 'info');
     return true;
   } catch (error) {
+    if (summit && version !== summitSessionVersion) return;
+    sessionError = error.message;
     setStatus(error.message, "error");
   } finally {
+    if (summit && version !== summitSessionVersion) return;
+    if (summit) setSummitSessionBusy(false, sessionError);
     if (button) {
       button.disabled = false;
       button.textContent = "Continuar";
@@ -1301,8 +1341,7 @@ function renderMinigame() {
       config: currentActivation.game_config, seed: gameSessionToken,
       prize: currentActivation.reward_config?.reward_label,
       onFinish(result) {
-        completeActivation({ participant_id: participant?.id, game_session_token: gameSessionToken,
-          summit_trace: result.trace, duration_ms: result.duration_ms });
+        return completeActivation({ ...session, summit_trace: result.trace, duration_ms: result.duration_ms }, () => active);
       },
     },
       request: (body, { signal } = {}) => api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
@@ -4105,7 +4144,7 @@ function finishGame(score, durationMs, completionPayload = {}) {
   });
 }
 
-async function completeActivation(payload = {}) {
+async function completeActivation(payload = {}, isCurrent = () => true) {
   const button = experienceBody.querySelector(".submit-button");
   if (button) {
     button.disabled = true;
@@ -4113,7 +4152,8 @@ async function completeActivation(payload = {}) {
   }
   try {
     const basePayload = participantPayload();
-    const data = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/complete`, {
+    const summit = currentActivation.activation_type === 'QORI_SUMMIT';
+    const data = await (summit ? summitSessionApi : api)(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/complete`, {
       method: "POST",
       body: JSON.stringify({
         ...basePayload,
@@ -4126,10 +4166,12 @@ async function completeActivation(payload = {}) {
         },
       }),
     });
+    if (!isCurrent()) return;
     experienceStage.classList.add("hidden");
     setStatus(data.message, data.rewarded ? "success" : "info");
-    await renderResult(data);
+    await renderResult(data, isCurrent);
   } catch (error) {
+    if (!isCurrent()) return;
     setStatus(error.message, "error");
     if (button) {
       button.disabled = false;
@@ -4295,4 +4337,5 @@ async function downloadDataUrl(filename, dataUrl) {
 }
 
 participantForm.addEventListener("submit", handleParticipantSubmit);
+document.getElementById('summitNewSession').addEventListener('click', restartSummitSession);
 loadActivation();

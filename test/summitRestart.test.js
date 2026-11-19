@@ -1,19 +1,21 @@
 const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs');
 const { JSDOM } = require('jsdom');
 const source = fs.readFileSync('activacion/activation.js', 'utf8');
-const sessionSource = source.slice(source.indexOf('async function restartSummitSession()'), source.indexOf('function renderExperience()'));
+const sessionSource = source.slice(source.indexOf('function setSummitSessionBusy('), source.indexOf('function renderExperience()'));
+const completionSource = source.slice(source.indexOf('async function completeActivation('), source.indexOf('async function renderResult('));
 const mountSource = source.slice(source.indexOf('function renderMinigame()'), source.indexOf('  const config = currentActivation.game_config || {};', source.indexOf('function renderMinigame()'))) + '}';
 const cleanupSource = source.slice(source.indexOf('function cleanupGameState()'), source.indexOf('function finishGame('));
 const resultSource = source.slice(source.indexOf('async function renderResult('), source.indexOf('function rewardQrFilename()'));
 
 function setup(collects = false) {
-  const dom = new JSDOM('<form id="form" class="hidden"><input value="Ana"><button type="submit">Continuar</button></form><section id="stage"><div id="body"></div></section><div id="ticket">Premio anterior</div>', { url: 'https://example.invalid/activacion/family', runScripts: 'outside-only' });
+  const dom = new JSDOM('<section id="summitSessionControls"><p id="summitSessionStatus"></p><button id="summitNewSession">Nueva sesión</button></section><form id="form" class="hidden"><input value="Ana"><button type="submit">Continuar</button></form><section id="stage"><div id="body"></div></section><div id="ticket">Premio anterior</div>', { url: 'https://example.invalid/activacion/family', runScripts: 'outside-only' });
   const w = dom.window, mounts = [], calls = [], key = 'qori-summit:/activacion/family';
   w.HTMLElement.prototype.scrollIntoView = function () {};
   Object.assign(w, {
     participantForm: w.document.getElementById('form'), experienceStage: w.document.getElementById('stage'),
     experienceBody: w.document.getElementById('body'), ticketResult: w.document.getElementById('ticket'),
     experienceTitle: {}, experienceCopy: {}, gameState: null,
+    summitSessionVersion: 0, summitPendingRequests: new Set(),
     participant: { id: 'old-player' }, gameSessionToken: 'old-token',
     currentActivation: { activation_type: 'QORI_SUMMIT', public_slug: 'family', game_config: {}, reward_config: {} },
     activationCollectsParticipantData: () => collects, participantPayload: () => ({ name: 'Ana' }),
@@ -26,7 +28,7 @@ function setup(collects = false) {
     QoriSummitModes: { mount(host, options) { const mounted = { options, destroyed: false, destroy() { this.destroyed = true; } }; mounts.push(mounted); return mounted; } },
   });
   w.sessionStorage.setItem(key, JSON.stringify({ participant_id: 'old-player', game_session_token: 'old-token' }));
-  w.eval(sessionSource + mountSource + cleanupSource);
+  w.eval(sessionSource + mountSource + cleanupSource + completionSource);
   w.renderMinigame();
   return { w, calls, mounts, key, close: () => w.close() };
 }
@@ -61,15 +63,68 @@ test('restart with registration returns to editable data and does not bypass par
   } finally { e.close(); }
 });
 
-test('failure creating the next session keeps the completed room available for another restart', async () => {
+test('failure creating the next session clears the stuck game and leaves the permanent retry enabled', async () => {
   const e = setup();
   try {
     e.w.api = async () => { throw new Error('Sin conexión'); };
     await e.mounts[0].options.onRestart();
-    assert.equal(e.mounts[0].destroyed, false); assert.equal(e.mounts.length, 1);
-    assert.equal(e.w.participant.id, 'old-player'); assert.match(e.w.statusMessage, /Sin conexión/);
+    assert.equal(e.mounts[0].destroyed, true); assert.equal(e.mounts.length, 1);
+    assert.equal(e.w.participant, null); assert.match(e.w.statusMessage, /Sin conexión/);
+    assert.equal(e.w.document.getElementById('summitNewSession').disabled, false);
     assert.equal(e.w.ticketResult.classList.contains('hidden'), false);
   } finally { e.close(); }
+});
+
+test('solo completion leaves the permanent new-session control available and starts with a fresh token', async () => {
+  const e = setup();
+  try {
+    e.w.renderResult = async data => { e.w.ticketResult.textContent = data.message; };
+    e.w.api = async (url, options) => {
+      const body = JSON.parse(options.body); e.calls.push({url,body});
+      return url.endsWith('/complete') ? {rewarded:false,message:'Terminó el ascenso'} : {participant:{id:'solo-next'},game_session_token:'solo-next-token'};
+    };
+    await e.mounts[0].options.solo.onFinish({trace:[[0,2700]],duration_ms:45000});
+    assert.equal(e.w.experienceStage.classList.contains('hidden'), true);
+    assert.equal(e.w.document.getElementById('summitNewSession').disabled, false);
+    await e.w.restartSummitSession();
+    assert.equal(e.w.participant.id, 'solo-next'); assert.equal(e.mounts.length,2);
+    assert.equal(e.w.experienceStage.classList.contains('hidden'), false);
+  } finally { e.close(); }
+});
+
+test('a late solo completion cannot hide the new mode chooser or render its old result', async () => {
+  const e=setup();let release,rendered=false;
+  try {
+    e.w.renderResult=async()=>{rendered=true;};
+    e.w.api=async url=>url.endsWith('/complete')?new Promise(r=>{release=r;}):{participant:{id:'new'},game_session_token:'new'};
+    const finishing=e.mounts[0].options.solo.onFinish({trace:[[0,2700]],duration_ms:45000});
+    await e.w.restartSummitSession();release({rewarded:false,message:'Old result'});await finishing;
+    assert.equal(rendered,false);assert.equal(e.w.experienceStage.classList.contains('hidden'),false);
+  } finally {e.close();}
+});
+
+test('starting a fresh session discards a late response from the old resume', async () => {
+  const e=setup();let release;
+  try {
+    e.w.api=async url=>url.endsWith('/summit')?new Promise(r=>{release=r;}):{participant:{id:'new'},game_session_token:'new'};
+    const resuming=e.w.resumeSummitSession();await e.w.restartSummitSession();
+    release({room:{status:'racing',own:{}}});assert.equal(await resuming,false);
+    assert.equal(e.w.participant.id,'new');assert.equal(e.mounts.length,2);
+  } finally {e.close();}
+});
+
+test('a stalled participant request times out and the permanent control can retry successfully', async () => {
+  const e=setup();
+  try {
+    const workingApi=e.w.api, timer=e.w.setTimeout.bind(e.w);
+    e.w.setTimeout=(fn,delay)=>timer(fn,delay===12000?5:delay);
+    e.w.api=()=>new Promise(()=>{}); // Even a prerequisite that ignores AbortSignal must release the UI.
+    await e.w.restartSummitSession();
+    assert.equal(e.w.document.getElementById('summitNewSession').disabled,false);
+    assert.match(e.w.document.getElementById('summitSessionStatus').textContent,/tardó demasiado/);
+    e.w.api=workingApi;await e.w.restartSummitSession();
+    assert.equal(e.w.participant.id,'new-player');assert.equal(e.w.summitPendingRequests.size,0);
+  } finally {e.close();}
 });
 
 test('a delayed reward render from the previous room cannot overwrite the next session', async () => {

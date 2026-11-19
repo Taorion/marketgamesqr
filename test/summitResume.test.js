@@ -3,9 +3,9 @@ const source=fs.readFileSync('activacion/activation.js','utf8');
 const resume=source.slice(source.indexOf('async function resumeSummitSession()'),source.indexOf('async function startGameSession('));
 function setup(room){
  let removed=false,rendered=false;
- const context=vm.createContext({location:{pathname:'/activacion/family',search:''},currentActivation:{public_slug:'family'},
+ const context=vm.createContext({location:{pathname:'/activacion/family',search:''},currentActivation:{public_slug:'family'},summitSessionVersion:0,
   sessionStorage:{getItem:()=>JSON.stringify({participant_id:'player',game_session_token:'session'}),removeItem(){removed=true;}},
-  api:async()=>({room}),participantForm:{classList:{add(){}}},renderMinigame(){rendered=true;}});
+  summitSessionApi:async()=>({room}),participantForm:{classList:{add(){}}},renderMinigame(){rendered=true;}});
  return {context,removed:()=>removed,rendered:()=>rendered,run:()=>vm.runInContext(resume+'\nresumeSummitSession()',context)};
 }
 test('an expired room allows a fresh participation after a physics update',async()=>{
