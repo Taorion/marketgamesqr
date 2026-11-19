@@ -5,6 +5,9 @@ test('all current personal plan cards copy and share the exact link; clipboard f
  const w=new JSDOM('<div id="host"></div>',{runScripts:'outside-only'}).window;let copied='',fail=false,current=true;
  try{Object.defineProperty(w.navigator,'clipboard',{value:{writeText:async text=>{if(fail)throw Error('denied');copied=text;}}});w.eval(fs.readFileSync('seller/referral-links.js','utf8'));
   const host=w.document.getElementById('host');w.QoriSellerReferralLinks.render(host,links,{isCurrent:()=>current});assert.equal(host.querySelectorAll('article').length,links.length);assert.equal(host.querySelector('seguro'),null);
+  assert.match(host.querySelector('[data-plan-code=DESPEGA] .seller-plan-price').textContent,/prepago/);
+  assert.doesNotMatch(host.querySelector('[data-plan-code=DESPEGA] .seller-plan-price').textContent,/\/ mes/);
+  for(const code of ['STARTER','GROWTH','PRO'])assert.match(host.querySelector(`[data-plan-code=${code}] .seller-plan-price`).textContent,/\/ mes/);
   for(const plan of links){const card=host.querySelector('[data-plan-code='+plan.code+']');assert.equal(card.querySelector('input').value,plan.url);assert.ok(new URL(card.querySelector('[data-whatsapp]').href).searchParams.get('text').endsWith(plan.url));card.querySelector('button').click();await settle();assert.equal(copied,plan.url);}
   fail=true;const card=host.querySelector('article');card.querySelector('button').click();await settle();assert.equal(w.document.activeElement,card.querySelector('input'));assert.match(card.querySelector('[role=status]').textContent,/Selecciona y copia/);
   fail=false;current=false;card.querySelector('[role=status]').textContent='';card.querySelector('button').click();await settle();assert.equal(card.querySelector('[role=status]').textContent,'');

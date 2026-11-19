@@ -63496,7 +63496,7 @@ function renderSellerAttributions(data = {}, { append = false } = {}) {
     const amount = row.status === "APPROVED" ? row.approved_revenue_cop : row.expected_revenue_cop;
     const evidence = row.payment_reference ? `Pago …${row.payment_reference}` : `Orden …${row.order_reference}`;
     return `<tr>
-      <td data-label="Cliente y plan"><strong>${escapeHtml(row.client_business_name || "Cliente Qori")}</strong><small>${escapeHtml(row.plan_name || row.plan_code)} · ${row.billing_cycle === "annual" ? "Anual" : "Mensual"}</small></td>
+      <td data-label="Cliente y plan"><strong>${escapeHtml(row.client_business_name || "Cliente Qori")}</strong><small>${escapeHtml(row.plan_name || row.plan_code)} · ${row.billing_cycle === "prepaid" ? "Prepago" : row.billing_cycle === "annual" ? "Anual" : "Mensual"}</small></td>
       <td data-label="Estado"><span class="seller-attribution-status ${sellerAttributionStatusClass(row.status)}">${escapeHtml(SELLER_ATTRIBUTION_STATUS_LABELS[row.status] || row.status)}</span><small>${escapeHtml(sellerDate(row.approved_at || row.created_at))}</small></td>
       <td data-label="Responsable"><strong>${escapeHtml(responsible)}</strong><small>${row.attribution_source === "SELF" ? "Origen directo" : row.attribution_source === "ADMIN_ASSIGNED" ? "Asignación administrativa" : "Asesor elegido"}</small></td>
       <td data-label="Valor"><strong>${escapeHtml(money(amount || 0))}</strong><small>${row.status === "APPROVED" ? "Importe aprobado" : "Importe esperado"}</small></td>

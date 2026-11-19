@@ -7,7 +7,7 @@ function planReferralLinks(freeUrl,paidUrl){
     ...paidCodes.map(code=>{const plan=PLAN_CATALOG[code],url=new URL(paidUrl);
       url.searchParams.set('plan',code);
       url.hash='signupSection';
-      return {code,name:plan.name,monthly_price_cop:Number(plan.monthly_price_cop),summary:plan.access_summary,url:url.toString()};
+      return {code,name:plan.name,monthly_price_cop:Number(plan.monthly_price_cop),billing_period:plan.billing_period,summary:plan.access_summary,url:url.toString()};
     })];
 }
 module.exports={planReferralLinks};
