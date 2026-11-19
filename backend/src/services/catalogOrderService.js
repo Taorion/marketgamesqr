@@ -30,7 +30,7 @@ async function catalog(db, id, bySlug = false, lock = false) {
 }
 function canReceive(c) {
   const plan = planFromBusiness(c.business);
-  return !require('./affiliateCatalogService').isPoints(c) && enabled(c.business_id) && c.business.is_active && !c.business.archived_at && c.status === 'ACTIVE' && plan.portal_access_allowed && plan.raw_status === 'ACTIVE' && !!plan.features.showcase;
+  return !require('./catalogShowcaseService').isStamps(c) && !require('./affiliateCatalogService').isPoints(c) && enabled(c.business_id) && c.business.is_active && !c.business.archived_at && c.status === 'ACTIVE' && plan.portal_access_allowed && plan.raw_status === 'ACTIVE' && !!plan.features.showcase;
 }
 async function settings(db, id, lock = false) {
   return (await db.query(`select * from catalog_order_settings where catalog_id=$1 ${lock ? 'for update' : ''}`, [id])).rows[0];

@@ -318,6 +318,7 @@ async function dashboard(businessId) {
 async function createCatalog(businessId, user, body) {
   const payload = mapCatalogPayload(body, user.id);
   const result = await withTransaction(async (client) => {
+    await require("./catalogShowcaseService").validateConfig(client,businessId,payload);
     const slug = await uniqueCatalogSlug(client, payload.slug);
     return client.query(
       `insert into smart_catalogs
@@ -356,6 +357,7 @@ async function updateCatalog(businessId, catalogId, body) {
   const merged = { ...existing.rows[0], ...body };
   const payload = mapCatalogPayload(merged, existing.rows[0].created_by_user_id);
   const result = await withTransaction(async (client) => {
+    await require("./catalogShowcaseService").validateConfig(client,businessId,payload);
     const slug = body.slug ? await uniqueCatalogSlug(client, payload.slug, catalogId) : existing.rows[0].slug;
     return client.query(
       `update smart_catalogs
@@ -796,6 +798,7 @@ async function createWhatsappIntent(slug, productId, body = {}, reqMeta = {}) {
     );
     if (!catalogResult.rowCount) throw notFound("Catalogo no encontrado o no publicado.");
     const catalog = catalogResult.rows[0];
+    if (require('./catalogShowcaseService').isStamps(catalog)) throw badRequest('Elige un programa e inscríbete desde esta vitrina.');
     if (require('./affiliateCatalogService').isPoints(catalog)) throw badRequest('Usa el carrito de puntos para esta vitrina.');
     const product = productId
       ? (await client.query(

@@ -13012,6 +13012,7 @@ function renderSmartCatalogTables() {
             <button class="ghost-button compact" type="button" data-smart-catalog-edit="${escapeHtml(catalog.id)}">Editar</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-status="${escapeHtml(catalog.id)}" data-smart-catalog-next-status="${publishStatus}">${publishAction}</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Link</button>
+            <button class="ghost-button compact" type="button" data-catalog-access-qr="${escapeHtml(catalog.id)}">QR de acceso</button>
             <button class="ghost-button danger-button compact" type="button" data-smart-catalog-delete="${escapeHtml(catalog.id)}" aria-label="Eliminar vitrina ${escapeHtml(catalog.title)}">Eliminar</button>
           </div></td>
         </tr>
@@ -13108,6 +13109,7 @@ function renderSmartCatalogWorkbench() {
   }
   const catalogs = state.smartCatalogs || [];
   const activeCatalog = smartCatalogSelectedCatalog();
+  const stampShowcase = activeCatalog?.metadata?.redemption_mode === 'STAMP_PROGRAMS';
   const products = state.smartCatalogProducts || [];
   workbench.innerHTML = `
     <article class="smart-catalog-workbench-card">
@@ -13129,7 +13131,7 @@ function renderSmartCatalogWorkbench() {
                 <span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span>
               </span>
               <span class="smart-catalog-card-metrics">
-                <span class="pill muted">${Number(catalog.product_count || 0).toLocaleString("es-CO")} productos</span>
+                <span class="pill muted">${catalog.metadata?.redemption_mode === 'STAMP_PROGRAMS' ? `${catalog.metadata.stamp_program_ids?.length || 0} programas` : `${Number(catalog.product_count || 0).toLocaleString("es-CO")} productos`}</span>
                 <span class="pill muted">${Number(catalog.view_count || 0).toLocaleString("es-CO")} vistas</span>
                 <span class="pill muted">${Number(catalog.intent_count || 0).toLocaleString("es-CO")} interesados</span>
               </span>
@@ -13148,17 +13150,18 @@ function renderSmartCatalogWorkbench() {
         ${activeCatalog ? `<span class="status-chip ${smartCatalogStatusClass(activeCatalog.status)}">${escapeHtml(smartCatalogStatusLabel(activeCatalog.status))}</span>` : ""}
       </div>
       <div class="smart-catalog-active-panel">
-        <h3>${activeCatalog ? `${products.length.toLocaleString("es-CO")} producto(s) publicados` : "Empieza con la información básica"}</h3>
-        <p>${activeCatalog ? "Cuando termines la oferta, comparte el enlace y las consultas quedarán registradas como intenciones comerciales." : "Después podrás añadir productos, precios, imágenes y el mensaje de WhatsApp."}</p>
+        <h3>${stampShowcase ? `${activeCatalog.metadata.stamp_program_ids?.length || 0} programas seleccionados` : activeCatalog ? `${products.length.toLocaleString("es-CO")} producto(s) publicados` : "Empieza con la información básica"}</h3>
+        <p>${stampShowcase ? "Comparte el QR: cada persona elige un programa y se inscribe para recibir su tarjeta de sellos." : activeCatalog ? "Cuando termines la oferta, comparte el enlace y las consultas quedarán registradas como intenciones comerciales." : "Después podrás añadir productos, precios, imágenes y el mensaje de WhatsApp."}</p>
         <div class="smart-catalog-active-metrics">
-          <span><strong>${Number(activeCatalog?.product_count || products.length || 0).toLocaleString("es-CO")}</strong><small>Productos</small></span>
+          <span><strong>${stampShowcase ? activeCatalog.metadata.stamp_program_ids?.length || 0 : Number(activeCatalog?.product_count || products.length || 0).toLocaleString("es-CO")}</strong><small>${stampShowcase ? 'Programas' : 'Productos'}</small></span>
           <span><strong>${Number(activeCatalog?.view_count || 0).toLocaleString("es-CO")}</strong><small>Vistas</small></span>
           <span><strong>${Number(activeCatalog?.intent_count || 0).toLocaleString("es-CO")}</strong><small>Interesados</small></span>
         </div>
         <div class="smart-catalog-active-actions">
-          <button class="solid-button compact" type="button" data-smart-catalog-jump="${activeCatalog ? "products" : "catalogs"}">${activeCatalog ? "Agregar productos" : "Crear vitrina"}</button>
+          ${stampShowcase ? `<button class="solid-button compact" type="button" data-smart-catalog-edit="${escapeHtml(activeCatalog.id)}">Elegir programas</button>` : `<button class="solid-button compact" type="button" data-smart-catalog-jump="${activeCatalog ? "products" : "catalogs"}">${activeCatalog ? "Agregar productos" : "Crear vitrina"}</button>`}
           <button class="ghost-button compact" type="button" data-smart-catalog-workbench-copy ${activeCatalog ? "" : "disabled"}>Copiar enlace</button>
-          <button class="ghost-button compact" type="button" data-smart-catalog-orders="${escapeHtml(activeCatalog?.id || '')}">Domicilios, QR y volante</button>
+          <button class="ghost-button compact" type="button" data-catalog-access-qr="${escapeHtml(activeCatalog?.id || '')}" ${activeCatalog ? "" : "disabled"}>QR de acceso</button>
+          ${stampShowcase ? '' : `<button class="ghost-button compact" type="button" data-smart-catalog-orders="${escapeHtml(activeCatalog?.id || '')}">Domicilios, QR y volante</button>`}
           <button class="ghost-button compact" type="button" data-smart-catalog-jump="intents" ${activeCatalog ? "" : "disabled"}>Ver interesados</button>
         </div>
       </div>
@@ -13398,8 +13401,9 @@ function openSmartCatalogCreateModal() {
   const title = modal.querySelector("#smartCatalogCreateModalTitle");
   const copy = modal.querySelector(".modal-head p");
   if (title) title.textContent = "Crea tu vitrina web";
-  if (copy) copy.textContent = "Define tu marca y WhatsApp. Podrás activarla cuando la oferta esté lista.";
+  if (copy) copy.textContent = "Elige el uso de la vitrina y define tu marca. Podrás publicarla cuando esté lista.";
   syncSmartCatalogCreateModalMode(modal, false);
+  window.QoriCatalogShowcases?.setupForm();
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogForm?.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
 }
@@ -13423,8 +13427,9 @@ function openSmartCatalogEditModal(catalogId) {
   const title = modal.querySelector("#smartCatalogCreateModalTitle");
   const copy = modal.querySelector(".modal-head p");
   if (title) title.textContent = "Edita la vitrina";
-  if (copy) copy.textContent = "Actualiza la marca, WhatsApp y publicación sin perder tus productos ni tus consultas.";
+  if (copy) copy.textContent = "Actualiza la marca, el contenido y la publicación de esta vitrina.";
   syncSmartCatalogCreateModalMode(modal, true);
+  window.QoriCatalogShowcases?.setupForm(catalog);
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogForm.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
 }
@@ -13555,6 +13560,8 @@ async function submitSmartCatalog(event) {
   try {
     const payload = smartCatalogFormPayload(smartCatalogForm);
     payload.metadata = {...((state.smartCatalogs || []).find(c=>c.id===editingCatalogId)?.metadata || {}), redemption_mode:payload.redemption_mode};
+    Object.assign(payload.metadata,window.QoriCatalogShowcases?.formMetadata() || {});
+    if(payload.redemption_mode === "STAMP_PROGRAMS" && !payload.whatsapp_number) payload.whatsapp_number="00000000";
     delete payload.redemption_mode;
     const data = await api(editingCatalogId ? `/api/business/catalogs/${encodeURIComponent(editingCatalogId)}` : "/api/business/catalogs", {
       method: editingCatalogId ? "PATCH" : "POST",
@@ -13567,7 +13574,7 @@ async function submitSmartCatalog(event) {
     setInlineMessage(smartCatalogMessage, editingCatalogId ? "Vitrina web actualizada." : "Vitrina web creada. Agrega productos y comparte el enlace público.", "success");
     await refreshSmartCatalogs({ quiet: true });
     closeSmartCatalogCreateModal();
-    setSmartCatalogTab(editingCatalogId ? "catalogs" : "products");
+    setSmartCatalogTab(editingCatalogId || payload.metadata?.redemption_mode === "STAMP_PROGRAMS" ? "catalogs" : "products");
   } catch (error) {
     setInlineMessage(
       smartCatalogMessage,

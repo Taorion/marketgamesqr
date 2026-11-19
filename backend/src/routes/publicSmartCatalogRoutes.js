@@ -19,6 +19,7 @@ const publicCatalogCache = cacheBusinessResponse({
   businessIdFromReq: () => "public",
 });
 
+for(const [route,method] of [['stamp-programs','stampPrograms'],['access-qr','publicAccessQr']])router.get('/catalogs/:catalogSlug/'+route,publicCatalogReadLimit,async(req,res,next)=>{try{res.set('Cache-Control','no-store');res.json(await require('../services/catalogShowcaseService')[method](req.params.catalogSlug));}catch(e){next(e);}});
 router.get("/catalogs/:catalogSlug", publicCatalogReadLimit, publicCatalogCache, publicGet);
 router.get("/catalogs/:catalogSlug/products/:productSlug", publicCatalogReadLimit, publicCatalogCache, publicGetProduct);
 router.post("/catalogs/:catalogSlug/events", publicCatalogActionLimit, publicEvent);

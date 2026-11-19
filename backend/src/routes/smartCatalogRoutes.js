@@ -40,6 +40,7 @@ router.get("/dashboard", smartCatalogCache, businessDashboard);
 router.post("/templates/doctor-angie", seedDoctorAngie);
 router.get("/", smartCatalogCache, businessList);
 router.post("/", businessCreate);
+router.get('/:catalogId/access-qr',async(req,res,next)=>{try{res.set('Cache-Control','private, no-store');res.json(await require('../services/catalogShowcaseService').accessQr(req.user.business_id,req.params.catalogId));}catch(e){next(e);}});
 router.get("/:catalogId", smartCatalogCache, businessDetail);
 router.patch("/:catalogId", businessPatch);
 router.delete("/:catalogId", businessArchive);
