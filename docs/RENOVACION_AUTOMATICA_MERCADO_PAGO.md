@@ -43,6 +43,22 @@ No necesita migración ni datos de tarjeta nuevos.
 
 ## Configuración y verificación
 
+En Qori Empresa, **Admin → Cuenta**, la tarjeta «Renovación mensual automática»
+está disponible tanto en el perfil como en Administración de usuarios. El
+administrador puede activar la inscripción para el plan vigente, consultar su
+estado y desactivarla. La activación redirige a Mercado Pago y permanece pendiente
+hasta la autorización del titular; al regresar se abre el perfil y se consulta al
+proveedor. Desactivar conserva el periodo pagado. Los usuarios sin permisos de
+facturación ven el estado con los controles deshabilitados; la API conserva la
+restricción por rol y negocio. Despega no ofrece activación mensual.
+
+La revisión del perfil cubrió navegador a 1440, 390 y 320 píxeles: consulta,
+cancelación confirmada, fallo de cancelación sin falso estado desactivado,
+conservación de vigencia, nueva inscripción del plan vigente y estado pendiente.
+Se verificó también el bloqueo de controles para usuarios sin permiso y el 403
+del servidor, además de la exclusión de Despega. Se usó PostgreSQL local y
+Mercado Pago simulado; no se modificaron autorizaciones de clientes reales.
+
 Requiere `MERCADO_PAGO_ACCESS_TOKEN` y `MERCADO_PAGO_WEBHOOK_SECRET` en el servidor.
 Configurar en Mercado Pago los tres eventos citados hacia
 `https://gosqori.com/api/payments/mercadopago/webhook` y conservar la clave de firma

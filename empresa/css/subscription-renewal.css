@@ -1,6 +1,6 @@
 /* Keep billing controls above the legacy portal's unlayered important rules. */
 @layer qoriSubscriptionRenewal {
-  #subscriptionRenewalForm [hidden] { display: none !important; }
+  #subscriptionRenewalForm [hidden], #accountAutoRenewCard [hidden] { display: none !important; }
   #subscriptionRenewalForm .auto-renew-actions {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -15,4 +15,47 @@
   }
   #subscriptionRenewalForm button:disabled { opacity: .55 !important; cursor: not-allowed !important; }
   #subscriptionAutoRenewStatus { overflow-wrap: anywhere; }
+  #accountAutoRenewCard {
+    display: grid !important;
+    gap: 16px !important;
+    min-width: 0 !important;
+    padding: clamp(18px, 3vw, 28px) !important;
+    border: 1px solid #cce3e2 !important;
+    background: linear-gradient(135deg, #f3faf8, #fff) !important;
+    border-radius: 20px !important;
+    color: #173d43 !important;
+  }
+  #accountAutoRenewCard.account-screen-hidden { display: none !important; }
+  #accountAutoRenewCard .account-renewal-head,
+  #accountAutoRenewCard .auto-renew-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 12px !important;
+    justify-content: space-between !important;
+  }
+  #accountAutoRenewCard h3 { margin: 6px 0 0 !important; font-size: 21px !important; }
+  #accountAutoRenewState { display: inline-flex !important; visibility: visible !important; }
+  #accountAutoRenewCard p { margin: 0 !important; overflow-wrap: anywhere !important; }
+  #accountAutoRenewCard .account-renewal-details {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+  }
+  #accountAutoRenewCard dt { color: #52666b !important; font-size: 12px !important; }
+  #accountAutoRenewCard dd { margin: 6px 0 0 !important; font-weight: 700 !important; overflow-wrap: anywhere !important; }
+  #accountAutoRenewCard button {
+    flex: 1 1 210px !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    white-space: normal !important;
+  }
+  #accountAutoRenewCard button:disabled { opacity: .55 !important; cursor: not-allowed !important; }
+  @media (max-width: 480px) {
+    #accountAutoRenewCard .account-renewal-details { grid-template-columns: minmax(0, 1fr) !important; }
+  }
 }
