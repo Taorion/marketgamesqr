@@ -92,7 +92,7 @@ async function reconcile(businessId) {
     }
     if (invoiceError) throw invoiceError;
     await query(`update businesses set settings=jsonb_set(coalesce(settings,'{}'),'{subscription}',
-      coalesce(settings->'subscription','{}') || jsonb_build_object('auto_renew_checked_at',now(),'auto_renew_sync_error',null),true) where id=$1`, [businessId]);
+      coalesce(settings->'subscription','{}') || jsonb_build_object('auto_renew_checked_at',now(),'auto_renew_sync_error',null,'auto_renew_sync_detail',null),true) where id=$1`, [businessId]);
     return getBusinessSubscription(businessId);
   });
 }
@@ -127,7 +127,8 @@ async function runBatch() {
     try { await reconcile(row.id); } catch (error) {
       failed++;
       await query(`update businesses set settings=jsonb_set(coalesce(settings,'{}'),'{subscription}',
-        coalesce(settings->'subscription','{}') || jsonb_build_object('auto_renew_sync_error','No se pudo verificar con Mercado Pago. Reintento automático pendiente.'),true) where id=$1`, [row.id]);
+        coalesce(settings->'subscription','{}') || jsonb_build_object('auto_renew_sync_error','No se pudo verificar con Mercado Pago. Reintento automático pendiente.','auto_renew_sync_detail',$2::text),true) where id=$1`,
+        [row.id, String(error.message || 'Provider request failed').replace(/https?:\/\/\S+/g, '[provider]').slice(0,240)]);
       console.error('Subscription reconciliation failed:', row.id, error.status || error.statusCode || 'provider_error');
     }
   }
