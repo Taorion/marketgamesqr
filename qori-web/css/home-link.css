@@ -1,0 +1,23 @@
+.qori-home-return {
+  width: min(1280px, calc(100% - 40px));
+  margin-inline: auto;
+  padding-block: 8px;
+}
+.qori-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.qori-home-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.qori-home-link:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
