@@ -50,6 +50,14 @@ Aplicar `database/migrations/20261118134405_qori_summit_rooms.sql` (copia idént
 
 Pruebas adicionales: `test/summitRace.integration.test.js` usa exclusivamente `127.0.0.1:55447/qori_summit_qa`, una base local con tablas mínimas. Comprueba PostgreSQL real, concurrencia, capacidad, sesiones, caducidad, recuperación, rollback y dos clientes HTTP con el controlador real. En ese archivo la emisión final se sustituye por un registro local de prueba. `test/summitAward.integration.test.js` utiliza otra base local, `qori_summit_release_qa`, con el esquema completo: verifica la creación de la activación, una carrera concurrente con el servicio canónico real, un único QR y un solo débito, recuperación sin nuevo cargo y emisión individual independiente. No acredita redención en tienda ni dispositivos físicos. `test/summitModes.test.js` y `test/summitView.test.js` comprueban elección de modo, sala, cuenta regresiva, controles y resultado en DOM simulado.
 
+## Volver a jugar en multijugador
+
+Al finalizar una sala (con ganador, sin ganador o vencida), cada jugador dispone de **Jugar otra vez**. El botón crea una participación nueva para crear otra sala o unirse a un código nuevo; no reutiliza el participante de la carrera finalizada. Si la activación solicita datos, primero vuelve al formulario para confirmarlos. Se mantienen las restricciones de intentos, identidad, premios disponibles y créditos del negocio.
+
+La sesión anterior cierra el juego, audio, temporizadores y conexión en vivo. Las respuestas pendientes no pueden modificar la siguiente partida. Una petición de sala que no responde en 12 segundos libera los controles y ofrece reconectar con el mismo jugador. Recargar una carrera terminada permite recuperar su resultado y volver a jugar, sin volver a emitir ni cobrar su premio.
+
+Validación del 19 de noviembre de 2026: 71 pruebas de Cumbre aprobadas, incluyendo reinicio, recuperación, respuestas tardías y tiempo de espera. Dos contextos de Chrome a 1440 y 390 px completaron dos salas consecutivas con nuevos participantes, usando el backend y PostgreSQL locales; el final se aceleró mediante trazas válidas por API. Se verificaron dos premios únicos y dos débitos, recarga y botones accesibles sin desbordamiento horizontal. Esto no equivale a pruebas en celulares físicos ni a redención real.
+
 ## Configurar en Qori Empresa
 
 1. En Activaciones, seleccionar **Cumbre Qori**.

@@ -527,6 +527,25 @@ async function handleParticipantSubmit(event) {
   renderExperience();
 }
 
+async function restartSummitSession() {
+  try { sessionStorage.removeItem('qori-summit:' + location.pathname + location.search); } catch (_) {}
+  if (!activationCollectsParticipantData()) {
+    // Keep the completed room available for retry if creating the next session fails.
+    if (await startGameSession({ resume: false })) experienceStage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  cleanupGameState();
+  participant = null;
+  gameSessionToken = null;
+  experienceStage.classList.add('hidden');
+  experienceBody.replaceChildren();
+  participantForm.classList.remove('hidden');
+  setProgress(0, 2);
+  setStatus('Confirma los datos de quien va a jugar. Se aplican los límites de participación del negocio.', 'info');
+  participantForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  participantForm.querySelector('input:not([type="hidden"]), button[type="submit"]')?.focus({ preventScroll: true });
+}
+
 async function resumeSummitSession() {
   let saved;
   const key = 'qori-summit:' + location.pathname + location.search;
@@ -550,14 +569,14 @@ async function resumeSummitSession() {
   participantForm.classList.add('hidden'); renderMinigame(); return true;
 }
 
-async function startGameSession() {
+async function startGameSession({ resume = true } = {}) {
   const button = participantForm.querySelector("button[type='submit']");
   if (button) {
     button.disabled = true;
     button.textContent = "Preparando...";
   }
   try {
-    if (currentActivation.activation_type === 'QORI_SUMMIT' && await resumeSummitSession()) return;
+    if (resume && currentActivation.activation_type === 'QORI_SUMMIT' && await resumeSummitSession()) return;
     const data = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
       method: "POST",
       body: JSON.stringify(participantPayload()),
@@ -574,7 +593,10 @@ async function startGameSession() {
       try { sessionStorage.setItem('qori-summit:' + location.pathname + location.search, JSON.stringify({ participant_id: participant.id, game_session_token: gameSessionToken })); } catch (_) {}
     }
     participantForm.classList.add("hidden");
+    ticketResult.classList.add('hidden');
     renderMinigame();
+    if (currentActivation.activation_type === 'QORI_SUMMIT') setStatus('Elige cómo jugar o únete a una nueva sala.', 'info');
+    return true;
   } catch (error) {
     setStatus(error.message, "error");
   } finally {
@@ -1273,6 +1295,8 @@ function renderMinigame() {
     experienceStage.classList.remove("hidden");
     experienceTitle.textContent = "Cumbre Qori";
     experienceCopy.textContent = "El premio está en la cima. Llega al cofre antes de que se agote el tiempo.";
+    let active = true;
+    const session = { participant_id: participant.id, game_session_token: gameSessionToken };
     const mounted = QoriSummitModes.mount(experienceBody, { solo: {
       config: currentActivation.game_config, seed: gameSessionToken,
       prize: currentActivation.reward_config?.reward_label,
@@ -1281,12 +1305,13 @@ function renderMinigame() {
           summit_trace: result.trace, duration_ms: result.duration_ms });
       },
     },
-      request: body => api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
-        method: 'POST', body: JSON.stringify({ ...body, participant_id: participant.id, game_session_token: gameSessionToken }),
+      request: (body, { signal } = {}) => api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/summit`, {
+        method: 'POST', signal, body: JSON.stringify({ ...body, ...session }),
       }),
-      onResult: async data => { setStatus(data.message, data.rewarded ? 'success' : 'info'); await renderResult(data); },
+      onResult: async data => { if (!active) return; setStatus(data.message, data.rewarded ? 'success' : 'info'); await renderResult(data, () => active); },
+      onRestart: restartSummitSession,
     });
-    gameState = { cleanupFns: [() => mounted.destroy()] };
+    gameState = { cleanupFns: [() => { active = false; mounted.destroy(); }] };
     return;
   }
   const config = currentActivation.game_config || {};
@@ -4113,12 +4138,13 @@ async function completeActivation(payload = {}) {
   }
 }
 
-async function renderResult(data) {
+async function renderResult(data, isCurrent = () => true) {
   const fulfillment = benefitFulfillmentFromResult(data);
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
   const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
   const benefitUrl = !isDigitalAssetReward ? String(data.benefit_url || "") : "";
   const rewardQrDataUrl = data.rewarded && !isDigitalAssetReward ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
+  if (!isCurrent()) return;
   const diagnostic = data.diagnostic_result;
   const scratchResult = data.scratch_result;
   const diagnosticMarkup = diagnostic ? `

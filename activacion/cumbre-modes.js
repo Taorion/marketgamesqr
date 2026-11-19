@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   function mount(host, options) {
-    let game, live, timer, destroyed = false, busy = false, pendingStart = false, pendingPoll = false, lastSent = 0, checked = false, room, ack = 0, offset = 0, delivered = false;
+    let game, live, timer, requestController, requestDeadline, destroyed = false, busy = false, restarting = false, pendingStart = false, pendingPoll = false, lastSent = 0, checked = false, room, ack = 0, offset = 0, delivered = false;
     host.innerHTML = `<section class="cumbre-lobby"><h3>¿Cómo quieres subir?</h3>
       <p>Juega a tu ritmo o compite con tu familia por el premio de la cima.</p>
       <div class="cumbre-mode-buttons"><button type="button" data-action="solo">Individual</button><button type="button" data-action="family">Multijugador · 2 a 8</button></div>
@@ -13,6 +13,7 @@
       <div class="cumbre-room" hidden><p>SALA <strong class="cumbre-room-code"></strong></p><p class="cumbre-room-prize"></p>
         <ol class="cumbre-players"></ol><p class="cumbre-race-help">Pueden iniciar desde 2 jugadores conectados, hasta un máximo de 8. El primero en llegar gana el único premio.</p>
         <div class="cumbre-room-actions"><button type="button" data-action="start">Iniciar carrera</button><button type="button" data-action="leave">Salir de la sala</button></div>
+        <button type="button" data-action="restart" hidden>Jugar otra vez</button>
       </div><p class="cumbre-network" role="status" aria-live="polite"></p><button type="button" data-action="resume" hidden>Volver a conectar</button>
       </section><div class="cumbre-play-host"></div>`;
     const panel = host.querySelector('.cumbre-lobby'), playHost = host.querySelector('.cumbre-play-host');
@@ -29,7 +30,8 @@
       room = next;
       roomPanel.hidden = !room;
       host.querySelector('.cumbre-mode-buttons').hidden = Boolean(room);
-      if (!room) { live?.destroy(); live = null; game?.destroy(); game = null; return; }
+      buttons('restart').hidden = !room || !['finished', 'expired'].includes(room.status);
+      if (!room) { live?.destroy(); live = null; game?.destroy(); game = null; playHost.replaceChildren(); say('Elige cómo jugar o únete a una sala.'); return; }
       host.querySelector('.cumbre-family').hidden = true;
       host.querySelector('.cumbre-room-code').textContent = room.code;
       host.querySelector('.cumbre-room-prize').textContent = `Premio: ${room.prize}`;
@@ -64,7 +66,7 @@
         const copy = winner ? (winner.id === room.own.id ? `¡Ganaste! ${room.prize}` : `${winner.alias} llegó primero y ganó ${room.prize}.`) : room.status === 'expired' ? 'La sala venció o la activación cambió. No se entregó un premio.' : 'Terminó la carrera. Nadie alcanzó el cofre.';
         say(copy); game?.finish(copy);
         host.querySelector('.cumbre-race-help').textContent = copy;
-        if (room.own.result && !delivered) { delivered = true; Promise.resolve(options.onResult?.(room.own.result)).catch(e => { delivered = false; say(e.message); buttons('resume').hidden = false; }); }
+        if (room.own.result && !delivered) { delivered = true; Promise.resolve(options.onResult?.(room.own.result)).catch(e => { if (destroyed) return; delivered = false; say(e.message); buttons('resume').hidden = false; }); }
       } else say(room.status === 'waiting'
         ? connected < 2 ? 'Esperando a otro jugador. Pueden iniciar desde 2 conectados.'
           : room.host_id === room.own.id ? 'Ya pueden iniciar la carrera. No hace falta llenar la sala.' : 'Esperando a que el organizador inicie la carrera.'
@@ -72,12 +74,19 @@
       schedule();
     }
     async function send(action, extra = {}) {
-      if (destroyed || busy) return;
+      if (destroyed || busy || restarting) return;
       busy = true;
       host.querySelectorAll('[data-action]').forEach(b => { if (b.dataset.action !== 'start') b.disabled = true; });
       const sent = Date.now(); lastSent = sent;
+      const controller = new AbortController(); requestController = controller;
+      let deadline;
       try {
-        const result = await options.request({ action, ...extra });
+        const result = await Promise.race([
+          options.request({ action, ...extra }, { signal: controller.signal }),
+          new Promise((_, reject) => { requestDeadline = deadline = setTimeout(() => {
+            reject(new Error('La conexión tardó demasiado.')); controller.abort();
+          }, options.requestTimeoutMs || 12000); }),
+        ]);
         if (destroyed) return;
         checked = true;
         if (result.room) offset = new Date(result.room.server_now).getTime() - (sent + Date.now()) / 2;
@@ -89,7 +98,10 @@
         say(`${error.message} Puedes volver a conectar sin cambiar de jugador.`);
         buttons('resume').hidden = false; schedule();
       } finally {
+        clearTimeout(deadline);
+        if (requestController === controller) requestController = null;
         busy = false;
+        if (destroyed) return;
         host.querySelectorAll('[data-action]').forEach(b => { if (b.dataset.action !== 'start') b.disabled = !checked && b.dataset.action !== 'resume'; });
         if (pendingStart) {
           pendingStart = false;
@@ -106,9 +118,22 @@
     }
     function click(event) {
       const action = event.target.closest('[data-action]')?.dataset.action;
-      if (!action) return;
+      if (!action || destroyed || restarting) return;
       if (busy) {
         if (action === 'start') { pendingStart = true; say('Iniciando carrera…'); }
+        return;
+      }
+      if (action === 'restart') {
+        if (!['finished', 'expired'].includes(room?.status)) return;
+        restarting = true; buttons('restart').disabled = true;
+        buttons('restart').textContent = 'Preparando…';
+        Promise.resolve().then(() => options.onRestart?.()).catch(error => {
+          if (!destroyed) say(error.message);
+        }).finally(() => {
+          if (destroyed) return;
+          restarting = false; buttons('restart').disabled = false;
+          buttons('restart').textContent = 'Jugar otra vez';
+        });
         return;
       }
       if (action === 'solo') {
@@ -127,7 +152,7 @@
     }
     host.addEventListener('click', click);
     send('resume');
-    return { destroy() { destroyed = true; clearTimeout(timer); live?.destroy(); game?.destroy(); host.removeEventListener('click', click); } };
+    return { destroy() { destroyed = true; clearTimeout(timer); clearTimeout(requestDeadline); requestController?.abort(); live?.destroy(); game?.destroy(); host.removeEventListener('click', click); } };
   }
   root.QoriSummitModes = { mount };
 })(globalThis);

@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync('activacion/activation.js','utf8');
-const resume=source.slice(source.indexOf('async function resumeSummitSession()'),source.indexOf('async function startGameSession()'));
+const resume=source.slice(source.indexOf('async function resumeSummitSession()'),source.indexOf('async function startGameSession('));
 function setup(room){
  let removed=false,rendered=false;
  const context=vm.createContext({location:{pathname:'/activacion/family',search:''},currentActivation:{public_slug:'family'},

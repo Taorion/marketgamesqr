@@ -1,13 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {JSDOM}=require('jsdom');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function setup(request) {
+function setup(request, options = {}) {
   const dom=new JSDOM('<div id="host"></div>',{runScripts:'outside-only'}),w=dom.window,host=w.document.getElementById('host'),mounts=[];
   w.QoriSummit={mount(h,options){const game={options,destroyed:false,packet:()=>({from:0,runs:[]}),opponents(list){this.others=list;},finish(copy){this.message=copy;},destroy(){this.destroyed=true;}};mounts.push(game);return game;}};
   w.eval(fs.readFileSync('activacion/cumbre-modes.js','utf8'));
   let result;
-  const controller=w.QoriSummitModes.mount(host,{request,solo:{seed:'solo'},onResult:r=>{result=r;}});
-  return {w,host,mounts,result:()=>result,click:a=>host.querySelector(`[data-action="${a}"]`).click(),close(){controller.destroy();w.close();}};
+  const controller=w.QoriSummitModes.mount(host,{request,solo:{seed:'solo'},onResult:r=>{result=r;},...options});
+  return {w,host,mounts,controller,result:()=>result,click:a=>host.querySelector(`[data-action="${a}"]`).click(),close(){controller.destroy();w.close();}};
 }
 function room(status='waiting') { return {code:'ABCD23',status,host_id:'p1',winner_id:null,server_now:new Date().toISOString(),starts_at:new Date(Date.now()+3000).toISOString(),config:{floors:8},prize:'Helado',seed:'shared',members:[{id:'p1',alias:'Ana',ready:false,connected:true,floor:0},{id:'p2',alias:'<img src=x onerror=alert(1)>',ready:false,connected:true,floor:0}],own:{id:'p1',state:{tick:0},result:null}}; }
 test('the player chooses individual without creating a room',async()=>{
@@ -93,4 +93,44 @@ test('HTTP clock estimates cannot pause or accelerate a running race',async()=>{
     game.options.onFinish();await tick();
     assert.equal(game.options.race.now()-before,100);
   }finally{env.close();}
+});
+
+test('every terminal room offers one restart without replaying or reissuing its result',async()=>{
+  for(const outcome of ['winner','loser','nobody','expired']) {
+    const state=room(outcome==='expired'?'expired':'finished'),calls=[];let restarts=0,release;
+    state.winner_id=outcome==='winner'?'p1':outcome==='loser'?'p2':null;
+    if(outcome==='winner')state.own.result={rewarded:true,benefit_url:'existing-prize'};
+    const env=setup(async body=>{calls.push(body.action);return {room:state};},{onRestart:()=>{restarts++;return new Promise(r=>{release=r;});}});
+    try {
+      await tick();assert.equal(env.host.querySelector('[data-action="restart"]').hidden,false);
+      env.click('restart');env.click('restart');await tick();assert.equal(restarts,1);
+      assert.deepEqual(calls,['resume']);assert.equal(env.result()?.benefit_url,outcome==='winner'?'existing-prize':undefined);
+      release();await tick();assert.equal(env.host.querySelector('[data-action="restart"]').disabled,false);
+    } finally {release?.();env.close();}
+  }
+});
+
+test('a stalled request times out, aborts and allows reconnect; its late result is ignored',async()=>{
+  let release,signal,calls=0;
+  const env=setup((body,options)=>{
+    calls++;if(calls===1){signal=options.signal;return new Promise(r=>{release=r;});}
+    return Promise.resolve({room:null});
+  },{requestTimeoutMs:20});
+  try {
+    await new Promise(r=>setTimeout(r,40));assert.equal(signal.aborted,true);
+    assert.equal(env.host.querySelector('[data-action="resume"]').disabled,false);
+    assert.match(env.host.querySelector('.cumbre-network').textContent,/tardó demasiado/);
+    env.click('resume');await tick();assert.equal(calls,2);
+    release({room:room('finished')});await tick();assert.equal(env.host.querySelector('.cumbre-room').hidden,true);
+    assert.equal(env.host.querySelector('[data-action="family"]').disabled,false);
+  } finally {env.close();}
+});
+
+test('destroy aborts an in-flight request and its completion cannot change a replacement screen',async()=>{
+  let release,signal;
+  const env=setup((body,options)=>{signal=options.signal;return new Promise(r=>{release=r;});});
+  env.controller.destroy();assert.equal(signal.aborted,true);
+  env.host.innerHTML='<button data-action="family" disabled>New session</button>';
+  release({room:room('finished')});await tick();
+  assert.equal(env.host.querySelector('button').disabled,true);assert.equal(env.host.textContent,'New session');env.w.close();
 });
