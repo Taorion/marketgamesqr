@@ -32324,13 +32324,30 @@ function selectActivationForLinkQr() {
   setFormMessage(activationLinkQrMessage, "Enlace cargado. Pulsa Generar QR para crear la imagen.", "info");
 }
 
-function prepareActivationLinkQr(activationId) {
+async function prepareActivationLinkQr(activationId, button) {
   const activation = activationById(activationId);
   if (!activation?.public_url) return;
-  if (activationLinkQrActivationSelect) activationLinkQrActivationSelect.value = activation.id;
-  selectActivationForLinkQr();
-  document.querySelector(".activation-link-qr-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  window.setTimeout(() => activationLinkQrUrlInput?.focus({ preventScroll: true }), 350);
+  if (button?.disabled) return;
+  const previous = button?.innerHTML;
+  if (button) { button.disabled = true; button.textContent = "Cargando QR…"; }
+  try {
+    const data = await api("/api/business/qr/link-image", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ url: activation.public_url, label: String(activation.title || "Activación").slice(0, 120), size: 900 }),
+    });
+    const qr = data.qr || {};
+    if (!String(qr.qr_image_data_url || "").startsWith("data:image/png")) throw new Error("No se pudo cargar el QR de acceso.");
+    window.QoriShowcases.openQr({
+      kind: "activation", title: activation.title || "Activación", url: qr.target_url || activation.public_url,
+      qr_image: qr.qr_image_data_url, filename: activationLinkQrFilename(activation.title),
+      status: activationIsUsable(activation) ? "ACTIVE" : "UNAVAILABLE",
+      availability_note: "Esta activación no está recibiendo participaciones. Revisa su estado y las fechas antes de compartir el QR.",
+    });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo mostrar el QR. Inténtalo nuevamente.", "error", { title: "QR de acceso" });
+  } finally {
+    if (button) { button.disabled = false; button.innerHTML = previous; }
+  }
 }
 
 function renderTriviaLaunchers() {
@@ -32367,11 +32384,11 @@ function renderTriviaLaunchers() {
             ${item.status === "draft" ? `<button class="activation-primary-row-action" type="button" data-continue-activation-draft="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">edit_square</span><span>Continuar</span></button>` : `<button class="activation-primary-row-action" type="button" data-open-activation-detail="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>${archived ? "Ver historial" : "Abrir detalle"}</span></button>`}
             <details class="activation-row-menu"><summary aria-label="Más acciones para ${escapeHtml(item.title || "esta activación")}" title="Más acciones"><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span></summary><div role="menu">
               ${shareable ? `<button type="button" role="menuitem" data-share-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">send</span>Enviar a un lead</button>` : ""}
-              ${item.public_url ? `<button type="button" role="menuitem" data-generate-activation-link-qr="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Crear QR publicitario</button>` : ""}
               ${item.public_url ? `<button type="button" role="menuitem" data-copy-activation-link="${escapeHtml(item.public_url)}"><span class="material-symbols-outlined" aria-hidden="true">link</span>Copiar enlace</button>` : ""}
               ${!archived ? `<button type="button" role="menuitem" data-edit-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span>Editar configuración</button>` : ""}
               <button type="button" role="menuitem" data-recycle-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Crear una copia</button>
             </div></details>
+            ${item.public_url ? `<button class="ghost-button compact activation-access-qr-action" type="button" data-generate-activation-link-qr="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span><span>Ver QR de acceso</span></button>` : ""}
           </div>
         </td>
       </tr>`;
@@ -32430,7 +32447,7 @@ function renderTriviaLaunchers() {
       event.preventDefault();
       event.stopPropagation();
       button.closest("details")?.removeAttribute("open");
-      prepareActivationLinkQr(button.dataset.generateActivationLinkQr);
+      prepareActivationLinkQr(button.dataset.generateActivationLinkQr, button);
     });
   });
   triviaLauncherTable.querySelectorAll("[data-copy-activation-link]").forEach((button) => {

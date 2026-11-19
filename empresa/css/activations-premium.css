@@ -84,6 +84,13 @@ html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[d
   display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; align-items: center !important;
   justify-content: center !important; gap: 8px !important; width: 100% !important;
 }
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-access-qr-action {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  white-space: normal !important;
+  line-height: 1.3 !important;
+}
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-primary-row-action {
   width: 100% !important; min-height: 44px !important; padding: 9px 12px !important;
   white-space: normal !important; line-height: 1.2 !important;
