@@ -8,7 +8,7 @@ const {env}=require('../backend/src/config/env');
 const renewal=require('../backend/src/services/subscriptionAutoRenewalService');
 const mp=require('../backend/src/services/mercadoPagoService');
 const actualFetch=global.fetch,mandates=new Map(),invoices=new Map(),payments=new Map();
-let creates=0,denyCancel=false,loseCreateResponse=false,server;
+let creates=0,denyCancel=false,loseCreateResponse=false,server;const invoiceOffsets=[];
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});
 const uuid=randomUUID;
 async function fixture(plan='STARTER') {
@@ -42,7 +42,7 @@ test('Monthly card renewal: authorization, provider verification, recovery and c
     }
     if(url.pathname==='/authorized_payments/search'){
       const rows=[...invoices.values()].filter(i=>url.searchParams.has('payment_id')?String(i.payment?.id)===url.searchParams.get('payment_id'):i.preapproval_id===url.searchParams.get('preapproval_id'));
-      const offset=Number(url.searchParams.get('offset'));return json({results:rows.slice(offset,offset+50),paging:{total:rows.length}});
+      const offset=Number(url.searchParams.get('offset')||0),limit=Number(url.searchParams.get('limit')||20);if(limit>20)return json({message:'Invalid value for limit'},400);invoiceOffsets.push(offset);return json({results:rows.slice(offset,offset+limit),paging:{total:rows.length}});
     }
     if(url.pathname.startsWith('/authorized_payments/'))return json(invoices.get(url.pathname.split('/').pop()));
     if(url.pathname.startsWith('/v1/payments/'))return json(payments.get(url.pathname.split('/').pop()));
@@ -95,6 +95,10 @@ test('Monthly card renewal: authorization, provider verification, recovery and c
     const row=(await query('select * from qr_credit_purchase_orders where mercado_pago_payment_id=$1',[third.p.id])).rows[0];assert.ok(row.credited_at);
     const before=(await business(f.b.id)).subscription_current_period_ends_at;await renewal.refresh(f.u);assert.equal(+((await business(f.b.id)).subscription_current_period_ends_at),+before);
     assert.ok((await business(f.b.id)).settings.subscription.auto_renew_checked_at);
+  });
+  await t.test('reconciliation paginates with the provider limit of twenty invoices',async()=>{
+    invoiceOffsets.length=0;for(let i=0;i<21;i++){const id=uuid();invoices.set(id,{id,preapproval_id:m.id});}
+    await renewal.refresh(f.u);assert.ok(invoiceOffsets.includes(20));
   });
   await t.test('wrong amount, currency, signature and invoice association never credit',async()=>{
     for(const field of ['amount','currency','association']){

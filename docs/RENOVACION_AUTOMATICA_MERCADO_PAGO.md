@@ -36,7 +36,7 @@ Los reembolsos y contracargos conservan el historial y pasan por los ajustes
 existentes de atribución/comisiones; este cambio no introduce reembolsos automáticos.
 
 El proceso de conciliación corre al iniciar el servidor y cada cinco minutos,
-en lotes de veinte negocios, con paginación de facturas. Consulta al proveedor;
+en lotes de veinte negocios, con páginas de veinte facturas (límite verificado en producción). Consulta al proveedor;
 no ejecuta cargos adicionales. Guarda en `businesses.settings.subscription` la
 fecha de intento, de verificación y el aviso de error. Los fallos se reintentan.
 No necesita migración ni datos de tarjeta nuevos.
@@ -56,7 +56,7 @@ Fuentes oficiales:
 - https://www.mercadopago.com.co/developers/es/reference/online-payments/subscriptions/authorized-payment-search/get
 
 Validación local: PostgreSQL aislado `qori_customer_qa`, proveedor simulado,
-40 pruebas de renovación/pagos/planes y recorrido real de navegador a 1440, 390
+41 pruebas de renovación/pagos/planes y recorrido real de navegador a 1440, 390
 y 320 píxeles para consultar y cancelar la autorización. Una prueba antigua de
 referidos tiene cuatro fallos de acceso Admin que también se reproducen en el
 commit anterior `cc3f4e5`; no se modificó la política administrativa.
