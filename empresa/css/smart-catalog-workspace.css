@@ -1,0 +1,155 @@
+/* Important declarations in this layer take precedence over the portal legacy
+   unlayered important rules, without escalating selector specificity. */
+@layer qoriCatalogWorkspace {
+/* Scoped overrides for the legacy portal cascade. The editor lives under body,
+   outside .portal-shell; it therefore owns its layout and control styles. */
+#smartCatalogWorkspace.active:not([hidden]) {
+  display: grid !important;
+  gap: 24px !important;
+  width: 100% !important;
+  max-width: 1440px !important;
+  min-width: 0 !important;
+  padding: 24px !important;
+  margin: 0 auto !important;
+  background: #f5f9ff !important;
+}
+#smartCatalogWorkspace .smart-catalog-head {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 0 0 20px !important;
+  background: transparent !important;
+}
+#smartCatalogWorkspace .smart-catalog-head > div:first-child { flex: 1 1 380px !important; display: block !important; min-width: 0 !important; }
+#smartCatalogWorkspace .head-actions .material-symbols-outlined { display: none !important; }
+#smartCatalogWorkspace .breadcrumb .material-symbols-outlined { font-size: 0 !important; }
+#smartCatalogWorkspace .breadcrumb .material-symbols-outlined::after { content: '/'; font: 14px/1 sans-serif; }
+#smartCatalogWorkspace :is(.smart-catalog-head, .table-card-head) button { min-height: 44px !important; height: auto !important; border-radius: 8px !important; }
+#smartCatalogWorkspace .head-actions { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; }
+#smartCatalogWorkspace .smart-catalog-head p { max-width: 62ch !important; margin: 8px 0 0 !important; }
+#smartCatalogWorkspace .smart-catalog-tabs {
+  display: flex !important; flex-wrap: wrap !important; gap: 8px !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important; min-height: 0 !important;
+}
+#smartCatalogWorkspace .smart-catalog-tabs button {
+  flex: 0 1 auto !important; width: auto !important; min-height: 44px !important;
+  padding: 10px 16px !important; border: 1px solid #c9dcef !important; border-radius: 10px !important;
+  background: #fff !important; color: #29456b !important; box-shadow: none !important;
+}
+#smartCatalogWorkspace .smart-catalog-tabs button.active { background: #0759d6 !important; color: #fff !important; border-color: #0759d6 !important; }
+#smartCatalogWorkspace .qori-tab-icon { display: none !important; }
+#smartCatalogWorkspace .smart-catalog-panels,
+#smartCatalogWorkspace .smart-catalog-panel,
+#smartCatalogWorkspace .smart-catalog-split { min-width: 0 !important; padding: 0 !important; margin: 0 !important; }
+#smartCatalogWorkspace .smart-catalog-table-card {
+  padding: 20px !important; margin: 0 !important; border: 1px solid #d8e4f2 !important;
+  border-radius: 16px !important; background: #fff !important; box-shadow: 0 8px 24px #12376408 !important;
+}
+#smartCatalogWorkspace .table-card-head {
+  display: flex !important; flex-wrap: wrap !important; align-items: center !important;
+  flex-direction: row !important;
+  gap: 12px !important; padding: 0 0 18px !important; margin: 0 0 16px !important;
+}
+#smartCatalogWorkspace .table-card-head > div:first-child { flex: 1 1 300px !important; display: block !important; min-width: 0 !important; }
+#smartCatalogWorkspace .table-card-head h3 { margin: 5px 0 !important; font-size: 22px !important; }
+#smartCatalogWorkspace .table-wrap { min-width: 0 !important; margin: 0 !important; padding: 0 !important; overflow-x: auto !important; }
+#smartCatalogWorkspace table { width: 100% !important; margin: 0 !important; border-collapse: collapse !important; }
+#smartCatalogWorkspace th,
+#smartCatalogWorkspace td { padding: 14px 12px !important; vertical-align: top !important; }
+#smartCatalogWorkspace td small { display: block !important; margin-top: 5px !important; overflow-wrap: anywhere !important; }
+#smartCatalogWorkspace .smart-catalog-row-actions { display: grid !important; grid-template-columns: repeat(2, minmax(90px, 1fr)) !important; gap: 8px !important; min-width: 190px !important; }
+#smartCatalogWorkspace .smart-catalog-row-actions button { width: 100% !important; min-height: 40px !important; margin: 0 !important; white-space: normal !important; }
+#smartCatalogWorkspace button:focus-visible,
+#smartCatalogCreateModal :is(button, input, select, textarea):focus-visible { outline: 3px solid #55b6f7 !important; outline-offset: 2px !important; }
+
+html:has(body > #smartCatalogCreateModal:not(.hidden)),
+body:has(> #smartCatalogCreateModal:not(.hidden)) { overflow: hidden !important; }
+html body > #smartCatalogCreateModal:not(.hidden) {
+  position: fixed !important; inset: 0 !important; z-index: 10050 !important;
+  display: grid !important; place-items: center !important;
+  width: 100% !important; height: 100dvh !important; margin: 0 !important; padding: 16px !important;
+  overflow: hidden !important; background: #041b44b3 !important; backdrop-filter: blur(6px) !important;
+}
+#smartCatalogCreateModal *, #smartCatalogWorkspace * { box-sizing: border-box; }
+html body > #smartCatalogCreateModal .smart-catalog-create-modal-card {
+  display: grid !important; grid-template-rows: max-content minmax(0, 1fr) !important;
+  width: min(880px, 100%) !important; max-width: 100% !important; min-width: 0 !important;
+  height: min(820px, calc(100dvh - 32px)) !important; max-height: calc(100dvh - 32px) !important;
+  margin: 0 !important; padding: 0 !important; overflow: hidden !important;
+  background: #fff !important; border: 1px solid #d8e4f2 !important; border-radius: 18px !important;
+  box-shadow: 0 24px 80px #021c4055 !important;
+}
+html body > #smartCatalogCreateModal .modal-head {
+  display: grid !important; grid-template-columns: minmax(0, 1fr) 44px !important;
+  align-items: start !important; gap: 16px !important; min-height: 0 !important;
+  margin: 0 !important; padding: 20px 24px !important;
+  border-bottom: 1px solid #dce8f3 !important; background: #f6faff !important;
+}
+#smartCatalogCreateModal .modal-head h3 { margin: 5px 0 !important; font-size: 24px !important; line-height: 1.2 !important; }
+#smartCatalogCreateModal .modal-head p { margin: 0 !important; font-size: 14px !important; line-height: 1.5 !important; color: #536c8c !important; }
+#smartCatalogCreateModal .mono-label { font-size: 11px !important; letter-spacing: .06em !important; }
+#smartCatalogCreateModal [data-close-smart-catalog-create] {
+  display: grid !important; place-items: center !important; width: 44px !important; height: 44px !important;
+  min-width: 44px !important; min-height: 44px !important; padding: 0 !important; margin: 0 !important;
+  font: 28px/1 Arial, sans-serif !important; background: #fff !important; border: 1px solid #c9dcef !important;
+  border-radius: 12px !important; color: #15365b !important; box-shadow: none !important;
+}
+html body > #smartCatalogCreateModal #smartCatalogForm {
+  display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important; gap: 18px 20px !important;
+  min-height: 0 !important; min-width: 0 !important; width: 100% !important;
+  max-height: none !important; margin: 0 !important; padding: 24px !important;
+  overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain;
+  scrollbar-gutter: stable; background: #fff !important; border: 0 !important; box-shadow: none !important;
+}
+#smartCatalogCreateModal #smartCatalogForm > :is(.span-2, .form-section-head, .form-message, button, fieldset) { grid-column: 1 / -1 !important; }
+#smartCatalogCreateModal #smartCatalogForm > label { display: grid !important; align-content: start !important; gap: 7px !important; min-width: 0 !important; margin: 0 !important; padding: 0 !important; font-size: 14px !important; font-weight: 600 !important; }
+#smartCatalogCreateModal #smartCatalogForm [hidden] { display: none !important; }
+#smartCatalogCreateModal #smartCatalogForm :is(input:not([type=checkbox]), select, textarea) {
+  display: block !important; width: 100% !important; min-width: 0 !important; min-height: 44px !important;
+  height: auto !important; padding: 10px 12px !important; margin: 0 !important;
+  border: 1px solid #bfd1e5 !important; border-radius: 9px !important;
+  background: #fff !important; color: #16375e !important; font: inherit !important; font-weight: 400 !important;
+  box-shadow: none !important; line-height: 1.5 !important;
+}
+#smartCatalogCreateModal #smartCatalogForm textarea { resize: vertical !important; }
+#smartCatalogCreateModal #smartCatalogForm input[type=color] { height: 44px !important; padding: 5px !important; }
+#smartCatalogCreateModal #smartCatalogForm small { color: #536c8c !important; font-size: 12px !important; font-weight: 400 !important; line-height: 1.55 !important; }
+#smartCatalogCreateModal .form-section-head { margin: 0 !important; padding: 4px 0 12px !important; border-bottom: 1px solid #e1eaf4 !important; }
+#smartCatalogCreateModal .form-section-head h3 { font-size: 18px !important; margin: 5px 0 0 !important; }
+#smartCatalogCreateModal .qs-program-picker { min-width: 0 !important; margin: 0 !important; padding: 16px !important; border: 1px solid #c9dcef !important; border-radius: 12px !important; background: #f7faff !important; }
+#smartCatalogCreateModal .qs-program-picker p { margin: 0 0 12px !important; font-size: 14px !important; line-height: 1.5 !important; }
+#smartCatalogCreateModal .qs-program-picker label { display: flex !important; align-items: flex-start !important; gap: 10px !important; margin: 0 !important; padding: 12px 0 !important; border-top: 1px solid #e1eaf4 !important; font-size: 14px !important; line-height: 1.45 !important; }
+#smartCatalogCreateModal .qs-program-picker input[type=checkbox] { appearance: auto !important; flex: 0 0 20px !important; width: 20px !important; height: 20px !important; min-height: 20px !important; margin: 1px 0 0 !important; padding: 0 !important; box-shadow: none !important; accent-color: #0759d6; }
+#smartCatalogCreateModal .qs-picker-benefit { display: block !important; margin-top: 4px !important; }
+#smartCatalogCreateModal .form-message:empty { display: none !important; }
+#smartCatalogCreateModal #smartCatalogForm > button[type=submit] { min-height: 46px !important; margin: 0 !important; border-radius: 10px !important; }
+
+@media (max-width: 760px) {
+  #smartCatalogWorkspace:not([hidden]) { padding: 16px 10px !important; gap: 18px !important; }
+  #smartCatalogWorkspace .smart-catalog-head > div:first-child { flex-basis: 100% !important; }
+  #smartCatalogWorkspace .head-actions { width: 100% !important; }
+  #smartCatalogWorkspace .head-actions button { flex: 1 1 140px !important; }
+  #smartCatalogWorkspace .smart-catalog-tabs button { flex: 1 1 40% !important; padding: 10px !important; }
+  #smartCatalogWorkspace .smart-catalog-table-card { padding: 14px !important; }
+  #smartCatalogWorkspace .table-card-head > button { flex: 1 1 130px !important; }
+  #smartCatalogWorkspace [data-smart-catalog-panel=catalogs] table { min-width: 0 !important; display: block !important; }
+  #smartCatalogWorkspace [data-smart-catalog-panel=catalogs] thead { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip-path: inset(50%) !important; }
+  #smartCatalogWorkspace #smartCatalogTable { display: grid !important; gap: 14px !important; }
+  #smartCatalogWorkspace #smartCatalogTable tr { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; width: 100% !important; padding: 14px !important; border: 1px solid #d8e4f2 !important; border-radius: 12px !important; background: #f9fbff !important; }
+  #smartCatalogWorkspace #smartCatalogTable td { display: block !important; width: auto !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow-wrap: anywhere !important; }
+  #smartCatalogWorkspace #smartCatalogTable td:is(:first-child, :last-child, :nth-child(3)) { grid-column: 1 / -1 !important; }
+  #smartCatalogWorkspace #smartCatalogTable td:nth-child(4) { grid-column: 2 !important; grid-row: 2 !important; }
+  #smartCatalogWorkspace #smartCatalogTable td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 5px; font-size: 11px; color: #536c8c; font-weight: 600; }
+  #smartCatalogWorkspace #smartCatalogTable .smart-catalog-row-actions { min-width: 0 !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body > #smartCatalogCreateModal:not(.hidden) { padding: 8px !important; }
+  html body > #smartCatalogCreateModal .smart-catalog-create-modal-card { height: calc(100dvh - 16px) !important; max-height: calc(100dvh - 16px) !important; border-radius: 14px !important; }
+  html body > #smartCatalogCreateModal .modal-head { padding: 16px !important; gap: 10px !important; }
+  #smartCatalogCreateModal .modal-head h3 { font-size: 21px !important; }
+  html body > #smartCatalogCreateModal #smartCatalogForm { grid-template-columns: minmax(0, 1fr) !important; padding: 16px !important; gap: 16px !important; }
+}
+
+}

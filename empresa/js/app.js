@@ -13040,9 +13040,9 @@ function renderSmartCatalogTables() {
       return `
         <tr class="${active ? "is-selected-row" : ""}">
           <td><strong>${escapeHtml(catalog.title)}</strong><small>${escapeHtml(catalog.public_url || catalog.slug || "")}</small></td>
-          <td><span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span></td>
-          <td>${catalog.metadata?.redemption_mode === 'ACTIVATIONS' ? `${catalog.metadata.activation_ids?.length || 0} activaciones` : catalog.metadata?.redemption_mode === 'STAMP_PROGRAMS' ? `${catalog.metadata.stamp_program_ids?.length || 0} programas de sellos` : escapeHtml(catalog.whatsapp_number || "-")}</td>
-          <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
+          <td data-label="Estado"><span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span></td>
+          <td data-label="Contenido / contacto">${catalog.metadata?.redemption_mode === 'ACTIVATIONS' ? `${catalog.metadata.activation_ids?.length || 0} activaciones` : catalog.metadata?.redemption_mode === 'STAMP_PROGRAMS' ? `${catalog.metadata.stamp_program_ids?.length || 0} programas de sellos` : escapeHtml(catalog.whatsapp_number || "-")}</td>
+          <td data-label="Visitas">${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
           <td><div class="table-actions smart-catalog-row-actions">
             <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Gestionar</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-edit="${escapeHtml(catalog.id)}">Editar</button>
@@ -13405,7 +13405,7 @@ function ensureSmartCatalogCreateModal() {
           <h3 id="smartCatalogCreateModalTitle">Crea tu vitrina web</h3>
           <p>Define tu marca y WhatsApp. Después agrega productos y comparte el enlace.</p>
         </div>
-        <button class="icon-button" type="button" data-close-smart-catalog-create aria-label="Cerrar creación de vitrina web"><span class="material-symbols-outlined">close</span></button>
+        <button class="icon-button" type="button" data-close-smart-catalog-create aria-label="Cerrar creación de vitrina web"><span aria-hidden="true">&times;</span></button>
       </div>
     </article>
   `;
