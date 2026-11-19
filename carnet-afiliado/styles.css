@@ -113,6 +113,20 @@ h2 {
   color: #ba1a1a;
 }
 
+#affiliatePointsCatalogs {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+#affiliatePointsCatalogs a {
+  box-sizing: border-box;
+  min-height: 48px;
+  line-height: 1.5;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
 .identity-grid {
   display: grid;
   grid-template-columns: 132px minmax(0, 1fr);
