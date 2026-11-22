@@ -1,6 +1,6 @@
 const crypto=require('node:crypto');
 const {query,withTransaction}=require('../config/db'),{hash,fault}=require('./config');
-const SCOPES=['invoices:write','submissions:read'];
+const SCOPES=['invoices:write','submissions:read','play:manage','play:analytics'];
 async function issue(clientId,secret,requested) {
  if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(clientId||'')||!/^qi_sbx_[A-Za-z0-9_-]{43}$/.test(secret||''))throw fault(401,'INVALID_CLIENT');
  return withTransaction(async db=>{

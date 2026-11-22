@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-22",
+  "base_commit": "06391dd",
+  "environment": "Windows, Node 22.23.5, PostgreSQL 18, loopback qori_play_qa",
+  "main_suite": {"tests": 30, "pass": 30, "fail": 0, "play_tests": 18, "existing_invoice_units": 12},
+  "existing_invoice_integration": {"tests": 24, "pass": 24, "fail": 0},
+  "existing_regressions": [
+    {"suite": "finance-validator-selected", "pass": 22, "fail": 6, "same_failures_on_base": true},
+    {"suite": "seller-ui", "pass": 14, "fail": 2, "same_failures_on_base": true},
+    {"suite": "customer-books-integration", "pass": 0, "fail": 11, "same_failures_on_base": true}
+  ],
+  "latency_single_pair_ms": {"samples": 12, "p50": 20.8, "p95": 33.0},
+  "ten_pairs_two_actions_ms": {"samples": 10, "p50": 173.6, "p95": 192.6},
+  "hardware_validated": false,
+  "visual_browser_validated": false,
+  "production_enabled": false,
+  "dependency_audit": {"critical": 1, "high": 3, "moderate": 1, "unchanged_versions_from_base": true},
+  "limitations": ["Short local concurrency experiment, not SLA", "Preexisting regression failures remain", "Dependency advisories block homologation", "No real prizes, payments or deployment"]
+}

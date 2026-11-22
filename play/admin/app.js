@@ -1,0 +1,5 @@
+'use strict';
+let session;try{session=JSON.parse(localStorage.getItem('market_games_admin_session_v1'));}catch{}
+async function api(path,body){const r=await fetch('/api/admin/play'+path,{method:body?'PUT':'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?.token||'')},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error?.code||d.message||'Acceso denegado');return d;}
+async function refresh(){const d=await api('/organizations'),root=document.getElementById('organizations');root.replaceChildren();for(const o of d.organizations){const row=document.createElement('article'),text=document.createElement('p'),button=document.createElement('button');row.className='card';text.textContent=o.name+' · '+(o.enabled?'Habilitada':'Bloqueada');button.textContent=o.enabled?'Bloquear':'Rehabilitar sandbox';button.onclick=()=>api('/organizations/'+o.partner_id,{enabled:!o.enabled}).then(refresh).catch(error);row.append(text,button);root.append(row);}}
+function error(e){document.getElementById('status').textContent=e.message;}refresh().catch(error);

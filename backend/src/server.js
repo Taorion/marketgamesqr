@@ -14,7 +14,9 @@ const server = app.listen(env.port, () => {
   startDeactivatedUserCleanup();
 });
 
+const stopPlay = require('./play/realtime').attach(server);
 async function shutdown() {
+  await stopPlay();
   await stopSellerCommissions();
   await stopAgendaPushWorker();
   await stopCustomerPayments();

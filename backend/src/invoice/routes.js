@@ -60,7 +60,7 @@ function install(app) {
  developers.get('/overview',reply(req=>svc.overview(req.customer)));
  developers.post('/partners',reply(req=>svc.register(req.customer,parse(z.object({name}).strict(),req.body).name)));
  developers.post('/apps',reply(req=>{const d=parse(z.object({partner_id:uuid,name}).strict(),req.body);return svc.createApp(req.customer,d.partner_id,d.name);}));
- developers.post('/apps/:app/keys',reply(req=>svc.createKey(req.customer,parse(uuid,req.params.app),parse(z.object({scopes:z.array(z.enum(oauth.SCOPES)).min(1).max(2).optional()}).strict(),req.body||{}).scopes)));
+ developers.post('/apps/:app/keys',reply(req=>svc.createKey(req.customer,parse(uuid,req.params.app),parse(z.object({scopes:z.array(z.enum(oauth.SCOPES)).min(1).max(4).optional()}).strict(),req.body||{}).scopes)));
  developers.get('/terms',reply(()=>ops.TERMS));
  developers.put('/partners/:partner/profile',reply(req=>ops.profile(req.customer,parse(uuid,req.params.partner),parse(z.object({
   entity_kind:z.enum(['PERSON','COMPANY']),country:z.string().regex(/^[A-Z]{2}$/),identification:z.string().regex(/^(SBX|SANDBOX)[A-Z0-9]{3,24}$/),
