@@ -1,0 +1,150 @@
+{
+  "info": {
+    "name": "Qori Invoice sandbox 0.2.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Solo datos sintéticos. Introduce credenciales en el entorno local de Postman; no exportar secretos. Autoriza el emisor en Developers antes de usar."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:3197"
+    },
+    {
+      "key": "client_id",
+      "value": ""
+    },
+    {
+      "key": "client_secret",
+      "value": ""
+    },
+    {
+      "key": "idempotency_key",
+      "value": "sandbox-postman-001"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Token Client Credentials",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{client_id}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{client_secret}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "url": "{{base_url}}/api/invoice/v1/oauth/token",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "key": "scope",
+              "value": "invoices:write submissions:read"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Token\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"access_token\", pm.response.json().access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Enviar original (repetir conserva submission_id)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/invoice/v1/invoices",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"issuer_nit\":\"900000000\",\"xml\":{{xml_json}}}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.variables.set(\"xml_json\", JSON.stringify(\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<Invoice xmlns=\\\"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2\\\" xmlns:cbc=\\\"urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2\\\" xmlns:cac=\\\"urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2\\\">\\n <cbc:ID>SANDBOX-001</cbc:ID><cbc:UUID>29305902d75017f1be5f64a5dd59e49ffe19bebf472d74ded9bee06b26698c7297e5177aa7535cac5b73627892e86ff9</cbc:UUID><cbc:IssueDate>2026-11-22</cbc:IssueDate><cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>\\n \\n <cac:AccountingSupplierParty><cac:Party><cac:PartyTaxScheme><cbc:RegistrationName>Comercio de prueba Qori</cbc:RegistrationName><cbc:CompanyID schemeName=\\\"31\\\">900000000</cbc:CompanyID></cac:PartyTaxScheme></cac:Party></cac:AccountingSupplierParty>\\n <cac:AccountingCustomerParty><cac:Party><cac:PartyTaxScheme><cbc:RegistrationName>Consumidor sintético</cbc:RegistrationName><cbc:CompanyID schemeName=\\\"13\\\">SANDBOXBUYER001</cbc:CompanyID></cac:PartyTaxScheme></cac:Party></cac:AccountingCustomerParty>\\n <cac:PaymentMeans><cbc:PaymentMeansCode>10</cbc:PaymentMeansCode></cac:PaymentMeans>\\n <cac:TaxTotal><cbc:TaxAmount currencyID=\\\"COP\\\">3800.00</cbc:TaxAmount><cac:TaxSubtotal><cbc:TaxableAmount currencyID=\\\"COP\\\">20000.00</cbc:TaxableAmount><cbc:TaxAmount currencyID=\\\"COP\\\">3800.00</cbc:TaxAmount><cac:TaxCategory><cbc:Percent>19.00</cbc:Percent><cac:TaxScheme><cbc:ID>01</cbc:ID><cbc:Name>IVA</cbc:Name></cac:TaxScheme></cac:TaxCategory></cac:TaxSubtotal></cac:TaxTotal>\\n <cac:LegalMonetaryTotal><cbc:LineExtensionAmount currencyID=\\\"COP\\\">20000.00</cbc:LineExtensionAmount><cbc:TaxExclusiveAmount currencyID=\\\"COP\\\">20000.00</cbc:TaxExclusiveAmount><cbc:TaxInclusiveAmount currencyID=\\\"COP\\\">23800.00</cbc:TaxInclusiveAmount><cbc:PayableAmount currencyID=\\\"COP\\\">23800.00</cbc:PayableAmount></cac:LegalMonetaryTotal>\\n <cac:InvoiceLine><cbc:ID>1</cbc:ID><cbc:InvoicedQuantity unitCode=\\\"94\\\">2</cbc:InvoicedQuantity><cbc:LineExtensionAmount currencyID=\\\"COP\\\">20000.00</cbc:LineExtensionAmount><cac:Item><cbc:Name>Café de prueba</cbc:Name></cac:Item><cac:Price><cbc:PriceAmount currencyID=\\\"COP\\\">10000.00</cbc:PriceAmount></cac:Price></cac:InvoiceLine>\\n</Invoice>\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"202 técnico\", () => pm.response.to.have.status(202));",
+              "pm.variables.set(\"submission_id\", pm.response.json().submission_id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Acuse técnico (consultar después de 10 segundos)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/invoice/v1/receipts/{{submission_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Sin identidad ni entrega\", () => { const d=pm.response.json(); pm.expect(d).not.to.have.property(\"customer_id\"); pm.expect(d).not.to.have.property(\"delivered\"); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

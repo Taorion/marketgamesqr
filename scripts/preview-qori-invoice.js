@@ -18,7 +18,10 @@ async function person(email,name,document){
  a.token=crypto.randomBytes(32).toString('base64url');
  await query("insert into customer_sessions(customer_id,token_hash,expires_at) values($1,$2,now()+interval '4 hours')",[a.id,cfg.hash(a.token)]);return a;
 }
+let environmentLock;
 (async()=>{
+ environmentLock=await pool.connect();
+ if(!(await environmentLock.query('select pg_try_advisory_lock_shared(53002817) acquired')).rows[0].acquired)throw new Error('Local test runner owns this environment');
  const owner=await person('invoice.developer@example.invalid','Integrador de prueba','SANDBOXDEVELOPER001');
  const buyer=await person('invoice.consumer@example.invalid','Consumidor de prueba','SANDBOXBUYER001');
  await query("insert into invoice_identity_attestations(customer_id,identity_hmac,method,evidence_reference,expires_at) values($1,$2,'SANDBOX_FIXTURE','LOCAL_PREVIEW',now()+interval '1 day') on conflict(identity_hmac) where revoked_at is null do update set expires_at=excluded.expires_at",[buyer.id,cfg.identity('13','SANDBOXBUYER001')]);
@@ -28,7 +31,8 @@ async function person(email,name,document){
  await svc.listing(owner,app.id,true);await svc.authorizeFixture(owner,app.id);
  await svc.grant(buyer,{app_id:app.id,book_id:buyer.book.id});
  const credential=await svc.createKey(owner,app.id);
- const principal=await svc.machine(credential.secret,'invoices:write');
+ const token=await require('../backend/src/invoice/oauth').issue(credential.client_id,credential.client_secret);
+ const principal=await svc.machine(token.access_token,'invoices:write');
  await svc.receive(principal,'local-preview-v1',{issuer_nit:'900000000',xml:fixture()});
  await svc.processOne();await svc.revokeKey(owner,app.id,credential.key.id);
  const host=express();
@@ -41,7 +45,7 @@ async function person(email,name,document){
  });
  host.use(require('../backend/src/app').app);
  const server=host.listen(3197,'127.0.0.1',()=>console.log('Preview local: http://127.0.0.1:3197/__invoice-demo/developer | /__invoice-demo/customer'));
- let busy=false;const timer=setInterval(async()=>{if(busy)return;busy=true;try{await svc.processOne();}catch{console.error('SANDBOX_WORKER_UNAVAILABLE');}finally{busy=false;}},1000);
- const stop=()=>{clearInterval(timer);server.close(()=>pool.end());};process.on('SIGINT',stop);process.on('SIGTERM',stop);
-})().catch(()=>{console.error('INVOICE_PREVIEW_START_FAILED');process.exitCode=1;pool.end();});
+ let busy=false,lastSweep=0;const timer=setInterval(async()=>{if(busy)return;busy=true;try{await svc.processOne();if(Date.now()-lastSweep>60000){await require('../backend/src/invoice/operations').retention();lastSweep=Date.now();}}catch{console.error('SANDBOX_WORKER_UNAVAILABLE');}finally{busy=false;}},1000);
+ const stop=()=>{clearInterval(timer);server.close(async()=>{await environmentLock.query('select pg_advisory_unlock_shared(53002817)');environmentLock.release();pool.end();});};process.on('SIGINT',stop);process.on('SIGTERM',stop);
+})().catch(()=>{console.error('INVOICE_PREVIEW_START_FAILED');process.exitCode=1;if(environmentLock)environmentLock.release();pool.end();});
 
