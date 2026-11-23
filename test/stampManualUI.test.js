@@ -7,8 +7,8 @@ function setup(){
   const dom=new JSDOM('<body data-current-view="stamp-cards"><div id="stampCardsWorkspace"></div></body>',{url:'https://gosqori.com/empresa/',runScripts:'outside-only'}),w=dom.window,calls=[];
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
   let scope='business-a';w.businessScopeKey=()=>scope;w.isCurrentBusinessScope=value=>value===scope;w.authHeaders=()=>({});
-  const card={id,name:'Ana Cliente',document_id:'QA123',business_name:'Café QA',program_name:'Café de siempre',stamps:0,cycle_id:id,cycle_number:1,void_count:0,expires_at:'2030-01-01',rules:{stamps_required:8,benefit_value:{label:'Un café'},minimum_purchase:5000,terms:'Solo café',one_per_day:false}};
-  w.api=async(url,options)=>{calls.push({url,options});if(url.includes('/validator/'))return {card:{...card,stamps:options.method==='POST'?1:0},can_stamp:true};
+  const card={id,name:'Ana Cliente',document_id:'QA123',business_name:'Café QA',program_name:'Café de siempre',stamps:0,cycle_id:id,cycle_number:1,void_count:0,expires_at:'2030-01-01',rules:{stamps_required:8,benefit_value:{label:'Un café'},minimum_purchase:5000,purchase_product:{inventory_product_id:id},terms:'Solo café',one_per_day:false}};
+  w.api=async(url,options)=>{calls.push({url,options});if(url.includes('/validator/'))return {card:{...card,stamps:options.method==='POST'?1:0},can_stamp:true,purchase:{products:[{id,name:'Café',unit_price:5000}],existing_sales:[]},sale:options.method==='POST'?{id,sale_amount:5000}:null};
     if(url.endsWith('/context'))return {programs:[],business:{name:'QA'},ticket_balance:5};
     if(url.includes('/dashboard'))return {metrics:{},trend:[]};if(url.includes('/members'))return {members:[]};return {events:[]};};
   w.ensureJsQrLoaded=async()=>true;w.extractStampCardQrId=raw=>raw===`qori:stamp-card:${id}`?id:'';
@@ -24,12 +24,23 @@ test('WhatsApp image opens card read-only; explicit confirmation sends once and 
   assert.match(d.textContent,/Ana Cliente/);assert.match(d.textContent,/Solo café/);assert.equal(t.calls.filter(c=>c.options.method==='POST').length,0);
   const button=d.querySelector('[data-scan-stamp]');button.click();button.click();await tick();
   assert.equal(t.calls.filter(c=>c.options.method==='POST').length,1);assert.match(d.textContent,/1 de 8 sellos/);assert.equal(d.querySelector('[data-scan-stamp]').disabled,true);
-  assert.deepEqual(JSON.parse(t.calls.find(c=>c.options.method==='POST').options.body),{cycle_id:id,expected_stamps:0,expected_voids:0});t.dom.window.close();
+  assert.deepEqual(JSON.parse(t.calls.find(c=>c.options.method==='POST').options.body),{cycle_id:id,expected_stamps:0,expected_voids:0,purchase:{inventory_product_id:id,quantity:1,sale_amount:5000}});t.dom.window.close();
 });
 test('unreadable image and wrong QR are recoverable and do not stamp',async()=>{
   const t=setup();await tick();await upload(t,false);assert.match(t.w.document.querySelector('#scDialogMessage').textContent,/No encontramos/);
   const input=t.w.document.querySelector('[data-qr-file]');t.w.jsQR=()=>({data:'https://example.org'});await input.onchange();assert.match(t.w.document.querySelector('#scDialogMessage').textContent,/no identifica/);
   assert.equal(t.calls.filter(c=>c.url.includes('/validator/')).length,0);t.dom.window.close();
+});
+test('purchase quantity updates the total and users can confirm the actual paid amount',async()=>{
+  const t=setup();await tick();await upload(t);const form=t.w.document.querySelector('[data-purchase-form]');
+  form.elements.quantity.value='2';form.elements.quantity.dispatchEvent(new t.w.Event('input'));assert.equal(form.elements.sale_amount.value,'10000');
+  form.elements.sale_amount.value='9000';t.w.document.querySelector('[data-scan-stamp]').click();await tick();
+  const body=JSON.parse(t.calls.find(c=>c.options.method==='POST').options.body);assert.equal(body.purchase.quantity,2);assert.equal(body.purchase.sale_amount,9000);t.dom.window.close();
+});
+test('linking an existing sale sends only its identity and disables new-sale fields',async()=>{
+  const t=setup();await tick();const previous=t.w.api;t.w.api=async(...args)=>{const result=await previous(...args);if(result.purchase)result.purchase.existing_sales=[{id,product_name:'Café registrado',sale_amount:5000,created_at:'2026-11-23'}];return result;};
+  await upload(t);const form=t.w.document.querySelector('[data-purchase-form]');form.elements.mode.value='existing';form.elements.mode.dispatchEvent(new t.w.Event('change'));form.elements.existing_sale_id.value=id;
+  assert.equal(form.elements.sale_amount.disabled,true);t.w.document.querySelector('[data-scan-stamp]').click();await tick();assert.deepEqual(JSON.parse(t.calls.find(c=>c.options.method==='POST').options.body).purchase,{existing_sale_id:id});t.dom.window.close();
 });
 test('real PNG QR pixels decode through the upload flow using the shipped jsQR decoder',async()=>{
   const t=setup();await tick();const QRCode=require('qrcode'),{PNG}=require('pngjs');

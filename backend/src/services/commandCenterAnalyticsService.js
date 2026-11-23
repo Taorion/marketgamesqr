@@ -17,6 +17,7 @@ const QR_TYPE_LABELS = {
 };
 
 const SOURCE_LABELS = {
+  STAMP_CARD: "Tarjeta de sellos",
   STORE_WALK_IN: "Vitrina / punto de venta",
   FRIEND_REFERRAL: "Referidos",
   FAIR_EVENT: "Feria o evento",
@@ -1513,4 +1514,7 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   return analytics;
 }
 
-module.exports = { getCommandCenterAnalytics };
+function clearCommandCenterAnalyticsCache(businessId) {
+  for(const key of analyticsCache.keys())if(JSON.parse(key).businessId===businessId)analyticsCache.delete(key);
+}
+module.exports = { getCommandCenterAnalytics, clearCommandCenterAnalyticsCache };

@@ -3442,6 +3442,7 @@ document.body.appendChild(chartFocusRoot);
 const chartHoverRegistry = new WeakMap();
 
 const ACQUISITION_SOURCE_LABELS = {
+  STAMP_CARD: "Tarjeta de sellos",
   STORE_WALK_IN: "Vio el almacen",
   FRIEND_REFERRAL: "Recomendación de un amigo",
   FAIR_EVENT: "Feria o evento",
@@ -22733,6 +22734,7 @@ function renderCustomerSaleItems() {
 }
 
 function saleSourceLabel(source) {
+  if (source === "STAMP_CARD") return "Tarjeta de sellos";
   if (source === "CONTACT_CENTER") return "Registro comercial";
   if (source === "REDEMPTION") return "Redención QR";
   return source || "-";
@@ -22939,7 +22941,7 @@ function closeSalesDetailModal() {
 
 async function voidAttributedSale(saleId = "") {
   const sale = salesRowsForAttributedSalesView().find((item) => String(item.id) === String(saleId));
-  if (!sale || String(sale.sale_source || "").toUpperCase() !== "CONTACT_CENTER") return;
+  if (!sale || !["CONTACT_CENTER", "STAMP_CARD"].includes(String(sale.sale_source || "").toUpperCase())) return;
   const label = sale.player_name || sale.customer_name || "esta venta";
   const reason = window.prompt(`Anular ${label}. La venta y su evidencia se conservarán para auditoría; las métricas dejarán de contarla. Motivo obligatorio:`);
   if (!String(reason || "").trim()) return;
@@ -23014,7 +23016,7 @@ function openSalesDetailModal(key = "") {
         ${saleDetailField("Notas", item.notes || saleMetadata(item).notes)}
       </div>
     </section>
-    ${String(item.sale_source || "").toUpperCase() === "CONTACT_CENTER" && String(item.sale_status || "PAID").toUpperCase() !== "VOIDED" ? `
+    ${["CONTACT_CENTER", "STAMP_CARD"].includes(String(item.sale_source || "").toUpperCase()) && String(item.sale_status || "PAID").toUpperCase() !== "VOIDED" ? `
       <section class="sales-detail-section sales-detail-danger-zone">
         <h4>Anulación</h4>
         <p>Esta acción no borra la venta ni su evidencia. Exige un motivo y la excluye de las métricas de revenue.</p>

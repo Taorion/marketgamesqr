@@ -16,7 +16,15 @@ async function sale(document='CC12345',amount=10000,extra={}){return (await quer
   (business_id,customer_document_id,customer_name,sale_amount,paid_at,sale_status) values ($1,$2,'Cliente QA',$3,coalesce($4::timestamptz,clock_timestamp()),$5) returning *`,
   [extra.business||business.id,document,amount,extra.paid_at||null,extra.status||'PAID'])).rows[0];}
 async function current(m=member){return (await query('select * from stamp_cycles where member_id=$1 order by cycle_number desc limit 1',[m.id])).rows[0];}
-async function stamp(m=member){const c=await svc.validatorCard(business.id,m.id);return svc.stampFromQr(business.id,user.id,m.id,{cycle_id:c.card.cycle_id,expected_stamps:c.card.stamps,expected_voids:c.card.void_count});}
+let fixtureProduct;
+async function fixturePurchase(businessId,memberId){
+ const info=await svc.validatorCard(businessId,memberId).catch(()=>null);
+ return {inventory_product_id:info?.card.rules.purchase_product?.inventory_product_id||fixtureProduct.id,quantity:1,sale_amount:10000};
+}
+async function manualPurchaseStamp(b,u,m,payload){return svc.manualStamp(b,u,m,{...payload,purchase:await fixturePurchase(b,m)});}
+async function qrPurchaseStamp(b,u,m,payload){return svc.stampFromQr(b,u,m,{...payload,purchase:await fixturePurchase(b,m)});}
+
+async function stamp(m=member){const c=await svc.validatorCard(business.id,m.id);return qrPurchaseStamp(business.id,user.id,m.id,{cycle_id:c.card.cycle_id,expected_stamps:c.card.stamps,expected_voids:c.card.void_count});}
 // Explicit fixture for rewards earned before the manual-only migration.
 async function historicalStamp(m,sale){const c=await current(m);await query(`insert into stamp_events(business_id,member_id,cycle_id,source,source_key,sale_id,sale_amount) values($1,$2,$3,'SALE',$4,$5,$6)`,[business.id,m.id,c.id,'sale:'+sale.id,sale.id,sale.sale_amount]);}
 
@@ -27,6 +35,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     other=(await query(`insert into businesses(name,slug,plan_code) values ('Otro negocio QA',$1,'PRO') returning *`,['other-'+crypto.randomUUID()])).rows[0];
     user=(await query(`insert into app_users(business_id,email,password_hash,full_name,role) values ($1,$2,'test','Manager QA','BUSINESS_OWNER') returning *`,[business.id,crypto.randomUUID()+'@example.test'])).rows[0];
     await query('insert into business_qr_credit_accounts(business_id,qr_balance,qr_purchased_total) values ($1,10,10)',[business.id]);
+    fixtureProduct=(await query(`insert into business_inventory_products(business_id,internal_id,name,unit_price,stock_quantity) values($1,$2,'Café de prueba',10000,1000) returning *`,[business.id,crypto.randomUUID()])).rows[0];
     program=await svc.saveProgram(business.id,user.id,rules);assert.equal(program.stamps_required,2);
   });
   await t.test('invalid benefit configuration is rejected',()=>{
@@ -40,7 +49,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
   });
   await t.test('early claims and cross-tenant writes fail',async()=>{
     await assert.rejects(()=>svc.claim(member.public_token,cycle.id),/faltan sellos/);
-    await assert.rejects(()=>svc.manualStamp(other.id,user.id,member.id,{reference:'hack',note:'bad'}),/no encontrada/);
+    await assert.rejects(()=>manualPurchaseStamp(other.id,user.id,member.id,{reference:'hack',note:'bad'}),/no encontrada/);
     await assert.rejects(()=>svc.enroll(other.id,user.id,{program_id:program.id,name:'Fake',document_id:'333'}),/activo/);
     await assert.rejects(()=>svc.saveProgram(other.id,user.id,rules,program.id),/no encontrado/);
     assert.equal((await svc.members(other.id)).members.length,0);
@@ -83,8 +92,8 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     const old=(await query('select rules from stamp_cycles where id=$1',[cycle.id])).rows[0];assert.equal(old.rules.stamps_required,2);
   });
   await t.test('manual visits are idempotent and changing a sale to paid adds no stamp',async()=>{
-    const a=await svc.manualStamp(business.id,user.id,member.id,{reference:'visit-1',note:'Visita verificada'});
-    const b=await svc.manualStamp(business.id,user.id,member.id,{reference:'visit-1',note:'Reintento'});
+    const a=await manualPurchaseStamp(business.id,user.id,member.id,{reference:'visit-1',note:'Visita verificada'});
+    const b=await manualPurchaseStamp(business.id,user.id,member.id,{reference:'visit-1',note:'Reintento'});
     assert.equal(a.duplicate,false);assert.equal(b.duplicate,true);assert.equal((await current()).stamps,1);
     const pending=await sale('CC12345',5000,{status:'PENDING'});await query("update business_sales set sale_status='PAID' where id=$1",[pending.id]);assert.equal((await current()).stamps,1);await stamp();assert.equal((await current()).stamps,2);
   });
@@ -99,7 +108,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     const p=await svc.saveProgram(business.id,user.id,{...rules,one_per_day:true});
     const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Diario QA',document_id:'DAY123'});
     await Promise.all([sale('DAY123'),sale('DAY123')]);assert.equal((await current(m)).stamps,0);await Promise.all([stamp(m),stamp(m),stamp(m)]);assert.equal((await current(m)).stamps,1);
-    await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{reference:'daily-visit',note:'Visita'}),/hoy/);
+    await assert.rejects(()=>manualPurchaseStamp(business.id,user.id,m.id,{reference:'daily-visit',note:'Visita'}),/hoy/);
   });
   await t.test('paused programs stop earning but honor existing complete cards',async()=>{
     await svc.saveProgram(business.id,user.id,{...rules,status:'PAUSED'},program.id);
@@ -167,21 +176,21 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Cliente nuevo',document_id:'MANUALNEW'});
     const original=(await current(m)).rules;
     const visit={reference:'first-manual',note:'Visita verificada'};
-    await query('update stamp_programs set allow_manual=false where id=$1',[p.id]);await svc.manualStamp(business.id,user.id,m.id,visit);
+    await query('update stamp_programs set allow_manual=false where id=$1',[p.id]);await manualPurchaseStamp(business.id,user.id,m.id,visit);
     await svc.saveProgram(business.id,user.id,{...rules,name:p.name,stamps_required:7,allow_manual:true,benefit_value:{label:'Otro premio'}},p.id);
-    await svc.manualStamp(business.id,user.id,m.id,visit);
+    await manualPurchaseStamp(business.id,user.id,m.id,visit);
     assert.equal((await current(m)).stamps,1);
     assert.deepEqual((await current(m)).rules,original);
     const row=(await svc.members(business.id,{program_id:p.id})).members[0];
     assert.equal(row.allow_manual,true);assert.equal(row.program_status,'ACTIVE');
     await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false},p.id);
-    await svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'second'});
+    await manualPurchaseStamp(business.id,user.id,m.id,{...visit,reference:'second'});
     assert.equal((await current(m)).stamps,2);
     assert.equal((await svc.members(business.id,{program_id:p.id})).members[0].allow_manual,true);
-    await assert.rejects(()=>svc.manualStamp(other.id,user.id,m.id,{...visit,enable_manual:true}),/no encontrada/);
+    await assert.rejects(()=>manualPurchaseStamp(other.id,user.id,m.id,{...visit,enable_manual:true}),/no encontrada/);
     await svc.saveProgram(business.id,user.id,{...rules,allow_manual:true},p.id);
     await query("update stamp_cycles set expires_at=now()-interval '1 minute' where member_id=$1",[m.id]);
-    await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'expired',enable_manual:true}),/vencida/);
+    await assert.rejects(()=>manualPurchaseStamp(business.id,user.id,m.id,{...visit,reference:'expired',enable_manual:true}),/vencida/);
     assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,true);
   });
   await t.test('HTTP manual visits work by default and honor daily limits and paused programs',async()=>{
@@ -190,7 +199,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     const jwt=require('jsonwebtoken'),{app}=require('../backend/src/app');
     const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
     const url=`http://127.0.0.1:${server.address().port}/api/business/stamp-cards/members/${m.id}/stamps`;
-    const body={reference:'visit-enable',note:'Habilitación y visita',enable_manual:true};
+    const body={reference:'visit-enable',note:'Habilitación y visita',purchase:await fixturePurchase(business.id,m.id)};
     const headers={'Content-Type':'application/json',Authorization:`Bearer ${jwt.sign({sub:user.id,password_version:0},process.env.JWT_SECRET)}`};
     try{
       assert.equal((await fetch(url,{method:'POST',headers,body:JSON.stringify(body)})).status,200);
@@ -207,7 +216,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
       assert.match((await capped.json()).error.message,/hoy/);
       assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,true);
       await svc.saveProgram(business.id,user.id,{...rules,status:'PAUSED',allow_manual:false},p.id);
-      await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...body,reference:'paused'}),/activo/);
+      await assert.rejects(()=>manualPurchaseStamp(business.id,user.id,m.id,{...body,reference:'paused'}),/activo/);
     }finally{await new Promise(resolve=>server.close(resolve));}
   });
   await t.test('deleting a program preserves completed cards, issued tickets, history and metrics',async()=>{
@@ -227,7 +236,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     assert.equal(persisted.deleted_by,user.id);assert.equal(persisted.status,'ARCHIVED');
     await assert.rejects(()=>svc.saveProgram(business.id,user.id,rules,p.id),/no encontrado/);
     await assert.rejects(()=>svc.enroll(business.id,user.id,{program_id:p.id,name:'Nuevo',document_id:'DELETEBLOCK'}),/activo/);
-    await assert.rejects(()=>svc.manualStamp(business.id,user.id,progress.id,{reference:'deleted-visit',note:'Intento',enable_manual:true}),/activo/);
+    await assert.rejects(()=>manualPurchaseStamp(business.id,user.id,progress.id,{reference:'deleted-visit',note:'Intento',enable_manual:true}),/activo/);
     await sale('DELETEPROGRESS');assert.equal((await current(progress)).stamps,1);
     assert.deepEqual((await svc.dashboard(business.id,{...filter,program_id:p.id})).metrics,before);
     assert.equal((await svc.history(business.id,{...filter,program_id:p.id})).events.length,3);
@@ -341,47 +350,47 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     assert.equal(scan.card.name,m.name);assert.equal(scan.can_stamp,true);assert.equal((await current(m)).stamps,0);
     assert.ok(!JSON.stringify(scan).includes(m.public_token));assert.ok(!JSON.stringify(scan).includes('reward_cost'));
     await assert.rejects(()=>svc.validatorCard(other.id,m.id),/no encontrada/);
-    await assert.rejects(()=>svc.stampFromQr(other.id,user.id,m.id,payload),/no encontrada/);
+    await assert.rejects(()=>qrPurchaseStamp(other.id,user.id,m.id,payload),/no encontrada/);
     await query('update stamp_programs set allow_manual=false where id=$1',[p.id]);
     assert.equal((await svc.validatorCard(business.id,m.id)).can_stamp,true);
     await svc.saveProgram(business.id,user.id,{...rules,name:p.name,allow_manual:true,stamps_required:3},p.id);
     assert.equal((await svc.validatorCard(business.id,m.id)).can_stamp,true);
-    const results=await Promise.all([1,2,3].map(()=>svc.stampFromQr(business.id,user.id,m.id,payload)));
+    const results=await Promise.all([1,2,3].map(()=>qrPurchaseStamp(business.id,user.id,m.id,payload)));
     assert.equal(results.filter(r=>!r.duplicate).length,1);assert.equal((await current(m)).stamps,1);
     assert.equal((await svc.context(business.id)).ticket_balance,before);
     const event=(await query("select * from stamp_events where member_id=$1 and source='MANUAL'",[m.id])).rows[0];
-    assert.equal(event.actor_id,user.id);assert.match(event.note,/QR/);assert.equal(Number(event.sale_amount),0);
-    await assert.rejects(()=>svc.stampFromQr(business.id,user.id,m.id,{...payload,cycle_id:crypto.randomUUID(),expected_stamps:1}),/cambió/);
-    await svc.stampFromQr(business.id,user.id,m.id,{...payload,expected_stamps:1});
-    await svc.stampFromQr(business.id,user.id,m.id,{...payload,expected_stamps:2});
+    assert.equal(event.actor_id,user.id);assert.match(event.note,/QR/);assert.equal(Number(event.sale_amount),10000);assert.ok(event.sale_id);
+    await assert.rejects(()=>qrPurchaseStamp(business.id,user.id,m.id,{...payload,cycle_id:crypto.randomUUID(),expected_stamps:1}),/cambió/);
+    await qrPurchaseStamp(business.id,user.id,m.id,{...payload,expected_stamps:1});
+    await qrPurchaseStamp(business.id,user.id,m.id,{...payload,expected_stamps:2});
     assert.equal((await svc.validatorCard(business.id,m.id)).can_stamp,false);
-    await assert.rejects(()=>svc.stampFromQr(business.id,user.id,m.id,{...payload,expected_stamps:3}),/completa/);
+    await assert.rejects(()=>qrPurchaseStamp(business.id,user.id,m.id,{...payload,expected_stamps:3}),/completa/);
     await query("update stamp_cycles set expires_at=now()-interval '1 minute' where id=$1",[c.id]);
     const oldQr=(await svc.publicCard(m.public_token)).identification.scan_url;
     await svc.renew(m.public_token);
     const renewed=await svc.validatorCard(business.id,m.id);
     assert.equal(renewed.card.cycle_number,2);assert.equal(renewed.card.stamps,0);
     assert.equal((await svc.publicCard(m.public_token)).identification.scan_url,oldQr);
-    await svc.stampFromQr(business.id,user.id,m.id,payload);assert.equal((await current(m)).stamps,0);
+    await qrPurchaseStamp(business.id,user.id,m.id,payload);assert.equal((await current(m)).stamps,0);
     await svc.saveProgram(business.id,user.id,{...rules,status:'PAUSED'},p.id);
     assert.equal((await svc.validatorCard(business.id,m.id)).can_stamp,false);
-    await assert.rejects(()=>svc.stampFromQr(business.id,user.id,m.id,{cycle_id:renewed.card.cycle_id,expected_stamps:0}),/activo/);
+    await assert.rejects(()=>qrPurchaseStamp(business.id,user.id,m.id,{cycle_id:renewed.card.cycle_id,expected_stamps:0}),/activo/);
   });
   await t.test('a fresh scan can stamp after a reversal while retries of the voided stamp remain idempotent',async()=>{
     const p=await svc.saveProgram(business.id,user.id,{...rules,name:'QR con anulación',stamps_required:3});
     const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Corrección QR',document_id:'QRVOID123'});
     const c=await current(m),payload={cycle_id:c.id,expected_stamps:0,expected_voids:0};
-    await svc.stampFromQr(business.id,user.id,m.id,payload);
+    await qrPurchaseStamp(business.id,user.id,m.id,payload);
     const event=(await query('select id from stamp_events where cycle_id=$1',[c.id])).rows[0];
     await svc.voidStamp(business.id,user.id,event.id,'Prueba de corrección');
-    assert.equal((await svc.stampFromQr(business.id,user.id,m.id,payload)).duplicate,true);
+    assert.equal((await qrPurchaseStamp(business.id,user.id,m.id,payload)).duplicate,true);
     assert.equal((await current(m)).stamps,0);
     const scan=await svc.validatorCard(business.id,m.id);
     assert.equal(scan.card.void_count,1);assert.equal(scan.can_stamp,true);
-    await assert.rejects(()=>svc.stampFromQr(business.id,user.id,m.id,{...payload,expected_stamps:1}),/cambió/);
-    const corrected=await svc.stampFromQr(business.id,user.id,m.id,{...payload,expected_voids:scan.card.void_count});
+    await assert.rejects(()=>qrPurchaseStamp(business.id,user.id,m.id,{...payload,expected_stamps:1}),/cambió/);
+    const corrected=await qrPurchaseStamp(business.id,user.id,m.id,{...payload,expected_voids:scan.card.void_count});
     assert.equal(corrected.duplicate,false);assert.equal(corrected.card.stamps,1);
-    assert.equal((await svc.stampFromQr(business.id,user.id,m.id,{...payload,expected_voids:1})).duplicate,true);
+    assert.equal((await qrPurchaseStamp(business.id,user.id,m.id,{...payload,expected_voids:1})).duplicate,true);
   });
   await t.test('validator role can find and stamp its own cards but cannot manage programs or bypass daily limits',async()=>{
     const p=await svc.saveProgram(business.id,user.id,{...rules,name:'QR diario',one_per_day:true});
@@ -399,7 +408,7 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
       assert.equal((await fetch(base+'/context',{headers})).status,403);
       assert.equal((await fetch(base+'/programs',{method:'POST',headers,body:JSON.stringify(rules)})).status,403);
       assert.equal((await fetch(base+'/validator/not-an-id',{headers})).status,400);
-      const stamp=body=>fetch(base+`/validator/${m.id}/stamp`,{method:'POST',headers,body:JSON.stringify(body)});
+      const stamp=body=>fetch(base+`/validator/${m.id}/stamp`,{method:'POST',headers,body:JSON.stringify({...body,purchase:{inventory_product_id:fixtureProduct.id,quantity:1,sale_amount:10000}})});
       assert.equal((await stamp({cycle_id:c.id})).status,400);
       const response=await stamp({cycle_id:c.id,expected_stamps:0});assert.equal(response.status,200);
       const result=await response.json();assert.equal(result.card.stamps,1);assert.equal(result.can_stamp,false);assert.match(result.blocked_reason,/hoy/);

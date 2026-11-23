@@ -72,7 +72,8 @@ test("manual sale retries are idempotent before any customer, product or points 
 
 test("premium sales command exposes server filters, pagination and canonical CSV", () => {
   assert.match(portal, /attributed-sales-premium\.css\?v=sales-detail-modal-v372-20260910/);
-  assert.match(portal, /app\.js\?v=[^"']*attributed-sales-command-v368/);
+  const preload=portal.match(/rel="preload" as="script" href="(js\/app\.js\?[^"']+)"/);
+  assert.ok(preload);assert.ok(portal.includes(`src="${preload[1]}"`));
   assert.match(portal, /id="salesAnalysisStatusInput"/);
   assert.match(portal, /id="salesAnalysisSourceInput"/);
   assert.match(portal, /id="salesLoadMoreButton"/);
@@ -119,7 +120,7 @@ test("sale registration uses one stable accessible dialog without moving the liv
 
 test("attributed sale detail is a fixed accessible overlay with internal scrolling", () => {
   assert.match(portal, /attributed-sales-premium\.css\?v=sales-detail-modal-v372-20260910/);
-  assert.match(portal, /sales-detail-modal=v475-20260910/);
+  assert.match(portal, /attributed-sales-premium\.css\?v=[^"']+/);
   assert.match(app, /sales-detail-modal modal-overlay hidden/);
   assert.match(app, /modal\.hidden = false/);
   assert.match(app, /content\.scrollTop = 0/);

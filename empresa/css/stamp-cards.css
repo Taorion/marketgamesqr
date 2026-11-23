@@ -1,4 +1,5 @@
 .sc-workspace{--sc-ink:#153047;--sc-muted:#627386;--sc-gold:#e8b84c;color:var(--sc-ink);display:grid;gap:22px;min-width:0;padding-bottom:28px}
+#scDialog .sc-purchase{display:grid;gap:16px;margin:20px 0;padding:16px;border:1px solid #dfe7ec;border-radius:12px}#scDialog .sc-purchase h4{margin:0;font-size:17px;color:#17354a}#scDialog .sc-purchase input,#scDialog .sc-purchase select{max-width:100%}
 .sc-quick-stamp{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px;border:1px solid #e2c477;border-radius:16px;background:#fff8e8}.sc-quick-stamp h3{margin:0 0 8px}.sc-quick-stamp p{margin:0;line-height:1.5}.sc-quick-stamp .sc-actions{flex-shrink:0}
 #scDialog [data-qr-video]{display:block;width:100%;max-height:45vh;object-fit:cover;background:#102a3d;border-radius:12px;margin-top:18px}
 @media(max-width:700px){.sc-quick-stamp{flex-direction:column;align-items:stretch}.sc-quick-stamp .sc-actions button{flex:1}}

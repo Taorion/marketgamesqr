@@ -9,6 +9,10 @@ const router=express.Router(),publicRouter=express.Router();
 const uuid=z.string().uuid();
 const money=z.coerce.number().finite().min(0).max(999999999);
 const inventoryProduct=z.object({inventory_product_id:uuid});
+const purchase=z.union([
+  z.object({existing_sale_id:uuid}).strict(),
+  z.object({inventory_product_id:uuid,quantity:z.number().int().min(1).max(10000).default(1),sale_amount:money.positive(),payment_method:z.string().trim().max(80).optional()}).strict()
+]);
 const program=z.object({
   name:z.string().trim().min(3).max(120),stamps_required:z.coerce.number().int().min(2).max(50),
   benefit_type:z.enum(['FREE_GIFT','PERCENT_DISCOUNT','FIXED_AMOUNT_DISCOUNT','CUSTOM']),
@@ -42,7 +46,7 @@ router.use(authRequired,requirePortalAccess,requireBusinessFeature('stamp_cards'
 const validatorRoles=requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','VALIDATOR','ADMIN','ADMIN_MARKET_GAMES');
 router.get('/validator/:id',validatorRoles,handle(req=>service.validatorCard(req.user.business_id,parse(uuid,req.params.id))));
 router.post('/validator/:id/stamp',validatorRoles,handle(req=>service.stampFromQr(req.user.business_id,req.user.id,parse(uuid,req.params.id),
-  parse(z.object({cycle_id:uuid,expected_stamps:z.number().int().min(0).max(50),expected_voids:z.number().int().nonnegative().default(0)}),req.body))));
+  parse(z.object({cycle_id:uuid,expected_stamps:z.number().int().min(0).max(50),expected_voids:z.number().int().nonnegative().default(0),purchase}),req.body))));
 router.use(requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES'));
 router.get('/context',handle(req=>service.context(req.user.business_id)));
 router.get('/dashboard',handle(req=>service.dashboard(req.user.business_id,filters(req))));
@@ -54,7 +58,7 @@ router.put('/programs/:id',handle(req=>service.saveProgram(req.user.business_id,
 router.delete('/programs/:id',handle(req=>service.deleteProgram(req.user.business_id,req.user.id,parse(uuid,req.params.id))));
 router.post('/members',handle(req=>service.enroll(req.user.business_id,req.user.id,parse(enrollment,req.body))));
 router.post('/members/:id/stamps',handle(req=>service.manualStamp(req.user.business_id,req.user.id,parse(uuid,req.params.id),
-  parse(z.object({reference:z.string().trim().min(3).max(100),note:z.string().trim().min(3).max(500)}),req.body))));
+  parse(z.object({reference:z.string().trim().min(3).max(100),note:z.string().trim().min(3).max(500),purchase}),req.body))));
 router.post('/events/:id/void',handle(req=>service.voidStamp(req.user.business_id,req.user.id,parse(uuid,req.params.id),
   parse(z.string().trim().min(5).max(500),req.body.reason))));
 publicRouter.use(rateLimit({keyPrefix:'stamp-card-read',max:180,windowMs:15*60000}));

@@ -2,7 +2,7 @@ const { query } = require("../config/db");
 const { badRequest } = require("../utils/http");
 
 const SALE_STATUS = new Set(["ALL", "PAID", "VOIDED"]);
-const SALE_SOURCE = new Set(["ALL", "REDEMPTION", "CONTACT_CENTER"]);
+const SALE_SOURCE = new Set(["ALL", "REDEMPTION", "CONTACT_CENTER", "STAMP_CARD"]);
 
 function cleanText(value, max = 240) {
   return String(value || "").trim().slice(0, max);
@@ -108,7 +108,7 @@ function canonicalAttributedSalesSql() {
         coalesce(nullif(bs.acquisition_channel_name_snapshot, ''), nullif(bs.acquisition_channel, ''), 'Sin canal') as acquisition_channel,
         bs.notes, coalesce(bs.sale_status, 'PAID') as sale_status,
         bs.metadata, bs.referred_affiliate_id, bs.referral_points_awarded,
-        bs.created_at, 'CONTACT_CENTER'::text as sale_source,
+        bs.created_at, case when bs.metadata->>'source_module'='stamp_card' then 'STAMP_CARD' else 'CONTACT_CENTER' end as sale_source,
         bs.customer_name as player_name, bs.customer_document_id as document_id,
         bs.customer_phone as phone, bs.customer_email as email,
         br.name as branch_name, u.full_name as confirmed_by,
