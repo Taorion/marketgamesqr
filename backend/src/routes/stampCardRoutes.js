@@ -14,7 +14,7 @@ const program=z.object({
   benefit_type:z.enum(['FREE_GIFT','PERCENT_DISCOUNT','FIXED_AMOUNT_DISCOUNT','CUSTOM']),
   benefit_value:z.object({label:z.string().trim().min(3).max(240),percent:money.optional(),amount:money.optional(),product_scope:inventoryProduct.optional()}),
   purchase_product:inventoryProduct.nullable().default(null),
-  minimum_purchase:money,one_per_day:z.boolean(),allow_manual:z.boolean(),
+  minimum_purchase:money,one_per_day:z.boolean(),allow_manual:z.boolean().default(true),
   card_valid_days:z.coerce.number().int().min(1).max(3650),ticket_valid_days:z.coerce.number().int().min(1).max(3650),
   reward_cost:money,ticket_cost:money,terms:z.string().trim().max(4000),
   status:z.enum(['ACTIVE','PAUSED','ARCHIVED']).default('ACTIVE')

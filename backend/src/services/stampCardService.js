@@ -38,7 +38,7 @@ async function context(businessId) {
 }
 async function saveProgram(businessId,userId,data,id) {
   // Resolve names on the server; clients cannot attach another tenant's inventory.
-  data={...data,benefit_value:{...data.benefit_value},purchase_product:data.purchase_product||null};
+  data={...data,allow_manual:true,benefit_value:{...data.benefit_value},purchase_product:data.purchase_product||null};
   const productIds=[data.purchase_product?.inventory_product_id,data.benefit_value.product_scope?.inventory_product_id].filter(Boolean);
   if (productIds.length) {
     const products=await query(`select id,name from business_inventory_products
@@ -175,7 +175,6 @@ async function manualStamp(businessId,userId,memberId,{reference,note,expected_c
     if ((expected_cycle_id && c.id!==expected_cycle_id) || (expected_stamps!==undefined && c.stamps!==expected_stamps))
       throw badRequest('La tarjeta cambió. Escanea de nuevo antes de sellar.');
     if (p.status!=='ACTIVE') throw badRequest('El programa debe estar activo para registrar visitas.');
-    if (!p.allow_manual) throw badRequest('Habilita los sellos manuales en la configuración del programa para registrar esta visita.');
     if (c.claimed_at || c.stamps>=c.rules.stamps_required || new Date(c.expires_at)<=new Date()) throw badRequest('Esta tarjeta está completa o vencida. El cliente puede iniciar una nueva desde su enlace.');
     // Operational permission follows the program; earned benefits retain their original rules.
     const result=await client.query(`insert into stamp_events (business_id,member_id,cycle_id,source,source_key,note,actor_id,daily_guard_date)
@@ -207,7 +206,6 @@ async function validatorCard(businessId,memberId) {
     card.claimed_at?'El beneficio ya fue generado. El cliente debe iniciar una nueva tarjeta desde su enlace.':
     new Date(card.expires_at)<=new Date()?'Esta tarjeta venció. El cliente puede iniciar una nueva desde su enlace.':
     card.stamps>=Number(card.rules.stamps_required)?'Tarjeta completa. El cliente ya puede generar su beneficio desde su enlace.':
-    !card.allow_manual?'El programa suma sellos por compras registradas. Para sellar visitas, el administrador debe habilitar los sellos manuales en Configurar programa.':
     card.rules.one_per_day&&card.stamped_today?'El cliente ya recibió su sello de hoy.':'';
   return {kind:'stamp_card',card:{id:card.id,name:card.name,document_id:card.document_key,
     business_name:card.business_name,program_name:card.program_name,cycle_id:card.cycle_id,cycle_number:card.cycle_number,
@@ -215,7 +213,7 @@ async function validatorCard(businessId,memberId) {
 }
 async function stampFromQr(businessId,userId,memberId,{cycle_id,expected_stamps,expected_voids=0}) {
   const result=await manualStamp(businessId,userId,memberId,{reference:`qr:${cycle_id}:${expected_stamps}:${expected_voids}`,
-    note:'Visita presencial sellada desde el QR de la tarjeta.',expected_cycle_id:cycle_id,expected_stamps,expected_voids});
+    note:'Sello manual confirmado en la tarjeta del cliente (QR o búsqueda).',expected_cycle_id:cycle_id,expected_stamps,expected_voids});
   return {...await validatorCard(businessId,memberId),duplicate:result.duplicate};
 }
 async function voidStamp(businessId,userId,id,reason) {
