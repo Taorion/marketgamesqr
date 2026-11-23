@@ -1,0 +1,29 @@
+{
+  "at": "2026-11-23T00:44:15.032Z",
+  "matched": true,
+  "tables": {
+    "play_sessions": {
+      "count": 975,
+      "digest": "dc1065cf45aee6edc300fd27e27a10fa"
+    },
+    "play_reward_grants": {
+      "count": 34,
+      "digest": "32c1da4515113f3627f2ef483e28b434"
+    },
+    "play_events": {
+      "count": 6013,
+      "digest": "4ab7840dce758adce1dad5dc86ae0f02"
+    },
+    "play_webhooks": {
+      "count": 2,
+      "digest": "68edd8c343e00aec42e709ffaa9262c9"
+    },
+    "play_webhook_deliveries": {
+      "count": 6,
+      "digest": "33c3da08f252bd131c9a0546f0d13886"
+    }
+  },
+  "seconds": 8.3669473,
+  "backup_bytes": 2420530,
+  "scope": "Synthetic local DB restore and exact Play row digests; does not validate production backup service, encryption-key recovery or remote RTO"
+}

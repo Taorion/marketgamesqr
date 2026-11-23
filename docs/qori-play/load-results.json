@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-23T00:41:40.680Z",
+  "screens": 100,
+  "applications": 4,
+  "measured_seconds": 60.392695700000004,
+  "rounds": 41,
+  "acknowledged": 3990,
+  "errors": {},
+  "ack_p50_ms": 28.755799999999,
+  "ack_p95_ms": 47.966999999996915,
+  "runtime": {
+    "cycles": 55,
+    "failures": 0,
+    "last_cycle_ms": 1189,
+    "max_cycle_ms": 1664,
+    "connections": 200
+  },
+  "memory_rss_bytes": 95936512,
+  "scope": "Loopback Node/PostgreSQL; ACK latency, not rendered pixels, mobile network or production capacity",
+  "terminal_input_races_recovered": 123
+}

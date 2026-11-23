@@ -1,55 +1,40 @@
-# Estado de implementación — 2026-11-22
+# Estado de implementación — correcciones de 2026-11-22
 
-Rama feat/qori-play-sandbox, base 06391dd, checkout tmp/qori-play-20261122. No se modificó el checkout principal con cambios ajenos. No hubo push, merge o despliegue productivo.
-
-## Etapas
-
-| Etapa | Entrega y evidencia | Riesgo / siguiente paso |
-| --- | --- | --- |
-| 0 — Auditoría | 00-auditoria.md, matriz real, ADR y diagramas en 01 | Reconciliar listener WS Cumbre de la rama principal antes de integrar |
-| 1 — Vertical | Player, QR, consentimiento, controlador, cola, dos juegos, simulación servidor y eventos | Prueba visual y física pendiente |
-| 2 — Developer/operador | Apps/auth reutilizadas, scopes, sedes, pantallas, emparejamiento, campañas, credencial única/revocación, SDK, guía/OpenAPI | Homologación productiva y fabricantes pendientes; webhooks no implementados |
-| 3 — Beneficios/analítica | Reserva presupuestada, adaptador QR transaccional, Customer, redención existente, agregados/CSV | Solo beneficios sintéticos; antifraude y oferta reales pendientes |
-| 4 — Hardening local | RLS, aislamiento, expiración, reconexión, rollback, tests HTTP/WS/DOM y diez pares concurrentes | Carga sostenida, pentest, privacidad definitiva, dependencias y hardware pendientes |
+Rama feat/qori-play-sandbox, checkout tmp/qori-play-20261122. Continúa la entrega adff639. Cambios locales, sin push, merge, despliegue, tráfico real, premios reales ni cobros. Informe detallado: [08-correcciones.md](08-correcciones.md).
 
 ## IMPLEMENTADO Y PROBADO
 
-Núcleo y flujo local completo de sandbox; autenticación y registros existentes; alta/consulta de operador, emparejamiento, dos juegos, tokens por actor, autorización de campañas, reserva/cupos, emisión única mediante generateQr, lectura privada Customer y redención Validator sin crear venta. Suite principal 30/30 (18 Play + 12 unidades Invoice); integración existente Invoice 24/24. Los fallos previos de otras suites se reproducen en la base y permanecen abiertos; detalle en 05-pruebas-y-validacion.md y validation-results.json.
+- MVP de pantalla/controlador, dos juegos, cola, consentimiento, autenticación reutilizada, scopes, paneles, QR, cupos y beneficio sintético idempotente.
+- Cumbre y Play atienden sus WebSockets en el mismo servidor sin interceptar rutas ajenas.
+- Salida/revocación inmediata, exportación de sesión y datos Play dentro de Customer; eliminación de cuenta sin romper referencias comerciales.
+- Callbacks propios con secreto único, rotación, revocación, outbox, HMAC, protección de destino, reintentos y DLQ. Transporte verificado con dobles de DNS/HTTPS; no se enviaron callbacks externos.
+- Bloqueo concurrente de campañas corregido y finales simultáneos con un cupo comprobados.
+- Errores de transición tardíos se sincronizan; falsificación de resultados sigue rechazada.
+- Métricas de runtime para Admin, recuperación por reinicio de runtime y restauración de backup local.
+- Dependencias actualizadas: instalación auditada con cero vulnerabilidades conocidas.
+- **122/122 pruebas** en las suites ejecutadas: principal 43, Finance/Validator 28, Invoice HTTP 24, Customer Books 11 y Seller 16. No equivale a ejecutar todas las pruebas históricas del repositorio.
+- Carga: 100 pantallas, cuatro aplicaciones, 200 conexiones, 60,39 s; 3.990 acciones confirmadas, cero errores. ACK p50 28,76 ms/p95 47,97 ms. Ciclo general máximo 1.664 ms: aún no cumple actualización periódica de 4 Hz a esa carga.
+- Restauración desechable: cinco tablas Play coinciden por conteo y digest; 8,37 s en esta corrida. No demuestra RTO productivo ni recuperación de llaves.
 
-La nueva migración 20261122173811_qori_play_sandbox.sql está aplicada únicamente en DB local, espejada en database/migrations y supabase/migrations. Once tablas nuevas con RLS; rollback de módulo vacío probado. No hay migraciones destructivas sobre entidades existentes.
+Migraciones 20261122173811_qori_play_sandbox y 20261122233458_qori_play_operations aplicadas exclusivamente a qori_play_qa. Trece tablas con RLS y permisos Data API revocados. Aplicación/rollback local probados; scripts de reversión rechazan datos existentes.
 
 ## IMPLEMENTADO NO PROBADO EN HARDWARE REAL
 
-Player Canvas, layouts horizontal/vertical/30-70/equilibrado/banda QR, fullscreen, iframe por origen permitido, controles táctiles, inclinación opcional, anuncio durante reconexión y lanzador HTTPS. Pruebas DOM no certifican ergonomía ni rendimiento visual. Ninguna certificación Yodeck, Tizen o webOS.
-
-Panel patrocinador y consola Admin están conectados a rutas/roles existentes. Las autorizaciones de patrocinador y el bloqueo de organización tienen pruebas de servicio; falta aceptación visual con sesiones privilegiadas reales. No se relajó la política de Admin para facilitar una demo.
+Player Canvas, orientación/layouts, QR, iframe permitido, fullscreen, inclinación opcional y fallback de red; interfaces de operador, patrocinador y Admin. Se probaron contratos HTTP/WS y flujo DOM, no ergonomía visual, cámara, TLS en teléfono, hardware o firmware de signage. No se certifican Yodeck, Tizen ni webOS.
 
 ## PENDIENTE
 
-1. Revisar y reconciliar cambios de checkout principal/Cumbre; dispatcher de upgrades por ruta.
-2. Resolver cinco alertas de dependencias y fallos preexistentes de regresión; no confundirlos con aprobación global.
-3. Validar HTTPS, QR/cámara, móvil y hardware de signage; evidencia visual/compatibilidad por modelo.
-4. Antibots/fraude, menores, patrocinio y presupuesto contractual; términos, retención/solicitudes de datos y revisión jurídica.
-5. Broker/sharding, pruebas sostenidas de 100 pantallas, observabilidad y recuperación de desastre.
-6. Webhooks seguros, creatividades multimedia moderadas, catálogo ampliable de plugins externos, planes/tarifas y facturación. No hay pantallas que simulen estas funciones.
-7. Aprobación explícita para cualquier piloto con tráfico/beneficios reales o despliegue. Este código mantiene la producción cerrada.
+1. Rendimiento periódico a mayor concurrencia: optimizar snapshots/consultas y definir shards/broker si se requiere más de un runtime. El lease impide réplicas activas incompatibles. El ensayo de 100 pantallas no constituye homologación de esa capacidad.
+2. Aceptación visual, móvil HTTPS y hardware; conectividad/proxy, cortes prolongados y ensayo sostenido de horas.
+3. Entrega HTTPS contra receptor externo aprobado, recepción idempotente persistente y alertas operativas externas. La implementación actual no realizó tráfico a terceros.
+4. Pentest independiente, política legal definitiva, menores, antifraude productivo, patrocinio/presupuesto contractual y aprobación de piloto real.
+5. Ampliaciones fuera del MVP: multimedia moderada, plugins externos y planes/facturación. No se simulan como operativas ni se activan tarifas.
+6. Revisión/merge de esta rama con el checkout principal y aprobación explícita de despliegue. La convivencia Cumbre está resuelta, pero no se sobrescribió el trabajo ajeno.
 
-## Rutas de la entrega
+## Uso local y archivos
 
-- /play/ y /developers/play: producto y entrada desde Developers.
-- /play/operator/: aplicaciones, sedes, pantallas, campañas y métricas.
-- /play/sponsor/ y /play/admin/: aprobación y bloqueo.
-- /play/screen/, /play/controller/: pantalla y control invitado.
-- /play/rewards/: beneficios propios con identidad Customer existente.
-- /play/guide/, /play/openapi.json, /play/examples/signage.html.
-- /api/play/v1/manage, /sponsor, /device*, /sessions*, /live.
-- /api/customer/play, /api/developers/play, /api/admin/play.
-- /api/invoice/v1/oauth/token y /api/developers/v1/* reutilizados.
+Demo: node scripts/preview-qori-play.js; panel de acceso sintético http://127.0.0.1:3198/__play-demo. Mantener el proceso abierto y detenerlo antes de pruebas/carga/restauración.
 
-## Archivos y operación
+Rutas: /play/, /play/operator/, /play/sponsor/, /play/admin/, /play/screen/, /play/controller/, /play/rewards/, /play/guide/, /play/openapi.json. API /api/play/v1, /api/customer/play, /api/admin/play y autenticación Developers/OAuth existente.
 
-Código nuevo: backend/src/play/*, play/*, test/qoriPlay*.test.js y fixtures, scripts/prepare-qori-play-qa.js, preview-qori-play.js, test-qori-play-regressions.js, estimate-qori-play-costs.js; documentación 00–07, OpenAPI, costos y rollback.
-
-Extensiones acotadas: app.js instala rutas; server.js adjunta/cierra runtime detrás del flag; invoice/oauth.js y routes.js aceptan scopes Play optativos; qrService.js permite transacción externa; navegación Developers/Customer añade enlaces; ws se declara dependencia directa fijada; .gitignore excluye datos locales. No se cambió código de Seller ni el ledger de ventas.
-
-Variables, comandos, supuestos de costo y runbook están en 02, 03, 05 y 06. El estimador no tiene precios reales: 100 pantallas/10.000 sesiones es un escenario de cálculo, no capacidad demostrada ni tarifa activada.
+Código extendido: backend/src/play; Customer export/borrado; server y canal visual Cumbre; controlador/panel operador/Admin; dependencias; fixtures de regresión. Código nuevo de operaciones: privacy.js, concurrency.js, webhooks.js; pruebas y scripts de carga/restauración. No cambió el ledger business_sales ni los flujos comerciales Seller.

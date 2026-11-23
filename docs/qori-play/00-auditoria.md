@@ -49,3 +49,7 @@ Primero apagar flag y cerrar conexiones; conservar eventos y llaves. Down separa
 - Contratos, privacidad Colombia, menores, patrocinio, presupuesto real y marketing requieren revisión humana. Aviso mínimo y consentimiento separado para reclamo.
 - No declarar soporte Samsung/Tizen/LG/Yodeck sin hardware/firmware ensayado.
 - Browser host Windows no estuvo disponible en la entrega anterior; pruebas DOM/HTTP no equivalen a aceptación visual.
+
+## Cierre de correcciones
+
+La revisión posterior resolvió convivencia WS con Cumbre, alertas npm y regresiones previas; incorporó privacidad y callbacks. El canal visual Cumbre se reutilizó del checkout principal sin importar otros cambios. Auditoría y evidencia actuales: 08-correcciones.md y validation-results.json. La integración/merge global sigue sin realizarse.

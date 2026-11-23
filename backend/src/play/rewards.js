@@ -10,7 +10,7 @@ async function claim(account,token){
  if(grant.status==='ISSUED')return {issued:true,qr_code_id:grant.qr_code_id,synthetic:true};
  const c=await svc.campaign(db,session.campaign_id);
  if(grant.status!=='RESERVED'||new Date(grant.expires_at)<=new Date()||session.status!=='COMPLETED'||!session.verified_result?.won)throw cfg.fault(409,'REWARD_UNAVAILABLE');
- await db.query('select id from play_campaigns where id=$1 for update',[c.id]);
+ await db.query('select id from play_campaigns where id=$1 for no key update',[c.id]);
  if((await db.query('select 1 from play_reward_grants where campaign_id=$1 and customer_id=$2',[c.id,account.id])).rowCount)throw cfg.fault(409,'ALREADY_CLAIMED');
  // Reuse the actual QR engine and credit ledger in the SAME transaction; never a monetary reward pass.
  const qr=await generateQr({business_id:c.business_id,campaign_id:c.source_id,game_id:c.source_game_id,reward_id:c.reward_id,

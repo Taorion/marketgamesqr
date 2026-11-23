@@ -178,6 +178,8 @@ async function exportData(account) {
   // Data rights remain available after disabling invoice intake; tolerate a rolling migration.
   if((await query("select to_regclass('public.invoice_documents') ready")).rows[0].ready)
     output.invoices=await require('../invoice/service').exportData(account);
+  if((await query("select to_regclass('public.play_reward_grants') ready")).rows[0].ready)
+    output.play=await require('../play/privacy').exportCustomer(account);
   return output;
 }
 module.exports={groceryCatalogSales,assertNotDebtEntry,assertNotPaymentEntry,dashboard,planning,movements,pendingSales,pendingSalesDetails,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};

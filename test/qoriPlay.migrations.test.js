@@ -8,6 +8,9 @@ test('Play migration applies, blocks populated rollback, reverses empty module a
  const down=fs.readFileSync('docs/qori-play/rollback.sql','utf8').replace(/^begin;\r?\n/m,'').replace(/^commit;\r?\n/m,'');
  const count=async()=>Number((await db.query("select count(*) n from pg_tables where schemaname=$1 and left(tablename,5)='play_'",[schema])).rows[0].n);
  await db.query(up);assert.equal(await count(),11);await db.query('savepoint populated');
+ const ops=fs.readFileSync('database/migrations/20261122233458_qori_play_operations.sql','utf8');assert.equal(ops,fs.readFileSync('supabase/migrations/20261122233458_qori_play_operations.sql','utf8'));
+ const reverseOps=fs.readFileSync('docs/qori-play/rollback-operations.sql','utf8').replace(/^begin;\r?\n/m,'').replace(/^commit;\r?\n/m,'');
+ await db.query(ops);assert.equal(await count(),13);await db.query(reverseOps);assert.equal(await count(),11);
  await db.query("with p as (insert into invoice_partners values(gen_random_uuid()) returning id) insert into play_organizations(partner_id) select id from p");
  await assert.rejects(db.query(down),/Play data exists/);await db.query('rollback to savepoint populated');await db.query(down);assert.equal(await count(),0);await db.query(up);assert.equal(await count(),11);
  }finally{await db.query('rollback');await db.end();}

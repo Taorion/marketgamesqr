@@ -21,6 +21,10 @@ function install(app){
  }catch(e){next(e);}});
  manage.use(rateLimit({keyPrefix:'play-manage-app',max:240,keyFromRequest:req=>req.playApp}));
  manage.get('/dashboard',reply(req=>svc.dashboard(req.playApp)));
+ manage.get('/webhooks',reply(req=>require('./webhooks').list(req.playApp)));
+ manage.post('/webhooks',reply(req=>{const d=parse(z.object({url:z.string().url().max(500),events:z.array(z.enum(require('./webhooks').EVENTS)).min(1).max(4)}).strict(),req.body);return require('./webhooks').create(req.playApp,d.url,d.events);}));
+ manage.post('/webhooks/:id/rotate',reply(req=>require('./webhooks').change(req.playApp,parse(id,req.params.id),true)));
+ manage.delete('/webhooks/:id',reply(req=>require('./webhooks').change(req.playApp,parse(id,req.params.id))));
  manage.post('/enable',reply(req=>{if(!req.customer)throw cfg.fault(403,'OWNER_SESSION_REQUIRED');return svc.enable(req.customer,req.playApp);}));
  manage.post('/locations',reply(req=>svc.location(req.playApp,parse(z.object({name}).strict(),req.body).name)));
  manage.post('/screens',reply(req=>svc.screen(req.playApp,parse(z.object({location_id:id,name,orientation:z.enum(['landscape','portrait'])}).strict(),req.body))));
@@ -48,6 +52,8 @@ function install(app){
  publicApi.post('/device/rotate',reply(req=>svc.rotateDevice(bearer(req))));
  publicApi.post('/sessions/join',limit({keyPrefix:'play-join',max:20}),reply(req=>{const d=parse(z.object({ticket:secret,accepted:z.literal(true),adult:z.literal(true),version:z.literal(cfg.consent.version)}).strict(),req.body);return svc.join(d.ticket);}));
  publicApi.get('/sessions/status',reply(req=>svc.personal(bearer(req))));
+ publicApi.get('/sessions/export',reply(req=>require('./privacy').exportSession(bearer(req))));
+ publicApi.post('/sessions/leave',reply(req=>require('./privacy').leave(bearer(req))));
  publicApi.post('/sessions/event',reply(req=>svc.telemetry(bearer(req),parse(z.object({type:z.literal('cta_opened')}).strict(),req.body).type)));
  publicApi.use((_req,res)=>res.status(404).json({error:{code:'NOT_FOUND'}}));publicApi.use(errors);app.use('/api/play/v1',gate,publicApi);
  const customer=express.Router();customer.use(customerRequired);customer.use(express.json({limit:'2kb',inflate:false}));
@@ -56,6 +62,7 @@ function install(app){
  customer.post('/claim',reply(req=>{const d=parse(z.object({controller_token:secret,accepted:z.literal(true),version:z.literal('play-claim-sandbox-1')}).strict(),req.body);return rewards.claim(req.customer,d.controller_token);}));
  customer.use(errors);app.use('/api/customer/play',gate,customer);
  const admin=express.Router();admin.use(authRequired,requireRoles('QORI_SUPERADMIN'));admin.use(express.json({limit:'2kb',inflate:false}));
+ admin.get('/runtime',reply(()=>({...require('./realtime').metrics,delivery_enabled:process.env.QORI_PLAY_WEBHOOK_DELIVERY_ENABLED==='true',production:false})));
  admin.get('/organizations',reply(async()=>({organizations:(await require('../config/db').query('select o.partner_id,o.enabled,p.name from play_organizations o join invoice_partners p on p.id=o.partner_id')).rows})));
  admin.put('/organizations/:id',reply(req=>svc.blockOrganization(parse(id,req.params.id),parse(z.object({enabled:z.boolean()}).strict(),req.body).enabled,req.user.id)));
  admin.use(errors);app.use('/api/admin/play',gate,admin);

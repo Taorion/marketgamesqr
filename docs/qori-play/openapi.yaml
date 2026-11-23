@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Qori Play Sandbox API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Solo base local qori_play_qa. Reutiliza apps/OAuth: /developers/openapi.yaml. Customer requiere sesión existente, X-Qori-Web: 1 y Origin same-origin en escrituras; X-Qori-Account vincula cuenta esperada. Sin complete, producción o facturación. Body máximo: manage 12kb, sponsor 8kb, público/Customer 2kb."
   },
   "servers": [
@@ -2201,6 +2201,468 @@
       "get": {
         "summary": "Disponibilidad sandbox y orígenes permitidos",
         "security": [],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/play/v1/sessions/export": {
+      "get": {
+        "summary": "Exportar la sesión propia sin tokens ni identidad",
+        "security": [
+          {
+            "ControllerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/play/v1/sessions/leave": {
+      "post": {
+        "summary": "Revocar inmediatamente este control y liberar una reserva sin reclamar",
+        "security": [
+          {
+            "ControllerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/play/v1/manage/webhooks": {
+      "get": {
+        "summary": "Listar callbacks propios y últimas 100 entregas sanitizadas",
+        "security": [
+          {
+            "DeveloperOAuth": [
+              "play:analytics"
+            ]
+          },
+          {
+            "CustomerSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Qori-App",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Obligatorio con sesión Customer; OAuth determina app desde credencial."
+          }
+        ]
+      },
+      "post": {
+        "summary": "Crear callback HTTPS permitido y revelar secreto una vez",
+        "security": [
+          {
+            "DeveloperOAuth": [
+              "play:manage"
+            ]
+          },
+          {
+            "CustomerSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Qori-App",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Obligatorio con sesión Customer; OAuth determina app desde credencial."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "url",
+                  "events"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 500,
+                    "description": "HTTPS, hostname en QORI_PLAY_WEBHOOK_HOSTS, sin query, fragmento, credenciales ni puerto personalizado"
+                  },
+                  "events": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "items": {
+                      "enum": [
+                        "screen_online",
+                        "game_finished",
+                        "score_verified",
+                        "reward_issued"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/play/v1/manage/webhooks/{id}/rotate": {
+      "post": {
+        "summary": "Rotar secreto del callback propio",
+        "security": [
+          {
+            "DeveloperOAuth": [
+              "play:manage"
+            ]
+          },
+          {
+            "CustomerSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Qori-App",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Obligatorio con sesión Customer; OAuth determina app desde credencial."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/play/v1/manage/webhooks/{id}": {
+      "delete": {
+        "summary": "Revocar callback y cancelar entregas pendientes",
+        "security": [
+          {
+            "DeveloperOAuth": [
+              "play:manage"
+            ]
+          },
+          {
+            "CustomerSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación confirmada; nunca implica una venta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Qori-App",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Obligatorio con sesión Customer; OAuth determina app desde credencial."
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/play/runtime": {
+      "get": {
+        "summary": "Métricas agregadas del runtime; solo Qori Superadmin",
+        "security": [
+          {
+            "AdminJWT": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Operación confirmada; nunca implica una venta.",

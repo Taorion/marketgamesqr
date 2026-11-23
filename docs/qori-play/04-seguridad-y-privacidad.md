@@ -51,3 +51,7 @@ Cerrar el control deja de enviar eventos; la sesión expira por abandono. El ret
 Se aplican Origin, autorización por mensaje, límites y protección contra datos sensibles en logs recomendados por [OWASP WebSocket Security](https://cheatsheetseries.owasp.org/cheatsheets/WebSocket_Security_Cheat_Sheet.html). ws usa maxPayload y noServer según su [documentación oficial](https://github.com/websockets/ws/blob/master/doc/ws.md). RLS server-only sigue el modelo documentado por [Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
 Antes de producción: resolver alertas del lockfile, revisión de permisos, TLS, backups restaurables, monitoreo, gestión de incidentes, antifraude, moderación, términos, soporte de derechos y consentimiento adecuado a la población. No hubo despliegue, compra de servicios, modificación de pagos ni premios reales.
+
+## Controles incorporados en la corrección
+
+Exportación propia de sesión y salida inmediata; Customer exporta sus datos Play con su mecanismo existente y puede eliminar la cuenta sin romper el registro comercial del beneficio. Se revocan controles y se desliga el Customer; no se borra el QR del comercio. Callbacks usan secreto cifrado, HMAC/timestamp, destino HTTPS permitido con DNS público fijado y no siguen redirects. Detalles y límites en 08-correcciones.md. No sustituye revisión jurídica ni prueba externa.

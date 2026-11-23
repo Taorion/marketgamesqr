@@ -4,7 +4,7 @@ const {query,pool}=require('../backend/src/config/db'),{app}=require('../backend
 let server,base,buyer,other,personal,cattle,expense;
 const today=()=>finance.dateKey(new Date(),'America/Bogota');
 async function account(){
- const a=(await query("insert into customer_accounts(email,full_name,currency,timezone) values($1,'Books QA','COP','America/Bogota') returning *",[crypto.randomUUID()+'@example.test'])).rows[0],token=crypto.randomBytes(32).toString('base64url');
+ const a=(await query("insert into customer_accounts(email,full_name,currency,timezone,declared_document_key,document_locked_at,finance_setup_state) values($1,'Books QA','COP','America/Bogota',$2,now(),'LEGACY') returning *",[crypto.randomUUID()+'@example.invalid','sbx'+crypto.randomUUID().replaceAll('-','')])).rows[0],token=crypto.randomBytes(32).toString('base64url');
  await query("insert into customer_sessions(customer_id,token_hash,device_name,expires_at) values($1,$2,'QA',now()+interval '1 day')",[a.id,crypto.createHash('sha256').update(token).digest('hex')]);return {...a,token};
 }
 async function api(url,body,book=personal?.id,user=buyer,method=body?'POST':'GET'){

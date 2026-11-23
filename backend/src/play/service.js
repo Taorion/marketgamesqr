@@ -4,8 +4,9 @@ const rows=async(db,sql,args=[])=> (await db.query(sql,args)).rows;
 const one=async(db,sql,args)=> (await rows(db,sql,args))[0];
 const terminal=s=>['COMPLETED','FAILED','EXPIRED'].includes(s);
 async function event(db,type,s={},suffix='',metadata={}){
- await db.query('insert into play_events(app_id,screen_id,campaign_id,session_id,event_type,dedupe_key,metadata) values($1,$2,$3,$4,$5,$6,$7) on conflict(dedupe_key) do nothing',
+ const inserted=await db.query('insert into play_events(app_id,screen_id,campaign_id,session_id,event_type,dedupe_key,metadata) values($1,$2,$3,$4,$5,$6,$7) on conflict(dedupe_key) do nothing returning *',
  [s.app_id||null,s.screen_id||null,s.campaign_id||null,s.session_id||null,type,[type,s.session_id||s.screen_id||s.app_id||'system',suffix].join(':'),metadata]);
+ if(inserted.rows[0])await require('./webhooks').enqueue(db,inserted.rows[0]);
 }
 async function activeApp(db,id){
  const a=await one(db,`select a.* from invoice_apps a join invoice_partners p on p.id=a.partner_id join play_organizations o on o.partner_id=a.partner_id
@@ -65,7 +66,7 @@ async function createCampaign(appId,data){return withTransaction(async db=>{
  return one(db,'insert into play_campaigns(app_id,sponsor_id,game_key,config,max_sessions) values($1,$2,$3,$4,$5) returning id,active,config',[appId,grant.id,data.game_key,data.config,data.max_sessions]);});}
 async function approve(user,id,data){return withTransaction(async db=>{
  const c=await one(db,`select p.*,c.business_id,c.reward_id from play_campaigns p join play_sponsors g on g.id=p.sponsor_id
- join campaigns c on c.id=g.campaign_id join businesses b on b.id=c.business_id where p.id=$1 and c.business_id=$2 and b.settings @> '{"qori_play_synthetic":true}'::jsonb for update of p`,[id,user.business_id]);
+ join campaigns c on c.id=g.campaign_id join businesses b on b.id=c.business_id where p.id=$1 and c.business_id=$2 and b.settings @> '{"qori_play_synthetic":true}'::jsonb for no key update of p`,[id,user.business_id]);
  if(!c)throw cfg.fault(404,'NOT_FOUND');
  if(data.reward_cap>0&&(!c.reward_id||data.reward_cost_minor<1||data.budget_minor<data.reward_cost_minor))throw cfg.fault(409,'REWARD_BUDGET_REQUIRED');
  const used=await one(db,"select count(*)::int n,coalesce(sum(cost_minor),0)::bigint cost from play_reward_grants where campaign_id=$1 and (status='ISSUED' or (status='RESERVED' and expires_at>now()))",[id]);
@@ -123,7 +124,7 @@ async function join(value){
  const t=await one(db,'select * from play_join_tickets where token_hash=$1 for update',[cfg.hash(value)]);
  if(t.consumed_at||new Date(t.expires_at)<=new Date()||!s.active||s.paused||Date.now()-new Date(s.last_seen_at)>15000)throw cfg.fault(409,'JOIN_UNAVAILABLE');
  const a=await one(db,'select campaign_id from play_assignments where screen_id=$1',[s.id]);if(a?.campaign_id!==t.campaign_id)throw cfg.fault(409,'JOIN_UNAVAILABLE');
- const c=await campaign(db,t.campaign_id);await db.query('select id from play_campaigns where id=$1 for update',[c.id]);
+ const c=await campaign(db,t.campaign_id);await db.query('select id from play_campaigns where id=$1 for no key update',[c.id]);
  const total=Number((await one(db,'select count(*) n from play_sessions where campaign_id=$1',[c.id])).n);if(total>=c.max_sessions)throw cfg.fault(429,'CAMPAIGN_SESSION_LIMIT');
  const waiting=Number((await one(db,"select count(*) n from play_sessions where screen_id=$1 and status='QUEUED'",[s.id])).n);if(waiting>=5)throw cfg.fault(409,'QUEUE_FULL');
  const secret=cfg.token(),session=await one(db,"insert into play_sessions(app_id,screen_id,campaign_id,controller_hash,controller_expires_at,status,consent_version) values($1,$2,$3,$4,now()+interval '15 minutes','QUEUED',$5) returning *",[s.app_id,s.id,c.id,cfg.hash(secret),cfg.consent.version]);
@@ -146,7 +147,7 @@ async function personal(token){
  result:s.verified_result,reward:grant&&new Date(grant.expires_at)>new Date()?grant.status:'NONE',cta_url:terminal(s.status)?c.config.cta_url:null};
 }
 async function reserve(db,s){
- await db.query('select id from play_campaigns where id=$1 for update',[s.campaign_id]);
+ await db.query('select id from play_campaigns where id=$1 for no key update',[s.campaign_id]);
  const c=await campaign(db,s.campaign_id);if(!s.game_state.won||s.game_state.score<c.min_score||c.reward_cap<1)return;
  const used=await one(db,"select count(*)::int n,coalesce(sum(cost_minor),0)::bigint total from play_reward_grants where campaign_id=$1 and (status='ISSUED' or (status='RESERVED' and expires_at>now()))",[c.id]);
  if(used.n>=c.reward_cap||Number(used.total)+Number(c.reward_cost_minor)>Number(c.budget_minor))return;
@@ -200,7 +201,7 @@ async function tickScreen(id){
  try{await promote(db,screen);}catch(e){if(![403,409].includes(e.status))throw e;}
  });
 }
-async function tick(){const active=await rows({query},"select distinct screen_id from play_sessions where status in ('READY','PLAYING','PAUSED','DISCONNECTED','QUEUED') limit 100");for(const s of active)await tickScreen(s.screen_id);}
+async function tick(){const active=await rows({query},"select distinct screen_id from play_sessions where status in ('READY','PLAYING','PAUSED','DISCONNECTED','QUEUED')");await require('./concurrency').each(active,s=>tickScreen(s.screen_id));}
 async function telemetry(token,type){
  const s=await controller({query},token);if(type!=='cta_opened'||!terminal(s.status))throw cfg.fault(409,'EVENT_NOT_ALLOWED');await event({query},type,{...s,session_id:s.id});return {ok:true};
 }
@@ -232,6 +233,7 @@ async function retention(){
  await query("update play_reward_grants set status='EXPIRED' where status='RESERVED' and expires_at<now()");
  const days=Math.max(1,Math.min(90,Number.parseInt(process.env.QORI_PLAY_EVENT_RETENTION_DAYS,10)||30));
  await query("delete from play_events where created_at<now()-($1::int*interval '1 day')",[days]);
+ await query("delete from play_webhook_deliveries where created_at<now()-($1::int*interval '1 day') and status in ('DELIVERED','DEAD','CANCELLED')",[days]);
  await query("update play_sessions set game_state='{}' where status in ('COMPLETED','FAILED','EXPIRED') and finished_at<now()-interval '1 day' and game_state<>'{}'::jsonb");
 }
 module.exports={enable,owner,activeApp,location,screen,pairing,confirmPair,claimPair,device,rotateDevice,sponsor,createCampaign,approve,campaign,assign,screenState,campaignState,snapshot,join,controller,personal,input,heartbeat,tick,tickScreen,event,overview,dashboard,analytics,blockOrganization,retention,terminal};

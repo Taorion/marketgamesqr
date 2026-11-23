@@ -29,3 +29,9 @@ $('claim-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/custom
 $('cta').onclick=()=>api('/api/play/v1/sessions/event',{type:'cta_opened'}).catch(()=>{});
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(timer);clearInterval(ping);ws?.close();if(gyroHandler)window.removeEventListener('deviceorientation',gyroHandler);});
 if(token)connect();
+const privacyActions=document.createElement('div');privacyActions.className='actions';
+const exportButton=document.createElement('button');exportButton.textContent='Descargar mi sesión';exportButton.className='secondary';
+exportButton.onclick=async()=>{try{const data=await api('/api/play/v1/sessions/export'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='mi-sesion-qori-play.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){message(e.message);}};
+const leaveButton=document.createElement('button');leaveButton.textContent='Salir y revocar este control';leaveButton.className='danger';
+leaveButton.onclick=async()=>{try{await api('/api/play/v1/sessions/leave',{});stopped=true;clearTimeout(timer);clearInterval(ping);ws?.close();if(gyroHandler)window.removeEventListener('deviceorientation',gyroHandler);sessionStorage.removeItem('qori-play-controller-v1');token=null;$('session').hidden=true;$('reward').hidden=true;message('Saliste de la partida. El control quedó revocado y se liberó cualquier beneficio sin reclamar.');}catch(e){message(e.message);}};
+privacyActions.append(exportButton,leaveButton);$('session').append(privacyActions);

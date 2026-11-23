@@ -128,6 +128,8 @@ sequenceDiagram
 | play_reward_grants | Una reserva por partida, un QR y un reclamo por Customer/campaña |
 | play_events | Dedupe único; índices por app, pantalla, campaña, sesión y fecha |
 
-Las once tablas tienen RLS y revocación de privilegios públicos/anon/authenticated. No hay políticas Data API. El backend usa SQL parametrizado y autorización explícita por objeto. RLS no sustituye esos controles al operar con el rol de servicio.
+Las trece tablas (incluyendo play_webhooks y play_webhook_deliveries de la ampliación) tienen RLS y revocación de privilegios públicos/anon/authenticated. No hay políticas Data API. El backend usa SQL parametrizado y autorización explícita por objeto. RLS no sustituye esos controles al operar con el rol de servicio.
 
 Estados de sesión: QUEUED → READY → PLAYING → COMPLETED/FAILED. PAUSED y DISCONNECTED permiten recuperación breve. EXPIRED termina abandono, caducidad, revocación y campaña inválida. idle pertenece a pantalla, no a una partida. El runtime promueve automáticamente la cola; no hay multijugador simultáneo.
+
+Callbacks: event() inserta evento y outbox en la transacción del resultado/emisión. Worker toma lease SKIP LOCKED, valida destino, firma y entrega; 2xx confirma, fallos reintentan hasta DEAD. La FK Customer de play_reward_grants ahora usa ON DELETE SET NULL; el borrado Customer revoca primero la capacidad de control. Ver 08-correcciones.md.

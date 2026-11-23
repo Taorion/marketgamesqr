@@ -59,4 +59,4 @@ SDK: initialize(), beginPairing(), claimPairing(), subscribe(callback), showQR()
 
 SDK reconecta con backoff 0,5–10 s. Códigos de emparejamiento y QR son de un uso. El reclamo usa la partida como clave idempotente, con unicidad adicional Customer/campaña y QR. Altas de sede/pantalla/borrador no tienen Idempotency-Key: tras una respuesta ambigua consultar dashboard antes de repetir; no asumir exactly-once para esos recursos.
 
-Webhooks no están implementados ni se ofrecen controles de configuración falsos. WS y consulta de métricas cubren el MVP. Una ampliación debe incorporar outbox, HMAC, timestamp, deduplicación, reintentos, DLQ y validación anti-SSRF antes de publicar el endpoint.
+Callbacks implementados bajo /api/play/v1/manage/webhooks, con scopes de gestión/lectura existentes. Registro, listado, rotación y revocación disponibles en el panel operador. Entrega desactivada por defecto; contrato HMAC, allowlist, reintentos, DLQ y verificador ejecutable en 08-correcciones.md. No se hicieron envíos a terceros.

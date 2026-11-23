@@ -25,10 +25,10 @@ No se añadieron planes ni tarifas. Máximos del corte: 25 pantallas/app, 5 part
 4. **Runtime duplicado:** PLAY_RUNTIME_UNAVAILABLE indica fallo de lease/DB; no iniciar un segundo procesador esperando repartir carga. El lease PostgreSQL libera al morir la conexión. Mantener una instancia.
 5. **Incidente:** bloquear organización desde Admin, revocar app/credencial en Developers o pantalla desde operador. Apagar flag y reiniciar para cerrar todo. Conservar evidencia sin exportar tokens ni datos privados.
 6. **Sin premio:** consultar reserva y configuración autorizada; nunca crear un QR manual para compensar una partida no verificada. Repetir el reclamo devuelve el mismo QR cuando ya fue emitido.
-7. **Rollback:** apagar feature, detener runtime. Con datos, conservar tablas y referencias. rollback.sql solo funciona si las once tablas están vacías; no utiliza CASCADE ni borra campaña/QR existente.
-8. **Respaldo:** restaurar base de pruebas separada; para producción preparar backup cifrado, rotación/recuperación de claves y simulacro. No se probó restauración de desastre en esta entrega.
+7. **Rollback:** apagar feature, detener runtime. Con datos, conservar tablas y referencias. primero rollback-operations.sql y después rollback.sql; ambos requieren sus tablas vacías; no utiliza CASCADE ni borra campaña/QR existente.
+8. **Respaldo:** restaurar base de pruebas separada; para producción preparar backup cifrado, rotación/recuperación de claves y simulacro. Se probó pg_dump/pg_restore en una DB sintética desechable: restore-results.json; no es restauración productiva ni recuperación de llaves.
 
-Logs propios: PLAY_RUNTIME_UNAVAILABLE y PLAY_TICK_UNAVAILABLE, sin frames, tokens, IP ni PII. Los eventos contienen IDs de app/pantalla/campaña/sesión y acciones auditadas. Dashboard cuenta eventos por periodo y filtro. Métricas operativas de CPU, DB, histograma de latencia, uptime y alertas externas quedan pendientes de instrumentación continua.
+Logs propios: PLAY_RUNTIME_UNAVAILABLE y PLAY_TICK_UNAVAILABLE, sin frames, tokens, IP ni PII. Los eventos contienen IDs de app/pantalla/campaña/sesión y acciones auditadas. Dashboard cuenta eventos por periodo y filtro. GET /api/admin/play/runtime expone ciclos, fallos, conexiones y duración de último/máximo ciclo a Superadmin; la consola los muestra. CPU/DB, histogramas persistentes y alertas externas aún requieren instrumentación continua.
 
 ## Semántica de métricas
 
@@ -57,3 +57,11 @@ Optimización propuesta antes de escalar: reducir snapshots idle, publicar delta
 ## Piloto posterior
 
 Elegir un integrador, un anunciante con oferta autorizada y una sede. Ensayar primero sin beneficios reales. Registrar modelo/firmware, TLS, orientación, inputs p50/p95, QR a control, porcentaje de cierres, cola, abandono, reconexiones y costo medido. Comprobar redenciones reales en Validator separadas de sesiones. Aprobar por escrito consentimiento, presupuesto, cupos, prevención de automatización y criterios de parada antes de un ensayo con beneficios reales.
+
+## Ampliación operativa
+
+QORI_PLAY_WEBHOOK_HOSTS: hostnames HTTPS exactos permitidos; vacío por defecto. QORI_PLAY_WEBHOOK_DELIVERY_ENABLED: true habilita únicamente el worker del sandbox; apagado por defecto. QORI_PLAY_CONNECTIONS_PER_IP: 2–200, defecto 20; la prueba de 100 pantallas loopback fija 200, sin superar 200 conexiones globales. No elevar límites en un piloto por extrapolación.
+
+El runtime paraleliza SQL con ancho 4, conserva lease único y procesa todas las pantallas pendientes. Al perder la conexión de lease cierra canales y exige reinicio; no continúa sin exclusión. El ensayo load-results.json sostuvo 200 conexiones sin fallos, pero llegó a 1.664 ms por ciclo general: no certifica 4 Hz ni escala productiva. El estimador sigue siendo un modelo de costos configurable, no una tarifa.
+
+Callbacks fallidos: consultar estado/last_code en el panel. DEAD se investiga; no hay replay ilimitado. Para emergencia revocar callback o aplicación; apagar entrega detiene nuevos intentos. Una petición ya enviada puede completarse. Restauración local: node scripts/restore-qori-play-qa.js con preview detenido.

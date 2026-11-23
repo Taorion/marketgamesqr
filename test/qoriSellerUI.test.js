@@ -66,7 +66,7 @@ test('authorized Seller keeps commercial access and red attention while completi
 
 test('Seller only sees a validated close after the administrator records it',async()=>{const {w}=setup({status:'APPROVED',linked:true,closed:true});try{await until(()=>w.document.querySelector('#referralLink'));w.document.querySelector('[data-view=crm]').click();await until(()=>w.document.querySelector('#prospectRows .card'));assert.match(w.document.querySelector('#prospectRows').textContent,/Cierre validado por Admin/);assert.equal(w.document.querySelector('[data-edit]'),null);}finally{w.close();}});
 
-test('approved Seller opens library from navigation; pending Seller cannot see it',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=resources]'));w.document.querySelector('[data-view=resources]').click();await until(()=>w.document.querySelector('[data-presentation]'));assert.match(w.document.querySelector('[data-presentation]').textContent,/Copiar/);}finally{w.close();}});
+test('approved Seller opens the restricted Academy state without unpublished resources',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=resources]'));w.document.querySelector('[data-view=resources]').click();await until(()=>w.document.querySelector('#qoriAcademyTitle'));assert.match(w.document.querySelector('#panel').textContent,/En desarrollo/);assert.equal(w.document.querySelector('[data-presentation]'),null);}finally{w.close();}});
 
 test('approved Seller opens opportunity and continues to CRM',async()=>{const {w}=setup({status:'APPROVED'});try{await until(()=>w.document.querySelector('[data-view=opportunity]'));w.document.querySelector('[data-view=opportunity]').click();await until(()=>w.document.querySelector('#panel [data-action=crm]'));w.document.querySelector('#panel [data-action=crm]').click();await until(()=>w.document.querySelector('#newProspect'));assert.ok(w.document.querySelector('#newProspect'));}finally{w.close();}});
 
@@ -78,7 +78,7 @@ test('daily actions open a new contact and preserve keyboard access to result se
   assert.equal(w.document.querySelector('[data-view=crm]').getAttribute('aria-current'),'page');
   assert.equal(calls.some(c=>c.body?.business_name),false);
   w.document.querySelector('dialog [data-close]').click();w.document.querySelector('[data-view=dashboard]').click();await until(()=>w.document.querySelector('[data-start=resources]'));
-  w.document.querySelector('[data-start=resources]').click();await until(()=>w.document.querySelector('[data-presentation]'));
+  w.document.querySelector('[data-start=resources]').click();await until(()=>w.document.querySelector('#qoriAcademyTitle'));assert.equal(w.document.querySelector('[data-presentation]'),null);
  }finally{w.close();}
 });
 

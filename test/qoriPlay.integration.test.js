@@ -87,7 +87,7 @@ test('sponsor approval, budget commitments and data API tables are protected',as
  const device=await pair(a),session=await win(a,device);
  await assert.rejects(svc.approve(a.user,a.campaign.id,{reward_cap:0,reward_cost_minor:0,budget_minor:0,min_score:0}),e=>e.code==='EXISTING_COMMITMENTS');
  const tables=(await query("select relname,relrowsecurity from pg_class where relnamespace='public'::regnamespace and relkind='r' and left(relname,5)='play_'")).rows;
- assert.equal(tables.length,11);assert.ok(tables.every(t=>t.relrowsecurity));
+ assert.equal(tables.length,13);assert.ok(tables.every(t=>t.relrowsecurity));
  assert.equal((await query("select count(*)::int n from pg_policies where schemaname='public' and left(tablename,5)='play_'")).rows[0].n,0);
  await svc.blockOrganization(a.partner.id,false,b.user.id);await svc.tickScreen(a.screen.id);await assert.rejects(svc.personal(session.controller_token),e=>e.status===403);
 });
@@ -106,12 +106,15 @@ function socket(role,token,origin=base){
  const wait=predicate=>new Promise((resolve,reject)=>{const check=()=>{const i=messages.findIndex(predicate);if(i<0)return;clearTimeout(timer);waiters.splice(waiters.indexOf(check),1);resolve(messages.splice(i,1)[0]);};const timer=setTimeout(()=>{waiters.splice(waiters.indexOf(check),1);reject(Error('WebSocket timeout'));},4000);waiters.push(check);check();});
  return {ws,wait,send:d=>ws.send(JSON.stringify(d))};
 }
-test('actual WebSockets authenticate roles, reject forged scores and recover; measured input propagation',async t=>{
+test('actual WebSockets coexist with Cumbre, authenticate roles, reject forged scores and recover; measured input propagation',async t=>{
  const a=await fixture({game:'orbita',cap:0}),device=await pair(a),s=await join(device);
- const stop=require('../backend/src/play/realtime').attach(server);let screen,control;
+ const summit=require('../backend/src/services/summitLiveService'),stopSummit=summit.attach(server);
+ const stop=require('../backend/src/play/realtime').attach(server);let screen,control,summitSocket;
  try{
   await new Promise(r=>setTimeout(r,100));screen=socket('screen',device.device_token);control=socket('controller',s.controller_token);
   await screen.wait(d=>d.type==='ready');await control.wait(d=>d.type==='ready');
+  summitSocket=new (require('ws'))(base.replace('http:','ws:')+summit.PATH,{origin:base});await require('node:events').once(summitSocket,'open');
+  const summitReady=require('node:events').once(summitSocket,'message');summitSocket.send(JSON.stringify({type:'auth',token:summit.ticket({status:'racing',own:{id:'synthetic'},seed:'synthetic-room',starts_at:new Date(),config:{duration_seconds:45,floors:8}}).token}));assert.equal(JSON.parse((await summitReady)[0]).type,'ready');
   control.send({type:'input',seq:1,action:'start'});await control.wait(d=>d.type==='ack'&&d.seq===1);
   const timings=[];for(let i=2;i<=13;i++){const lane=i%2===0?0:1,start=performance.now();control.send({type:'input',seq:i,action:i%2===0?'left':'right'});await control.wait(d=>d.type==='ack'&&d.seq===i);await screen.wait(d=>d.type==='state'&&d.state.game?.lane===lane);timings.push(performance.now()-start);await new Promise(r=>setTimeout(r,90));}
   timings.sort((a,b)=>a-b);t.diagnostic('Local input-to-state n=12 p50='+timings[6].toFixed(1)+'ms p95='+timings[11].toFixed(1)+'ms; not hardware latency or a load certification');
@@ -119,7 +122,7 @@ test('actual WebSockets authenticate roles, reject forged scores and recover; me
   assert.equal((await svc.personal(s.controller_token)).last_seq,13);
   control=socket('controller',s.controller_token);await control.wait(d=>d.type==='ready');assert.equal((await control.wait(d=>d.type==='state')).state.session_id,s.session_id);
   const foreign=socket('screen',device.device_token,'https://other.example.invalid');const result=await new Promise(r=>{foreign.ws.once('unexpected-response',(_req,res)=>{res.resume();foreign.ws.terminate();r(res.statusCode);});});assert.equal(result,403);
- }finally{screen?.ws.terminate();control?.ws.terminate();await stop();}
+ }finally{summitSocket?.terminate();stopSummit();screen?.ws.terminate();control?.ws.terminate();await stop();}
 });
 test('real operator, Player SDK and mobile scripts use HTTP and WebSocket end to end (DOM, not visual hardware)',async()=>{
  const {JSDOM}=require('jsdom'),fs=require('node:fs'),path=require('node:path'),root=path.join(__dirname,'..'),a=await fixture(),windows=[];
@@ -164,6 +167,50 @@ test('real operator, Player SDK and mobile scripts use HTTP and WebSocket end to
   const rewardsPage=page('play/rewards/index.html',a.buyer);script(rewardsPage,'play/rewards/app.js');await until(()=>rewardsPage.document.querySelector('#rewards button'));rewardsPage.document.querySelector('#rewards button').click();await until(()=>rewardsPage.document.querySelector('#rewards img'));
   assert.match(screen.document.getElementById('headline').textContent,/pausa/);
  }finally{for(const w of windows){w.dispatchEvent(new w.Event('pagehide'));w.close();}await stop();}
+});
+test('participant export, immediate leave and Customer deletion preserve commercial records',async()=>{
+ const privacy=require('../backend/src/play/privacy'),a=await fixture(),device=await pair(a),s=await join(device),queued=await join(device);
+ const exported=await req('/api/play/v1/sessions/export',{token:s.controller_token});assert.equal(exported.status,200);assert.equal(exported.data.session_id,s.session_id);assert.equal(JSON.stringify(exported.data).includes('controller_hash'),false);
+ assert.equal((await req('/api/play/v1/sessions/leave',{token:s.controller_token,body:{}})).status,200);
+ await assert.rejects(svc.personal(s.controller_token),e=>e.code==='INVALID_CONTROLLER');await svc.tickScreen(a.screen.id);assert.equal((await svc.personal(queued.controller_token)).status,'READY');await privacy.leave(queued.controller_token);
+ const won=await win(a,device),grant=await reward.claim(a.buyer,won.controller_token);
+ const own=await require('../backend/src/services/customerService').exportData(a.buyer);assert.equal(own.play.sessions[0].id,won.session_id);assert.equal((await privacy.exportCustomer(a.owner)).sessions.length,0);
+ const deleted=await req('/api/customer/me',{account:a.buyer,method:'DELETE',body:{confirmation:'ELIMINAR MI CUENTA'}});assert.equal(deleted.status,200,JSON.stringify(deleted.data));
+ const kept=(await query('select customer_id,qr_code_id from play_reward_grants where session_id=$1',[won.session_id])).rows[0];assert.equal(kept.customer_id,null);assert.equal(kept.qr_code_id,grant.qr_code_id);assert.equal((await query('select count(*)::int n from qr_codes where id=$1',[grant.qr_code_id])).rows[0].n,1);
+});
+test('webhooks persist atomically, isolate apps, retry, sign, rotate, revoke and dead-letter',async()=>{
+ const hooks=require('../backend/src/play/webhooks'),a=await fixture(),b=await fixture();process.env.QORI_PLAY_WEBHOOK_HOSTS='hooks.example.invalid';
+ const created=await req('/api/play/v1/manage/webhooks',{token:a.token,body:{url:'https://hooks.example.invalid/events',events:['game_finished']}});assert.equal(created.status,200);const h=created.data;
+ assert.equal((await req('/api/play/v1/manage/webhooks/'+h.id,{token:b.token,method:'DELETE'})).status,404);
+ await svc.event({query},'game_finished',{app_id:a.app.id,screen_id:a.screen.id},'synthetic-1');await svc.event({query},'game_finished',{app_id:a.app.id,screen_id:a.screen.id},'synthetic-1');
+ let listed=await hooks.list(a.app.id);assert.equal(listed.deliveries.length,1);assert.equal(JSON.stringify(listed).includes(h.secret),false);assert.equal((await hooks.list(b.app.id)).deliveries.length,0);
+ assert.equal(await hooks.next(()=>{throw Error('must stay off');}),false);process.env.QORI_PLAY_WEBHOOK_DELIVERY_ENABLED='true';
+ try{
+ let calls=0;const sender=async(url,body,headers)=>{calls++;assert.equal(require('../play/examples/verify-webhook.cjs').verify(h.secret,headers['X-Qori-Delivery'],headers['X-Qori-Timestamp'],body,headers['X-Qori-Signature']),true);assert.equal(JSON.stringify(JSON.parse(body)).includes(a.buyer.id),false);return 503;};
+ await hooks.next(sender);listed=await hooks.list(a.app.id);assert.equal(listed.deliveries[0].status,'PENDING');assert.equal(listed.deliveries[0].attempts,1);assert.equal(await hooks.next(sender),false);
+ for(let n=1;n<6;n++){await query('update play_webhook_deliveries set next_attempt_at=now() where id=$1',[listed.deliveries[0].id]);await hooks.next(sender);}assert.equal((await hooks.list(a.app.id)).deliveries[0].status,'DEAD');assert.equal(calls,6);
+ const rotated=await hooks.change(a.app.id,h.id,true);assert.notEqual(rotated.secret,h.secret);
+ await svc.event({query},'game_finished',{app_id:a.app.id,screen_id:a.screen.id},'synthetic-2');await Promise.all([hooks.next(async()=>204),hooks.next(async()=>204)]);assert.equal((await hooks.list(a.app.id)).deliveries.filter(d=>d.status==='DELIVERED').length,1);
+ await svc.event({query},'game_finished',{app_id:a.app.id,screen_id:a.screen.id},'synthetic-3');await hooks.change(a.app.id,h.id);assert.equal((await hooks.list(a.app.id)).deliveries.filter(d=>d.status==='CANCELLED').length,1);
+ }finally{delete process.env.QORI_PLAY_WEBHOOK_DELIVERY_ENABLED;}
+});
+test('parallel finishes sharing one campaign do not deadlock or exceed its single reward cap',async()=>{
+ const f=await fixture(),devices=[];
+ for(let i=0;i<4;i++){const screen=i?await svc.screen(f.app.id,{location_id:f.location.id,name:'Simultánea '+i,orientation:'landscape'}):f.screen;if(i)await svc.assign(f.app.id,screen.id,f.campaign.id);devices.push({f:{...f,screen},device:await pair({...f,screen})});}
+ await Promise.all(devices.map(x=>win(x.f,x.device)));
+ assert.equal((await query("select count(*)::int n from play_sessions where campaign_id=$1 and status='COMPLETED'",[f.campaign.id])).rows[0].n,4);
+ assert.equal((await query('select count(*)::int n from play_reward_grants where campaign_id=$1',[f.campaign.id])).rows[0].n,1);
+});
+test('runtime restart preserves session sequence and late completed-game input does not disconnect',async()=>{
+ const f=await fixture(),device=await pair(f),won=await win(f,device);let stop,control;
+ try{
+ for(let restart=0;restart<2;restart++){
+ stop=require('../backend/src/play/realtime').attach(server);await new Promise(r=>setTimeout(r,100));control=socket('controller',won.controller_token);await control.wait(d=>d.type==='ready');const state=(await control.wait(d=>d.type==='state')).state;
+ assert.equal(state.status,'COMPLETED');control.send({type:'input',seq:state.last_seq+1,action:'a'});assert.equal((await control.wait(d=>d.type==='error')).code,'SESSION_NOT_PLAYING');assert.equal(control.ws.readyState,1);assert.equal((await svc.personal(won.controller_token)).last_seq,state.last_seq);
+ control.ws.terminate();await stop();stop=null;
+ }
+ assert.equal((await query("select count(*)::int n from play_events where session_id=$1 and event_type='game_finished'",[won.session_id])).rows[0].n,1);
+ }finally{control?.ws.terminate();if(stop)await stop();}
 });
 test('bounded local concurrency: ten screens and ten controllers remain isolated',async t=>{
  const f=await fixture({game:'orbita',cap:0}),prepared=[];

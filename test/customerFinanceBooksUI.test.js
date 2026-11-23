@@ -3,7 +3,7 @@ let JSDOM;try{({JSDOM}=require('jsdom'));}catch{({JSDOM}=require('../.local-cust
 const load=(w,file)=>w.eval(fs.readFileSync(path.join(__dirname,'..',file),'utf8'));
 const personal={id:'11111111-1111-4111-8111-111111111111',name:'Personal',currency:'COP',is_default:true,opening_amount:null,opening_date:null,revision:1};
 const cattle={id:'22222222-2222-4222-8222-222222222222',name:'Ganado <privado>',currency:'COP',opening_amount:'5000',opening_date:'2026-11-01',revision:2};
-const account={id:'account-1',full_name:'Andrea',currency:'COP',timezone:'America/Bogota'};
+const account={id:'account-1',full_name:'Andrea',declared_document_key:'sbx-ui-001',finance_setup_state:'LEGACY',currency:'COP',timezone:'America/Bogota'};
 test('negative and incomplete forecasts stay explicit and onboarding reflects all three prerequisites',async()=>{
  const w=new JSDOM('<main id="page"></main>',{url:'https://gosqori.com/customer/',runScripts:'outside-only'}).window;
  try{
@@ -30,9 +30,10 @@ function setup(){
  const w=new JSDOM('<div id="app"></div><p id="announcement"></p>',{url:'http://localhost/customer/',runScripts:'outside-only'}).window,calls=[];
  w.setInterval=()=>0;w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.remove();};
  w.fetch=async(url,o)=>{calls.push({url,...o});const book=o.headers['X-Qori-Book']===cattle.id?cattle:personal;
-  return {ok:true,status:200,json:async()=>url.endsWith('/me')?{account}:url.endsWith('/finance-books')?{books:[personal,cattle]}:url.endsWith('/finance-home')?summary(book):url.endsWith('/relationships')?{relationships:[]}:url.endsWith('/recurring')?{recurring:{id:'rule'}}:url.endsWith('/entries')?{entry:{id:'entry'}}:{cards:[],purchased_gifts:[],pending_invitations:0}};
+  return {ok:true,status:200,headers:{get:()=>null},json:async()=>url.endsWith('/me')?{account}:url.endsWith('/finance-books')?{books:[personal,cattle]}:url.endsWith('/finance-home')?summary(book):url.endsWith('/relationships')?{relationships:[]}:url.endsWith('/recurring')?{recurring:{id:'rule'}}:url.endsWith('/entries')?{entry:{id:'entry'}}:{cards:[],purchased_gifts:[],pending_invitations:0}};
  };
- for(const file of ['wallet-model.js','accounting.js','finance.js','payments.js','app.js'])load(w,'customer-web/'+file);
+ w.QoriCookies={preferencesAllowed:()=>true};
+ for(const file of ['session-guard.js','wallet-model.js','accounting.js','finance.js','payments.js','app.js'])load(w,'customer-web/'+file);
  return {w,calls};
 }
 test('default home is financial, unknown cash requires setup, book switching keeps expense and income forms scoped',async()=>{
