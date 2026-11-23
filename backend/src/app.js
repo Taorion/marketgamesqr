@@ -175,6 +175,9 @@ app.use(helmet({
   },
 }));
 app.use(cors({ origin: corsOrigin }));
+// Additive sandbox routes: own authentication, body limits and redacted errors before the legacy JSON parser.
+require('./invoice/routes').install(app);
+require('./play/routes').install(app);
 // Email puede llevar hasta 8 MB de documentos y hasta 3 imágenes. Como ambos viajan
 // codificados en base64, el cuerpo JSON necesita margen suficiente sin relajar las
 // validaciones específicas de comunicaciones.

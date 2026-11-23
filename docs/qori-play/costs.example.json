@@ -1,0 +1,16 @@
+{
+  "screens": 100,
+  "hours_per_day": 8,
+  "days": 30,
+  "snapshots_per_second": 4,
+  "snapshot_bytes": 1024,
+  "sessions": 10000,
+  "session_seconds": 30,
+  "stored_bytes_per_session": 8192,
+  "compute": 0,
+  "database": 0,
+  "observability": 0,
+  "support": 0,
+  "egress_per_gb": 0,
+  "storage_per_gb_month": 0
+}

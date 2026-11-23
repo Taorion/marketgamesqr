@@ -33,6 +33,7 @@ function attach(server) {
   };
   confirmedRelays.add(relay);
   function upgrade(req, socket, head) {
+    if (req.url?.split('?')[0] !== PATH) return; // Another module owns this upgrade.
     let sameOrigin = false;
     try { sameOrigin = new URL(req.headers.origin).host === req.headers.host; } catch (_) {}
     if (req.url !== PATH || !sameOrigin || wss.clients.size >= 1024) {

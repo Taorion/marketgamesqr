@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-22",
+  "base_commit": "adff639",
+  "environment": "Windows, Node 22.23.5, PostgreSQL 18, loopback qori_play_qa",
+  "main_suite": {
+    "tests": 43,
+    "pass": 43,
+    "fail": 0
+  },
+  "regression_suites": [
+    {
+      "name": "finance-validator",
+      "exit": 0,
+      "tests": "28",
+      "pass": "28",
+      "fail": "0"
+    },
+    {
+      "name": "invoice-existing",
+      "exit": 0,
+      "tests": "24",
+      "pass": "24",
+      "fail": "0"
+    },
+    {
+      "name": "customer-books-existing",
+      "exit": 0,
+      "tests": "11",
+      "pass": "11",
+      "fail": "0"
+    },
+    {
+      "name": "seller-existing",
+      "exit": 0,
+      "tests": "16",
+      "pass": "16",
+      "fail": "0"
+    }
+  ],
+  "total_tests": 122,
+  "load": {
+    "at": "2026-11-23T00:41:40.680Z",
+    "screens": 100,
+    "applications": 4,
+    "measured_seconds": 60.392695700000004,
+    "rounds": 41,
+    "acknowledged": 3990,
+    "errors": {},
+    "ack_p50_ms": 28.755799999999,
+    "ack_p95_ms": 47.966999999996915,
+    "runtime": {
+      "cycles": 55,
+      "failures": 0,
+      "last_cycle_ms": 1189,
+      "max_cycle_ms": 1664,
+      "connections": 200
+    },
+    "memory_rss_bytes": 95936512,
+    "scope": "Loopback Node/PostgreSQL; ACK latency, not rendered pixels, mobile network or production capacity",
+    "terminal_input_races_recovered": 123
+  },
+  "restore": {
+    "at": "2026-11-23T00:44:15.032Z",
+    "matched": true,
+    "tables": {
+      "play_sessions": {
+        "count": 975,
+        "digest": "dc1065cf45aee6edc300fd27e27a10fa"
+      },
+      "play_reward_grants": {
+        "count": 34,
+        "digest": "32c1da4515113f3627f2ef483e28b434"
+      },
+      "play_events": {
+        "count": 6013,
+        "digest": "4ab7840dce758adce1dad5dc86ae0f02"
+      },
+      "play_webhooks": {
+        "count": 2,
+        "digest": "68edd8c343e00aec42e709ffaa9262c9"
+      },
+      "play_webhook_deliveries": {
+        "count": 6,
+        "digest": "33c3da08f252bd131c9a0546f0d13886"
+      }
+    },
+    "seconds": 8.3669473,
+    "backup_bytes": 2420530,
+    "scope": "Synthetic local DB restore and exact Play row digests; does not validate production backup service, encryption-key recovery or remote RTO"
+  },
+  "dependency_audit": {
+    "critical": 0,
+    "high": 0,
+    "moderate": 0,
+    "low": 0,
+    "source": "npm audit fix --ignore-scripts at dependency installation"
+  },
+  "hardware_validated": false,
+  "visual_browser_validated": false,
+  "external_webhook_delivery_validated": false,
+  "production_enabled": false,
+  "limitations": [
+    "100-screen periodic cycle reached 1664 ms; not certified 4 Hz or production capacity",
+    "No real hardware or browser visual acceptance",
+    "No production, real benefits, billing or external callback traffic"
+  ]
+}

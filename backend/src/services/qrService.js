@@ -35,7 +35,7 @@ function buildValidatorUrl(token) {
   return target.toString();
 }
 
-async function generateQr(data, actor) {
+async function generateQr(data, actor, transactionClient = null) {
   if (actor.type === "game") {
     if (actor.game.id !== data.game_id || actor.game.business_id !== data.business_id) {
       throw forbidden("The game API key cannot generate QR codes for this business or game.");
@@ -47,7 +47,7 @@ async function generateQr(data, actor) {
   const token = createSecureToken();
   const validatorUrl = buildValidatorUrl(token);
 
-  const result = await withTransaction(async (client) => {
+  const result = await (transactionClient ? fn => fn(transactionClient) : withTransaction)(async (client) => {
       const business = await client.query("select id,plan_code,is_seller_demo from businesses where id = $1 and is_active = true", [data.business_id]);
     if (!business.rowCount) {
       throw badRequest("Business does not exist or is inactive.");

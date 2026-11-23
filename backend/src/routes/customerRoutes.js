@@ -149,7 +149,7 @@ router.post('/logout',async(req,res,next)=>{try{await query('delete from custome
 router.get('/export',handle(req=>svc.exportData(req.customer)));
 router.delete('/me',handle(async req=>{
   parse(z.object({confirmation:z.literal('ELIMINAR MI CUENTA')}),req.body);
-  await withTransaction(async db=>{await db.query('delete from customer_sessions where customer_id=$1',[req.customer.id]);await db.query('delete from customer_challenges where email=$1',[req.customer.email]);await db.query('delete from customer_accounts where id=$1',[req.customer.id]);});
+  await withTransaction(async db=>{await require('../play/privacy').eraseCustomer(db,req.customer.id);await db.query('delete from customer_sessions where customer_id=$1',[req.customer.id]);await db.query('delete from customer_challenges where email=$1',[req.customer.email]);await db.query('delete from customer_accounts where id=$1',[req.customer.id]);});
   return {ok:true,message:'Cuenta personal eliminada. Los registros comerciales originales permanecen bajo responsabilidad de cada establecimiento.'};
 }));
 router.get('/identification',handle(req=>svc.identification(req.customer)));

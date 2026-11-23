@@ -103,5 +103,7 @@ test("migration repairs historical validator purchases and product history rende
   assert.match(app, /await loadInventoryProducts\(\{ force: true, quiet: true \}\)/);
   assert.match(app, /inventory\/products\?limit=500&include_archived=true[\s\S]*noClientCache: Boolean\(options\.force\)/);
   assert.match(app, /inventory\/products\/\$\{productId\}\/insights[\s\S]*noClientCache: true/);
-  assert.match(html, /validator-inventory-sale-v513-20260928/g);
+  const script=html.match(/<script\s+src="(js\/app\.js\?v=[^"]+)"/);
+  assert.ok(script,'Empresa loads its versioned application script');
+  assert.ok(fs.existsSync(path.join(root,'empresa',script[1].split('?')[0])));
 });

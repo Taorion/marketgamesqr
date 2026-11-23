@@ -112,6 +112,7 @@
     const nav=app.querySelector('.sidebar nav');
     nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Antojos')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas')+navLink('courtesies','✦','Cortesías');
     window.QoriAccounting.selector(app,exploreContext());
+    window.QoriInvoiceEntry?.attach(nav);
     window.QoriNotifications?.watch(exploreContext());
     if(route()==='calculator')window.QoriCalculator.render(page,exploreContext());
     else if(route()==='history')window.QoriMovementHistory.render(page,exploreContext());

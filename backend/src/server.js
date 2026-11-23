@@ -16,9 +16,11 @@ const server = app.listen(env.port, () => {
 });
 const stopSummitLive = require('./services/summitLiveService').attach(server);
 
+const stopPlay = require('./play/realtime').attach(server);
 async function shutdown() {
   stopSummitLive();
   await stopSubscriptionRenewals();
+  await stopPlay();
   await stopSellerCommissions();
   await stopAgendaPushWorker();
   await stopCustomerPayments();

@@ -175,6 +175,11 @@ async function exportData(account) {
   output.courtesy_lots=(await query('select * from customer_courtesy_lots where owner_customer_id=$1',[account.id])).rows;
   output.product_gift_orders=(await query("select * from customer_product_gift_orders where buyer_id=$1 or recipient_id=$1",[account.id])).rows;
   output.giftcards=await require('./customerWalletService').giftWallet(account);
+  // Data rights remain available after disabling invoice intake; tolerate a rolling migration.
+  if((await query("select to_regclass('public.invoice_documents') ready")).rows[0].ready)
+    output.invoices=await require('../invoice/service').exportData(account);
+  if((await query("select to_regclass('public.play_reward_grants') ready")).rows[0].ready)
+    output.play=await require('../play/privacy').exportCustomer(account);
   return output;
 }
 module.exports={groceryCatalogSales,assertNotDebtEntry,assertNotPaymentEntry,dashboard,planning,movements,pendingSales,pendingSalesDetails,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};

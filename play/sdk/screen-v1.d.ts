@@ -1,0 +1,3 @@
+export interface ScreenOptions {onState?:(state:ScreenState)=>void;onConnection?:(state:string)=>void;}
+export interface ScreenState {screen_id:string;status:string;orientation:'landscape'|'portrait';campaign:Record<string,unknown>|null;game:Record<string,unknown>|null;queue:number;join:{url:string;expires_at:string}|null;}
+export declare class QoriPlayScreen {constructor(options?:ScreenOptions);initialize():Promise<{code:string;expires_at:string}|null|undefined>;beginPairing():Promise<{code:string;expires_at:string}>;claimPairing():Promise<string>;subscribe(fn:(state:ScreenState)=>void):()=>void;showQR():Promise<{url:string|null;image:string|null}>;pause():void;resume():void;rotate():Promise<void>;destroy():void;}

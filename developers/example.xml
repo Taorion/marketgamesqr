@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">
+ <cbc:ID>SANDBOX-001</cbc:ID><cbc:UUID>29305902d75017f1be5f64a5dd59e49ffe19bebf472d74ded9bee06b26698c7297e5177aa7535cac5b73627892e86ff9</cbc:UUID><cbc:IssueDate>2026-11-22</cbc:IssueDate><cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+
+ <cac:AccountingSupplierParty><cac:Party><cac:PartyTaxScheme><cbc:RegistrationName>Comercio de prueba Qori</cbc:RegistrationName><cbc:CompanyID schemeName="31">900000000</cbc:CompanyID></cac:PartyTaxScheme></cac:Party></cac:AccountingSupplierParty>
+ <cac:AccountingCustomerParty><cac:Party><cac:PartyTaxScheme><cbc:RegistrationName>Consumidor sintético</cbc:RegistrationName><cbc:CompanyID schemeName="13">SANDBOXBUYER001</cbc:CompanyID></cac:PartyTaxScheme></cac:Party></cac:AccountingCustomerParty>
+ <cac:PaymentMeans><cbc:PaymentMeansCode>10</cbc:PaymentMeansCode></cac:PaymentMeans>
+ <cac:TaxTotal><cbc:TaxAmount currencyID="COP">3800.00</cbc:TaxAmount><cac:TaxSubtotal><cbc:TaxableAmount currencyID="COP">20000.00</cbc:TaxableAmount><cbc:TaxAmount currencyID="COP">3800.00</cbc:TaxAmount><cac:TaxCategory><cbc:Percent>19.00</cbc:Percent><cac:TaxScheme><cbc:ID>01</cbc:ID><cbc:Name>IVA</cbc:Name></cac:TaxScheme></cac:TaxCategory></cac:TaxSubtotal></cac:TaxTotal>
+ <cac:LegalMonetaryTotal><cbc:LineExtensionAmount currencyID="COP">20000.00</cbc:LineExtensionAmount><cbc:TaxExclusiveAmount currencyID="COP">20000.00</cbc:TaxExclusiveAmount><cbc:TaxInclusiveAmount currencyID="COP">23800.00</cbc:TaxInclusiveAmount><cbc:PayableAmount currencyID="COP">23800.00</cbc:PayableAmount></cac:LegalMonetaryTotal>
+ <cac:InvoiceLine><cbc:ID>1</cbc:ID><cbc:InvoicedQuantity unitCode="94">2</cbc:InvoicedQuantity><cbc:LineExtensionAmount currencyID="COP">20000.00</cbc:LineExtensionAmount><cac:Item><cbc:Name>Café de prueba</cbc:Name></cac:Item><cac:Price><cbc:PriceAmount currencyID="COP">10000.00</cbc:PriceAmount></cac:Price></cac:InvoiceLine>
+</Invoice>
