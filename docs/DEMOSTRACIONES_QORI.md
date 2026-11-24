@@ -148,10 +148,19 @@ Revisión visual en Chrome con superficies de 390 y 320 px: landing y formulario
 
 ## Inscripción directa o acompañada · ventana de 15 días
 
-El embajador conserva un único enlace y QR. En **Seller → Demostraciones**, **Copiar enlace** permite enviarlo al prospecto; **Inscribir a un prospecto** abre ese mismo formulario para completar sus datos con su autorización. Se eligen jornada, día y hora entre las sesiones que devuelve el servidor. El formulario muestra el límite exacto en hora de Colombia. Deben utilizarse el nombre y correo del prospecto, nunca los del embajador por comodidad.
+El embajador conserva un único enlace y QR. En **Seller → Demostraciones**, **Copiar enlace** permite enviarlo al prospecto; **Abrir mi formulario** abre ese mismo formulario para completar sus datos con su autorización. Se eligen jornada, día y hora entre las sesiones que devuelve el servidor. El formulario muestra el límite exacto en hora de Colombia. Deben utilizarse el nombre y correo del prospecto, nunca los del embajador por comodidad.
 
 Verificación de esta actualización: 36 pruebas aprobadas. Los recorridos directo y acompañado usan HTTP y PostgreSQL locales; se comprobó la agenda del propietario, el Meet elegido, la asociación de suscripción y el formulario vacío para la siguiente persona. Chrome a 1440, 390 y 320 px, zona Pacific/Auckland: sin desbordamiento horizontal, reserva ficticia completa y confirmación correcta. Sin destinatarios reales ni prueba en teléfono físico.
 
 Al guardar, la confirmación muestra el Meet de la sesión y el acceso de gestión. El embajador debe entregar este acceso al prospecto; el estado del correo se muestra por separado. **Inscribir a otro prospecto** abre un formulario vacío sin modificar la reserva anterior. Seller conserva los inscritos en su fecha y hora y la asociación comercial habitual.
 
 Administración: la migración auditada cambia únicamente `horizon_days` a 15. No cancela ni elimina reservas posteriores ya existentes, no cambia los Meet pendientes y no activa canales. El horizonte es móvil: ahora + 15 días; el servidor también rechaza solicitudes directas fuera de esa ventana. Continúa el inicio del 1 de diciembre de 2026 sin fecha final. Validación local: `node scripts/verify-demonstrations-local.cjs --apply` sobre una base QA local, seguido de las suites de demostraciones. Publicación mediante el runner de migraciones existente.
+
+
+### Invitación única visible en Seller
+
+La tarjeta superior muestra un único enlace y QR permanentes por embajador. **Abrir mi formulario** sirve para inscribir al prospecto con su autorización; **Copiar enlace** y **Compartir enlace** usan exactamente ese mismo acceso. **Compartir QR** abre las opciones del dispositivo cuando admite imágenes; **Descargar QR** permite guardarlo y adjuntarlo manualmente. Si no se admite compartir enlaces, se ofrece la copia; si no se admiten imágenes, se indica la descarga. Cerrar el selector de compartir no se presenta como un envío completado.
+
+Se retiraron los botones de invitación repetidos dentro de sesiones e inscritos de Demostraciones. El acceso contextual desde CRM conserva sus controles de autorización. No hay nuevos enlaces por fecha: el formulario elige entre las sesiones disponibles de los próximos 15 días. No se cambian reservas ni configuración administrativa.
+
+Validación: 37 pruebas aprobadas. Compartir archivo/enlace, cancelación y alternativas se verificaron con adaptadores del navegador simulados; la interfaz real y apertura del formulario se revisaron en Chrome a 1440, 390 y 320 px, sin desbordamiento horizontal y con QR cargado. No se enviaron mensajes ni archivos a contactos reales; el selector nativo de aplicaciones depende del dispositivo.
