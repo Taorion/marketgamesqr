@@ -6,7 +6,7 @@
   const date=v=>v?new Date(v).toLocaleString('es-CO'):'';
   const label={DRAFT:'Borrador',PROPOSED:'Por aceptar',ACTIVE:'Activa',PAUSED:'Pausada',REJECTED:'Rechazada',CANCELLED:'Cancelada',ARCHIVED:'Archivada',REDEEMED:'Canjeado',EXPIRED:'Vencido'};
   const request=(path='',method='GET',body)=>api(`/api/business/alliances${path}`,{method,headers:authHeaders(),noClientCache:true,...(body?{body:JSON.stringify(body)}:{})});
-  let ctx={},selected=null,filter='sent',offset=0,dialog=null;
+  let ctx={},selected=null,filter='sent',offset=0,dialog=null,opening=null;
   const btn=(text,action,id='',cls='')=>`<button type="button" class="${cls}" data-alliance-action="${action}" data-id="${esc(id)}">${text}</button>`;
   const badge=s=>`<span class="qa-badge ${esc(s)}">${esc(label[s]||s)}</span>`;
   const field=(title,name,value='',type='text',extra='')=>`<label>${esc(title)}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
@@ -21,7 +21,12 @@
     dialog.querySelector('form').onsubmit=async e=>{e.preventDefault();const b=e.submitter;if(b)b.disabled=true;try{await onSubmit(new FormData(e.target),e.target);dialog.close();await refresh();}catch(err){error(err);}finally{if(b)b.disabled=false;}};
     dialog.showModal();return dialog;
   }
-  async function open(){root.innerHTML='<p class="qa-loading">Cargando tus alianzas…</p>';selected=null;try{ctx=await request('/context');renderList();}catch(e){root.innerHTML='<div data-error class="qa-error" role="alert"></div>';error(e);}}
+  function open(){
+    if(opening)return opening;
+    root.innerHTML='<p class="qa-loading" role="status">Cargando tus alianzas…</p>';selected=null;
+    opening=(async()=>{try{ctx=await request('/context');renderList();}catch(e){root.innerHTML='<div data-error class="qa-error" role="alert"></div>'+btn('Volver a cargar','refresh');error(e);}})().finally(()=>{opening=null;});
+    return opening;
+  }
   async function refresh(){ctx=await request('/context');if(selected){selected=await request(`/${selected.alliance.id}?offset=${offset}`);renderDetail();}else renderList();}
   function renderList(){
     const closed=['ARCHIVED','CANCELLED','REJECTED'];const rows=(ctx.alliances||[]).filter(a=>filter==='closed'?closed.includes(a.status):!closed.includes(a.status)&&(filter==='sent'?a.issuer_id===ctx.business_id:a.ally_id===ctx.business_id));
@@ -114,7 +119,18 @@
         },'Confirmar');}
     }catch(err){error(err);}finally{b.disabled=false;}
   });
-  // Refresh only while this workspace is visible, without interrupting open forms.
-  setInterval(()=>{if(!document.hidden&&!root.closest('[hidden]')&&!dialog?.open)refresh().catch(error);},30000);
+  // Self-initialize for a restored view and for older cached portal shells that do not
+  // know this module. The main portal hook and this observer share the same in-flight load.
   window.QoriAlliances={open};
+  let lastView=document.body.dataset.currentView;
+  new MutationObserver(()=>{
+    const view=document.body.dataset.currentView;
+    if(view===lastView)return;
+    lastView=view;
+    if(view==='alliances')open();
+    else if(dialog?.open)dialog.close();
+  }).observe(document.body,{attributes:true,attributeFilter:['data-current-view']});
+  if(lastView==='alliances')open();
+  // Refresh only while this workspace is visible, without interrupting open forms.
+  setInterval(()=>{if(document.body.dataset.currentView==='alliances'&&!document.hidden&&!root.closest('[hidden]')&&!dialog?.open&&!opening)refresh().catch(error);},30000);
 })();

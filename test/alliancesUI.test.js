@@ -28,6 +28,42 @@ test('business-provided strings are rendered as text, not executable markup',asy
  try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();assert.equal(w.document.querySelector('#alliancesWorkspace img'),null);assert.equal(w.document.querySelector('#alliancesWorkspace script'),null);assert.match(w.document.body.textContent,/<img src=x/);}finally{dom.window.close();}
 });
 const publicOffer={...r,issuer:{name:'Origen'},ally:{name:'Vida'},branding:{display_name:'Vida',message:'Por venir de nuestra parte',invitation:'Recibe tu ticket',presentation:'',logo_url:'',collect_phone:false,collect_email:true},accepting:true};
+test('actual portal HTML renders Alianzas when the module loads after the view was selected',async()=>{
+ const dom=setup(read('empresa/index.html')),w=dom.window;let calls=0;
+ w.authHeaders=()=>({});w.api=async()=>{calls++;return {business_id:'issuer',ticket_balance:20,products:[],branches:[],alliances:[]};};
+ try{w.document.body.dataset.currentView='alliances';w.document.querySelector('.view-section[data-view=alliances]').hidden=false;
+ w.eval(read('empresa/js/alliances.js'));await pause();
+ assert.ok(w.document.querySelector('#alliancesWorkspace [data-alliance-action=create]'),'the selected workspace must initialize without a second click');assert.equal(calls,1);
+ }finally{dom.window.close();}
+});
+test('cached portal navigation initializes Alianzas through the view lifecycle without a new core hook',async()=>{
+ const dom=setup(read('empresa/index.html')),w=dom.window;let calls=0;
+ w.authHeaders=()=>({});w.api=async()=>{calls++;return {business_id:'issuer',ticket_balance:20,products:[],branches:[],alliances:[]};};
+ try{w.document.body.dataset.currentView='dashboard';w.eval(read('empresa/js/alliances.js'));
+ assert.equal(calls,0);w.document.body.dataset.currentView='alliances';w.document.querySelector('.view-section[data-view=alliances]').hidden=false;
+ await pause();assert.ok(w.document.querySelector('#alliancesWorkspace [data-alliance-action=create]'),'navigation must not leave the workspace blank');assert.equal(calls,1);
+ }finally{dom.window.close();}
+});
+test('the portal hook and view observer share one load and failed loads remain recoverable',async()=>{
+ const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;let calls=0,resolve;
+ w.authHeaders=()=>({});w.api=()=>{calls++;return new Promise(r=>{resolve=r;});};
+ try{w.document.body.dataset.currentView='dashboard';w.eval(read('empresa/js/alliances.js'));
+ const first=w.QoriAlliances.open();w.document.body.dataset.currentView='alliances';await pause();assert.equal(calls,1);
+ resolve({business_id:'issuer',ticket_balance:1,alliances:[]});await first;assert.ok(w.document.querySelector('[data-alliance-action=create]'));
+ w.api=async()=>{throw Error('No fue posible cargar tus alianzas.');};await w.QoriAlliances.open();assert.match(w.document.querySelector('[role=alert]').textContent,/No fue posible/);
+ w.api=async()=>({business_id:'issuer',alliances:[]});w.document.querySelector('[data-alliance-action=refresh]').click();await pause();assert.ok(w.document.querySelector('[data-alliance-action=create]'));
+ }finally{dom.window.close();}
+});
+test('portal HTML versions both the shell integration and the self-initializing module',()=>{
+ const dom=setup(read('empresa/index.html'));
+ try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-v2-20261124'));}finally{dom.window.close();}
+});
+test('a synchronous expired-session failure does not permanently block initialization',async()=>{
+ const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;
+ w.authHeaders=()=>{throw Error('Inicia sesión de nuevo.');};w.api=async()=>({business_id:'issuer',alliances:[]});
+ try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();assert.match(w.document.querySelector('[role=alert]').textContent,/Inicia sesión/);
+ w.authHeaders=()=>({});await w.QoriAlliances.open();assert.ok(w.document.querySelector('[data-alliance-action=create]'));}finally{dom.window.close();}
+});
 test('public form requests only configured data, separates marketing and preserves retry key',async()=>{
  const token='a'.repeat(64),dom=setup('<main id="app"></main>','http://127.0.0.1:3057/alianzas/#alianza='+token),w=dom.window,calls=[];let attempts=0;
  w.fetch=async(url,options)=>{calls.push({url,options});if(options.method==='GET')return {ok:true,json:async()=>publicOffer};attempts++;return {ok:attempts>1,json:async()=>attempts===1?{error:{message:'Error transitorio'}}:{...publicOffer,status:'ACTIVE',expires_at:r.ends_at,ticket_code:'b'.repeat(64),ticket_url:'http://127.0.0.1:3057/alianzas/#ticket='+'c'.repeat(64),qr_image:'data:image/png;base64,AAAA'}};};

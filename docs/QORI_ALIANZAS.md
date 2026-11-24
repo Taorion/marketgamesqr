@@ -1,6 +1,10 @@
 # Qori Alianzas
 
-Implementación local en `Ofrece → Alianzas`. Rama `feat/qori-alianzas-20261124`, basada en `origin/main` en `e9b39f2`. El checkout principal tenía cambios de otros trabajos y no se modificó. No se ha publicado ni ejecutado la migración en una base remota.
+Implementación en `Ofrece → Alianzas`. Rama `feat/qori-alianzas-20261124`, basada en `origin/main` en `e9b39f2`. El checkout principal tenía cambios de otros trabajos y no se modificó. La entrega inicial `0c61f83` y su migración se publicaron el 24 de noviembre de 2026; se verificaron SHA, salud, rutas y recursos.
+
+### Corrección de inicialización (24 de noviembre de 2026)
+
+La integración inicial no cambiaba la URL cacheada de `empresa/js/app.js` y dependía exclusivamente de que ese archivo llamara a `QoriAlliances.open()`. Un navegador con el shell anterior, o una vista restaurada antes de cargar el módulo, podía mostrar una sección vacía. Se reprodujeron ambos casos con el HTML completo del portal. El módulo ahora se inicializa al cargar y al entrar en su vista, comparte la petición en curso con el hook del portal y presenta un error recuperable si falla la carga. Se versionan tanto el shell (`alliances=2`) como el módulo (`alliance-v2-20261124`). La suite focalizada de esta corrección tiene 49 pruebas; las pruebas de DOM no acreditan una revisión visual.
 
 ## Recorrido operativo
 
