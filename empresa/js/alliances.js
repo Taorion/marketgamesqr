@@ -13,7 +13,13 @@
   const area=(title,name,value='',extra='')=>`<label class="qa-wide">${esc(title)}<textarea name="${name}" ${extra}>${esc(value)}</textarea></label>`;
   const select=(title,name,value,options)=>`<label>${esc(title)}<select name="${name}">${options.map(([v,t])=>`<option value="${esc(v)}" ${String(v)===String(value)?'selected':''}>${esc(t)}</option>`).join('')}</select></label>`;
   const check=(title,name,on)=>`<label class="qa-checkbox"><input type="checkbox" name="${name}" ${on?'checked':''}>${esc(title)}</label>`;
-  function error(e){const el=(dialog?.open?dialog:root).querySelector('[data-error]');if(el){el.hidden=false;el.textContent=e.message||String(e);el.scrollIntoView({block:'nearest'});}}
+  function friendlyError(e){
+    const message=e?.message||'';
+    if(/fetch|network|load failed/i.test(message))return 'No pudimos conectar con Qori. Revisa tu conexión e intenta de nuevo.';
+    if(!message||['SyntaxError','TypeError'].includes(e?.name)||/too small|too big|expected|invalid|unexpected|internal server|JSON|constraint|SQL/i.test(message))return 'No pudimos completar la solicitud. Revisa los datos del formulario y vuelve a intentarlo.';
+    return message;
+  }
+  function error(e){const el=(dialog?.open?dialog:root).querySelector('[data-error]');if(el){el.hidden=false;el.textContent=friendlyError(e);el.scrollIntoView({block:'nearest'});}}
   function modal(title,html,onSubmit,submit='Guardar'){
     dialog?.remove();dialog=document.createElement('dialog');dialog.className='qa-dialog';
     dialog.innerHTML=`<div class="qa-dialog-header"><h2>${esc(title)}</h2><button type="button" data-close aria-label="Cerrar">✕</button></div><form class="qa-dialog-body"><div data-error class="qa-error" role="alert" hidden></div>${html}<div class="qa-dialog-footer"><button type="button" data-close>Cancelar</button>${onSubmit?`<button class="qa-primary" type="submit">${esc(submit)}</button>`:''}</div></form>`;
@@ -42,7 +48,7 @@
   function rulesForm(a){const r=a?.pending_rules||a?.rules||{name:'',purpose:'',benefit_type:'FREE_GIFT',benefit_label:'',benefit_amount:0,minimum_purchase:0,terms:'',destination:'',starts_at:new Date().toISOString(),ends_at:new Date(Date.now()+30*864e5).toISOString(),ticket_valid_days:30,per_customer_limit:1,commission_type:'FIXED',commission_value:0,commission_base:'NET_PAID',settlement_terms:'Pago semanal contra compras confirmadas.',unused_policy:'RETURN_UNUSED',branch_ids:[]};
     const local=v=>{const d=new Date(v);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
     const html=`<p class="qa-note">El beneficio es público. La comisión solo se muestra a los dos negocios. ${a?.accepted_at?'Los cambios requieren aceptación del aliado. Al aceptarlos se cierran los lotes no entregados según su política; los tickets entregados conservan sus condiciones.':''}</p><div class="qa-fields">
-      ${!a||(!a.accepted_at&&['DRAFT','REJECTED'].includes(a.status))?field(a?'Cambiar aliado (slug, opcional)':'Identificador del aliado (slug de su cuenta)','ally_slug','','text',`${a?'':'required'} maxlength="120"`)+'<div><button type="button" data-lookup>Verificar negocio aliado</button><p data-partner class="qa-note" aria-live="polite"></p></div>':''}
+      ${!a||(!a.accepted_at&&['DRAFT','REJECTED'].includes(a.status))?field(a?'Cambiar aliado (identificador, opcional)':'Identificador de la cuenta del negocio aliado','ally_slug','','text',`${a?'':'required'} maxlength="120"`)+'<div><button type="button" data-lookup>Verificar negocio aliado</button><p data-partner class="qa-note" aria-live="polite"></p></div>':''}
       ${field('Nombre de la alianza','name',r.name,'text','required maxlength="120"')}${field('Propósito','purpose',r.purpose,'text','required maxlength="500"')}
       ${select('Tipo de beneficio','benefit_type',r.benefit_type,[['FREE_GIFT','Obsequio con compra'],['PERCENT_DISCOUNT','Descuento porcentual'],['FIXED_AMOUNT_DISCOUNT','Descuento en pesos'],['CUSTOM','Beneficio personalizado']])}
       ${field('Valor del descuento (% o COP)','benefit_amount',r.benefit_amount,'number','min="0" max="999999999" step="0.01" required')}
@@ -66,7 +72,13 @@
       const result=await request(a?`/${a.id}`:'',a?'PUT':'POST',{rules,ally_slug:f.get('ally_slug'),revision:a?.revision});
       if(!a){selected={alliance:result};offset=0;}
     },a?.accepted_at?'Proponer cambios':'Guardar borrador');
-    d.querySelector('[data-lookup]')?.addEventListener('click',async()=>{try{const p=await request(`/partner?slug=${encodeURIComponent(d.querySelector('[name=ally_slug]').value)}`);d.querySelector('[data-partner]').textContent=p.name;}catch(e){error(e);}});
+    d.querySelector('[data-lookup]')?.addEventListener('click',async()=>{
+      const input=d.querySelector('[name=ally_slug]'),slug=input.value.trim();
+      d.querySelector('[data-partner]').textContent='';
+      d.querySelector('[data-error]').hidden=true;
+      if(slug.length<2){error(Error('Escribe el identificador del negocio aliado con al menos 2 caracteres. Pídele este dato al negocio.'));input.focus();return;}
+      try{const p=await request(`/partner?slug=${encodeURIComponent(slug)}`);d.querySelector('[data-partner]').textContent=p.name;}catch(e){error(e);}
+    });
   }
   const dl=r=>`<dl>
     <dt>Propósito</dt><dd>${esc(r.purpose)}</dd><dt>Beneficio</dt><dd>${esc(r.benefit_label)}</dd>

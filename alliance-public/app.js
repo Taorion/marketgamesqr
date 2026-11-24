@@ -4,6 +4,12 @@
   const date=v=>new Date(v).toLocaleString('es-CO');
   const money=v=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v);
   let current=null;
+  function friendlyError(e){
+    const message=e?.message||'';
+    if(/fetch|network|load failed/i.test(message))return 'No pudimos conectar con Qori. Revisa tu conexión e intenta de nuevo.';
+    if(!message||['SyntaxError','TypeError'].includes(e?.name)||/too small|too big|expected|invalid|unexpected|internal server|JSON|constraint|SQL/i.test(message))return 'No pudimos completar la solicitud. Revisa tus datos y vuelve a intentarlo.';
+    return message;
+  }
   async function api(path,body){const response=await fetch('/api/public/alliances'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json();if(!response.ok)throw Error(data.message||data.error?.message||data.error||'No pudimos completar la solicitud.');return data;}
   function offer(d){return `<section class="offer">${d.branding?.logo_url?`<img class="logo" src="${esc(d.branding.logo_url)}" alt="${esc(d.branding.display_name)}">`:''}<span class="eyebrow">Una recomendación de ${esc(d.ally.name)}</span><h1>${esc(d.benefit_label)}</h1><p>Recibe tu beneficio en <strong>${esc(d.issuer.name)}</strong>.</p>${d.branding?.display_name?`<p>${esc(d.branding.display_name)} · ${esc(d.branding.presentation)}</p>`:''}<p>${esc(d.branding?.message||'')}</p><div class="destination"><strong>Dónde usarlo</strong><p>${esc(d.destination)}</p>${(d.branch_names||[]).map(b=>`<p>${esc(b.name)}${b.address?' · '+esc(b.address):''}</p>`).join('')}<p class="sub">Válido hasta ${date(d.ends_at)}</p></div><details><summary>Condiciones del beneficio</summary><p class="terms">${esc(d.terms)}</p><p>Compra mínima: ${money(d.minimum_purchase)}.</p>${d.purchase_product_name?`<p>Producto requerido: ${esc(d.purchase_product_name)}.</p>`:''}<p>Ticket personal, de un solo canje. Preséntalo con tu documento.</p></details></section>`;}
   function registration(d,t){current=d;
@@ -15,12 +21,12 @@
       try{const keyName='qori-alliance-request:'+t;let key;try{key=sessionStorage.getItem(keyName);if(!key){key=crypto.randomUUID();sessionStorage.setItem(keyName,key);}}catch{key=crypto.randomUUID();}
         const f=new FormData(form);const result=await api(`/${t}/enroll`,{request_key:key,name:f.get('name'),document_id:f.get('document_id'),phone:f.get('phone')||'',email:f.get('email')||'',data_use_confirmed:f.has('data_use_confirmed'),marketing_issuer:f.has('marketing_issuer'),marketing_ally:f.has('marketing_ally')});
         history.replaceState(null,'',result.ticket_url);ticket(result);
-      }catch(error){err.textContent=error.message;err.hidden=false;}finally{button.disabled=false;}});
+      }catch(error){err.textContent=friendlyError(error);err.hidden=false;}finally{button.disabled=false;}});
   }
   function ticket(d){const states={ACTIVE:'Listo para usar',REDEEMED:'Ya utilizado',EXPIRED:'Ticket vencido',CANCELLED:'Ticket anulado'};
     root.innerHTML=`<div class="layout">${offer(d)}<section class="ticket-card"><span class="status">${esc(states[d.status]||d.status)}</span><h2 style="margin-top:22px">Tu ticket de alianza</h2><p class="sub">Preséntalo en ${esc(d.issuer.name)}. Al escanearlo sabrán que vienes de parte de ${esc(d.ally.name)}.</p><img class="qr" src="${esc(d.qr_image)}" alt="QR único de tu ticket"><p class="code">${esc(d.ticket_code)}</p><p>Vence: <strong>${date(d.expires_at)}</strong></p><div class="actions"><button id="print" type="button">Guardar en PDF / imprimir</button><button id="copy" type="button">Copiar enlace</button><a class="button" href="${esc(d.qr_image)}" download="mi-ticket-alianza.png">Descargar QR</a></div><p id="saved" class="note" role="status">Guarda este enlace privado o imprime el ticket. No lo compartas: es personal.</p></section></div>`;
     document.getElementById('print').onclick=()=>window.print();document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(d.ticket_url);document.getElementById('saved').textContent='Enlace copiado. Guárdalo para presentar tu ticket.';}catch{document.getElementById('saved').textContent=d.ticket_url;}};
   }
-  async function load(){try{const params=new URLSearchParams(location.hash.slice(1)),t=params.get('ticket'),a=params.get('alianza');if(t&&/^[a-f0-9]{64}$/.test(t))ticket(await api('/tickets/'+t));else if(a&&/^[a-f0-9]{64}$/.test(a))registration(await api('/'+a),a);else throw Error('Abre el enlace o escanea el QR que te entregó el negocio aliado.');}catch(e){root.innerHTML=`<section class="notice"><h1>No pudimos abrir este beneficio</h1><p>${esc(e.message)}</p><button id="retry" type="button">Intentar de nuevo</button></section>`;document.getElementById('retry').onclick=load;}}
+  async function load(){try{const params=new URLSearchParams(location.hash.slice(1)),t=params.get('ticket'),a=params.get('alianza');if(t&&/^[a-f0-9]{64}$/.test(t))ticket(await api('/tickets/'+t));else if(a&&/^[a-f0-9]{64}$/.test(a))registration(await api('/'+a),a);else throw Error('Abre el enlace o escanea el QR que te entregó el negocio aliado.');}catch(e){root.innerHTML=`<section class="notice"><h1>No pudimos abrir este beneficio</h1><p>${esc(friendlyError(e))}</p><button id="retry" type="button">Intentar de nuevo</button></section>`;document.getElementById('retry').onclick=load;}}
   window.addEventListener('hashchange',load);load();
 })();

@@ -66,7 +66,7 @@ test('the portal hook and view observer share one load and failed loads remain r
 });
 test('portal HTML versions both the shell integration and the self-initializing module',()=>{
  const dom=setup(read('empresa/index.html'));
- try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-demo-v3-20261124'));}finally{dom.window.close();}
+ try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-clear-errors-v4-20261124'));}finally{dom.window.close();}
 });
 test('a synchronous expired-session failure does not permanently block initialization',async()=>{
  const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;
@@ -88,4 +88,23 @@ test('exhausted public offer has no enrollment submission control',async()=>{
  const dom=setup('<main id="app"></main>','http://127.0.0.1:3057/alianzas/#alianza='+'a'.repeat(64)),w=dom.window;
  w.fetch=async()=>({ok:true,json:async()=>({...publicOffer,accepting:false,message:'Se agotaron los tickets disponibles.'})});
  try{w.eval(read('alliance-public/app.js'));await pause();assert.equal(w.document.querySelector('form'),null);assert.match(w.document.body.textContent,/agotaron/);}finally{dom.window.close();}
+});
+
+test('partner lookup explains missing input without calling the server and clears stale results',async()=>{
+ const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window,calls=[];
+ w.authHeaders=()=>({});w.api=async p=>{calls.push(p);return p.endsWith('/context')?{business_id:'issuer',alliances:[]}:{name:'Naturista Vida'};};
+ try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();w.document.querySelector('[data-alliance-action=create]').click();
+ const input=w.document.querySelector('[name=ally_slug]'),button=w.document.querySelector('[data-lookup]'),error=w.document.querySelector('dialog [data-error]');
+ input.value=' ';button.click();await pause();assert.match(error.textContent,/identificador.*2 caracteres/);assert.equal(w.document.activeElement,input);assert.equal(calls.length,1);
+ input.value='naturista';button.click();await pause();assert.equal(error.hidden,true);assert.match(w.document.querySelector('[data-partner]').textContent,/Vida/);
+ input.value='a';button.click();await pause();assert.equal(w.document.querySelector('[data-partner]').textContent,'');assert.equal(calls.length,2);
+ }finally{dom.window.close();}
+});
+test('portal and public failures do not expose browser network errors',async()=>{
+ const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;
+ w.authHeaders=()=>({});w.api=async()=>{throw TypeError('Failed to fetch');};
+ try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();assert.match(w.document.querySelector('[role=alert]').textContent,/Revisa tu conexión/);assert.doesNotMatch(w.document.body.textContent,/Failed to fetch/);}finally{dom.window.close();}
+ const publicDom=setup('<main id="app"></main>','http://127.0.0.1:3057/alianzas/#alianza='+'a'.repeat(64)),publicWindow=publicDom.window;
+ publicWindow.fetch=async()=>{throw TypeError('Failed to fetch');};
+ try{publicWindow.eval(read('alliance-public/app.js'));await pause();assert.match(publicWindow.document.body.textContent,/Revisa tu conexión/);assert.doesNotMatch(publicWindow.document.body.textContent,/Failed to fetch/);}finally{publicDom.window.close();}
 });

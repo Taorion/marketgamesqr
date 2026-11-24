@@ -2,6 +2,7 @@ const {z}=require('zod');
 const {badRequest}=require('../utils/http');
 const money=z.coerce.number().finite().min(0).max(999999999);
 const uuid=z.string().uuid();
+const partnerSchema=z.string().trim().min(2).max(120);
 const rulesSchema=z.object({
   name:z.string().trim().min(3).max(120), purpose:z.string().trim().min(3).max(500),
   benefit_type:z.enum(['FREE_GIFT','PERCENT_DISCOUNT','FIXED_AMOUNT_DISCOUNT','CUSTOM']),
@@ -34,7 +35,56 @@ const enrollmentSchema=z.object({
   phone:z.string().trim().max(40).default(''), email:z.union([z.string().email().max(240),z.literal('')]).default(''),
   data_use_confirmed:z.literal(true), marketing_issuer:z.boolean().default(false),marketing_ally:z.boolean().default(false),
 }).strict();
-function parse(schema,input){const r=schema.safeParse(input);if(!r.success)throw badRequest(r.error.issues.map(i=>i.message).join(' '));return r.data;}
+const fieldLabels={
+  name:'el nombre de la alianza',purpose:'el propósito',benefit_type:'el tipo de beneficio',
+  benefit_label:'el beneficio que verá el cliente',benefit_amount:'el valor del descuento',
+  minimum_purchase:'la compra mínima',purchase_product_id:'el producto requerido',
+  terms:'las condiciones del beneficio',destination:'la dirección del negocio',branch_ids:'las sucursales',
+  starts_at:'la fecha de inicio',ends_at:'la fecha de fin',ticket_valid_days:'los días para usar cada ticket',
+  per_customer_limit:'los tickets por documento',commission_type:'el tipo de comisión',
+  commission_value:'el valor de la comisión',commission_base:'la base de la comisión',
+  settlement_terms:'las condiciones de liquidación',unused_policy:'la política de tickets no entregados',
+  display_name:'el nombre comercial',presentation:'la presentación del negocio',message:'el mensaje del ticket',
+  invitation:'la invitación al formulario',logo_url:'el enlace del logo',collect_phone:'la opción de solicitar teléfono',
+  collect_email:'la opción de solicitar correo',document_id:'el documento de identidad',phone:'el teléfono',
+  email:'el correo electrónico',marketing_issuer:'la autorización de novedades del negocio emisor',
+  marketing_ally:'la autorización de novedades del negocio aliado',ally_slug:'el identificador del negocio aliado',
+  offset:'la página de resultados',
+};
+function validationMessage(issue,schema,context){
+  const field=issue.path[0]||context;
+  const label=schema===enrollmentSchema&&field==='name'?'tu nombre completo':fieldLabels[field];
+  if(issue.code==='custom')return issue.message;
+  if(field==='data_use_confirmed')return 'Autoriza el uso de tus datos por ambos negocios para recibir el ticket. Las novedades comerciales son opcionales.';
+  if(field==='request_key')return 'No pudimos identificar esta solicitud. Actualiza la página y vuelve a intentarlo.';
+  if(field==='public_token')return 'Este enlace no es válido. Vuelve a escanear el QR o solicita el enlace al negocio.';
+  if(['id','batch','payment','ticket','commission_id'].includes(field))return 'No pudimos identificar el registro seleccionado. Actualiza la alianza y vuelve a abrirlo.';
+  if(issue.code==='unrecognized_keys')return 'El formulario contiene datos que ya no se utilizan. Actualiza la página y vuelve a intentarlo.';
+  if(!label)return 'Revisa los datos del formulario y completa los campos obligatorios.';
+  if(issue.code==='too_small'){
+    if(issue.origin==='string')return `Escribe ${label} con al menos ${issue.minimum} caracteres.`;
+    return `Revisa ${label}: el valor mínimo es ${issue.minimum}.`;
+  }
+  if(issue.code==='too_big'){
+    if(issue.origin==='string')return `Acorta ${label} a un máximo de ${issue.maximum} caracteres.`;
+    if(issue.origin==='array')return `Selecciona como máximo ${issue.maximum} sucursales.`;
+    return `Revisa ${label}: el valor máximo es ${issue.maximum}.`;
+  }
+  if(field==='email')return 'Escribe un correo válido, por ejemplo: nombre@correo.com.';
+  if(field==='document_id'&&issue.code==='invalid_format')return 'Escribe el documento usando letras, números, espacios, puntos o guiones.';
+  if(['starts_at','ends_at'].includes(field))return `Selecciona ${label} con una fecha y hora válidas.`;
+  if(issue.code==='invalid_type'){
+    if(issue.expected==='number'||issue.expected==='int')return `Ingresa un número${issue.expected==='int'?' entero':''} válido en ${label}.`;
+    return `Completa o revisa ${label}.`;
+  }
+  if(issue.code==='invalid_value'||issue.format==='uuid')return `Selecciona una opción válida para ${label}.`;
+  return `Revisa ${label} y vuelve a intentarlo.`;
+}
+function parse(schema,input,context){
+  const r=schema.safeParse(input);
+  if(!r.success)throw badRequest([...new Set(r.error.issues.map(i=>validationMessage(i,schema,context)))].join(' '));
+  return r.data;
+}
 const documentKey=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const round=v=>Math.round((Number(v)+Number.EPSILON)*100)/100;
 function benefit(r){return {label:r.benefit_label,purchase_required:true,minimum_purchase:r.minimum_purchase,
@@ -44,4 +94,4 @@ function benefit(r){return {label:r.benefit_label,purchase_required:true,minimum
 // Allowlist only. No agreement, commission, internal identifiers or customer data in public output.
 function publicRules(r){return Object.fromEntries(['name','purpose','benefit_type','benefit_label','benefit_amount','minimum_purchase','terms','destination','starts_at','ends_at','ticket_valid_days','purchase_product_name','branch_names'].map(k=>[k,r[k]]));}
 function commission(r,checkout){const base=r.commission_base==='SUBTOTAL'?checkout.subtotal:checkout.final_total;return round(r.commission_type==='FIXED'?r.commission_value:base*r.commission_value/100);}
-module.exports={rulesSchema,brandingSchema,enrollmentSchema,parse,uuid,documentKey,round,benefit,publicRules,commission};
+module.exports={rulesSchema,brandingSchema,enrollmentSchema,partnerSchema,parse,uuid,documentKey,round,benefit,publicRules,commission};

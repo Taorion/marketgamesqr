@@ -39,6 +39,7 @@ async function context(user){
   return {business_id:user.business_id,demo_mode:isDemo(b.rows[0]),alliances:a.rows,ticket_balance:Number(b.rows[0]?.qr_balance||0),products:p.rows,branches:s.rows};
 }
 async function lookup(user,slug){
+  slug=R.parse(R.partnerSchema,slug,'ally_slug');
   const b=(await query('select * from businesses where slug=$1 and id<>$2',[String(slug).trim().toLowerCase(),user.business_id])).rows[0];
   if(!eligible(b))throw notFound('No encontramos un negocio activo con ese identificador.');
   const own=(await query('select is_seller_demo,settings from businesses where id=$1',[user.business_id])).rows[0];
@@ -130,7 +131,7 @@ async function personalize(user,id,input){const branding=R.parse(R.brandingSchem
 });}
 async function issue(user,id,input){
   const quantity=Number(input.quantity);if(!Number.isInteger(quantity)||quantity<1||quantity>100000)throw badRequest('La cantidad debe estar entre 1 y 100.000.');
-  R.parse(R.uuid,input.request_key);
+  R.parse(R.uuid,input.request_key,'request_key');
   return withTransaction(async c=>{
     const a=await agreement(c,id,user.business_id,true);issuer(a,user);
     const prior=(await c.query('select * from qori_alliance_batches where alliance_id=$1 and request_key=$2',[id,input.request_key])).rows[0];
@@ -229,7 +230,7 @@ async function detail(user,id,offset=0){
     capture_url,qr_image:await QRCode.toDataURL(capture_url)};
 }
 async function pay(user,id,input){
-  R.parse(R.uuid,input.request_key);R.parse(R.uuid,input.commission_id);
+  R.parse(R.uuid,input.request_key,'request_key');R.parse(R.uuid,input.commission_id,'commission_id');
   const amount=R.round(input.amount),paidAt=new Date(input.paid_at);
   if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(paidAt.getTime())||paidAt>new Date()||!String(input.reference||'').trim())throw badRequest('Revisa importe, fecha y referencia del pago.');
   return withTransaction(async c=>{
