@@ -1,0 +1,39 @@
+/* One native disclosure, outside module render roots and legacy hero typography. */
+#workspace #portalModuleHelp{
+  box-sizing:border-box;min-width:0;max-width:100%;margin:0 0 20px;
+  border:1px solid #cddfe8!important;border-radius:14px!important;
+  background:#f5f9fc!important;color:#173347!important;box-shadow:none!important;
+}
+#workspace #portalModuleHelp[hidden]{display:none!important}
+#workspace #portalModuleHelp *{box-sizing:border-box;min-width:0;overflow-wrap:anywhere}
+#workspace #portalModuleHelp>summary{
+  display:flex;align-items:center;gap:12px;min-height:52px;padding:14px 18px;
+  list-style:none;cursor:pointer;font-size:13px;line-height:1.5;color:#173347!important;
+}
+#workspace #portalModuleHelp>summary::-webkit-details-marker{display:none}
+#workspace #portalModuleHelp>summary::marker{content:""}
+#workspace #portalModuleHelp>summary:focus-visible{outline:3px solid #2876a0;outline-offset:3px;border-radius:12px}
+#workspace #portalModuleHelp .module-help-icon{
+  flex:0 0 26px;width:26px;height:26px;border:1px solid #9cbacb;border-radius:50%;
+  display:grid;place-items:center;font-weight:800;color:#215671!important;background:#fff;
+}
+#workspace #portalModuleHelp .module-help-heading{flex:1;font-weight:600;color:#173347!important}
+#workspace #portalModuleHelp [data-module-help-title]{font-weight:800;color:#173347!important}
+#workspace #portalModuleHelp .module-help-action{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#245e7b!important}
+#workspace #portalModuleHelp .module-help-action:after{content:"";width:8px;height:8px;flex-shrink:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px 5px}
+#workspace #portalModuleHelp[open] .module-help-action:after{transform:rotate(225deg);margin-top:6px;margin-bottom:0}
+#workspace #portalModuleHelp .module-help-collapse{display:none}
+#workspace #portalModuleHelp[open] .module-help-collapse{display:inline}
+#workspace #portalModuleHelp[open] .module-help-expand{display:none}
+#workspace #portalModuleHelp .module-help-content{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:0 18px 20px}
+#workspace #portalModuleHelp .module-help-block{margin:0;font-size:13px;line-height:1.75!important;color:#294b61!important}
+#workspace #portalModuleHelp .module-help-label{display:block;margin:0 0 5px;font-weight:800;font-size:12px;color:#173347!important}
+#workspace #portalModuleHelp .module-help-example{border-left:2px solid #c7d9e4;padding-left:20px}
+@media(max-width:600px){
+  #workspace #portalModuleHelp>summary{padding:13px 14px;gap:10px;flex-wrap:wrap}
+  #workspace #portalModuleHelp .module-help-heading{flex-basis:calc(100% - 38px)}
+  #workspace #portalModuleHelp .module-help-action{margin-left:36px}
+  #workspace #portalModuleHelp .module-help-content{grid-template-columns:1fr;gap:16px;padding:0 14px 18px}
+  #workspace #portalModuleHelp .module-help-example{padding:14px 0 0;border-left:0;border-top:1px solid #c7d9e4}
+}
+@media print{#workspace #portalModuleHelp{display:none!important}}
