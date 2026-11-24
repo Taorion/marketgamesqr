@@ -1,6 +1,6 @@
 # Qori - Ideas para tu negocio
 
-Implementación local del 24 de noviembre de 2026. No publicada. No se aplicó ninguna migración a producción ni se enviaron correos o WhatsApp reales.
+Módulo publicado el 24 de noviembre de 2026, con migración aplicada. La habilitación de reservas es una decisión separada que se guarda desde Administración. No se enviaron correos o WhatsApp reales durante las pruebas.
 
 ## Accesos
 
@@ -11,13 +11,21 @@ Vista previa local preparada: **http://127.0.0.1:4877/qa**. Tiene una base indep
 ```
 
 - Embajador: `/seller/` → **Demostraciones**. En **Mi CRM**, cada contacto abierto tiene **Invitar a demostración**.
-- Administrador: `/admin/` → gestión comercial → **Demostraciones**. También disponible al entrar a Seller con la cuenta superadmin.
+- Administrador: `/admin/#demostraciones`. Acceso **Demostraciones · agenda** en la barra superior y en Cuentas Qori; abre directamente el módulo. También disponible al entrar a Seller con la cuenta superadmin.
 - Invitación pública: `/demostraciones/?i=<identificador aleatorio>`. Se obtiene desde Seller; no construir el enlace con un UUID de embajador.
 - Confirmación privada: `/demostraciones/#reserva=<acceso privado>`. El fragmento no se envía como parte de la URL al servidor ni a Meet. No compartirlo.
 
 El prospecto reserva sin cuenta ni compra. La confirmación incluye el Meet de su ocurrencia y **Ver planes y suscribirme**, que usa el mecanismo firmado existente `prospect_ref` y `advisor`. Si ya existe negocio vinculado, ofrece entrar a su cuenta. Un conflicto ambiguo conserva la reserva y solicita resolución administrativa antes de ofrecer una suscripción atribuida.
 
 ## Primera habilitación administrativa
+
+1. Abrir `/admin/#demostraciones` y pulsar **Configurar y habilitar**.
+2. Revisar modalidad, cupo, primera fecha, anticipación y días visibles. Correo y otras opciones están plegadas.
+3. Marcar **He revisado las opciones y apruebo esta configuración**.
+4. Pulsar **Guardar y habilitar reservas**. **Guardar sin habilitar** conserva la agenda cerrada.
+5. En **Revisar horarios y Meet**, confirmar las dos franjas pendientes si corresponde y usar **Actualizar fechas sin inscritos**. Las otras diez franjas pueden habilitarse antes.
+
+**Ver agenda** muestra fechas e inscritos; **Pausar nuevas reservas** conserva las reservas existentes.
 
 La migración deja `approved=false`, `enabled=false` y el canal automático apagado. La configuración se muestra como propuesta. Admin debe revisarla, marcar aceptación explícita y guardar antes de publicar horarios.
 
@@ -32,7 +40,7 @@ Las recurrencias empiezan el **5 de enero de 2027**, martes, miércoles y jueves
 | 14:00–15:00 | https://meet.google.com/djh-wqny-ggd | Confirmado los tres días |
 | 16:00–17:00 | https://meet.google.com/xpt-jroa-aec | Confirmado los tres días |
 
-Para las dos franjas pendientes: **Revisar franja**, verificar Meet, marcar confirmación y guardar con motivo; luego **Actualizar ocurrencias sin reservas**. Esta operación excluye ocurrencias con reservas o historial. Las sesiones existentes con reservas se gestionan individualmente. Una plantilla no modifica silenciosamente sus Meet, cupos ni fechas.
+Para las dos franjas pendientes: **Revisar franja**, verificar Meet, marcar confirmación y guardar con motivo; luego **Actualizar fechas sin inscritos**. Esta operación excluye ocurrencias con reservas o historial. Las sesiones existentes con reservas se gestionan individualmente. Una plantilla no modifica silenciosamente sus Meet, cupos ni fechas.
 
 Cambiar Meet de una sesión actualiza su confirmación y prepara aviso. Cambiar fecha/hora conserva el evento anterior y deja las reservas pendientes de aceptación; pueden aceptar, elegir otra sesión o cancelar. Cancelar una sesión impide nuevas reservas; sus asistentes pueden trasladar la reserva a otra disponible. Retirar Meet exige cerrar la sesión o dejarla en borrador. Nunca se reduce su capacidad por debajo de reservas activas.
 
@@ -114,11 +122,11 @@ Las suites cubren recurrencias, los cuatro Meet, aprobación pendiente, zona de 
 
 Revisión visual en Chrome con superficies de 390 y 320 px: landing y formulario; reserva completa realizada a 390 px, confirmación con Meet y suscripción visibles en el árbol de accesibilidad. Se corrigió la fecha seleccionada para mostrarla completa fuera del selector y el desplazamiento al inicio de la confirmación. No es prueba en un teléfono físico. La reprogramación se verificó por UI automatizada/HTTP, no mediante un teléfono físico. No se entró a las reuniones Meet ni se verificó correo real.
 
-## Publicación posterior: requiere otra instrucción
+## Procedimiento de publicación
 
 1. Revisar y preparar los cambios acotados; el checkout contiene trabajo previo ajeno al módulo.
 2. Ejecutar migración por el procedimiento habitual y verificar permisos, sin habilitar la agenda automáticamente.
 3. Publicar los assets y las rutas, verificar SHA y salud mediante el procedimiento de Qori.
 4. Revisar configuración, dos franjas pendientes, enlaces y capacidad; guardar aprobación.
 5. Configurar correo y probar únicamente con destinatarios autorizados; revisar entrega y recuperación.
-6. Ejecutar recorrido móvil publicado y luego habilitar agenda. Ninguno de estos pasos productivos se realizó durante esta entrega.
+6. Ejecutar recorrido móvil publicado y luego habilitar agenda. La publicación del módulo no aprueba la configuración ni activa los canales de comunicación.

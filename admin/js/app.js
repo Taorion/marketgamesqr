@@ -478,6 +478,7 @@ async function loadWorkspace() {
       showSellerAdmin:()=>{sessionStorage.setItem('qori-seller-token',session.token);location.assign('/seller/#admin');},
       download:async(path,filename)=>{const activeSession=session;const response=await fetch(path,{headers:{Authorization:`Bearer ${session.token}`}});if(!response.ok)throw new Error('No se pudo descargar el documento.');const blob=await response.blob();if(session!==activeSession)return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
     });
+    if(location.hash==='#demostraciones')await window.QoriCommercial.openDemonstrations();
     if(location.hash==='#accountsWorkspace'&&!document.getElementById('accountsWorkspace').hidden)document.getElementById('accountsWorkspace').scrollIntoView();
     return;
   }
