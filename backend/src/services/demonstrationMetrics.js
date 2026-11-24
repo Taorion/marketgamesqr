@@ -5,7 +5,7 @@ const {requireSuperadmin}=require('./commercialAuthorization');
 const {query}=require('../config/db');
 // Only canonical prospect.business_id links identify a business; email/name matches are never business identity.
 async function metrics(service,user,params={}){
- requireSuperadmin(user);const d=validate(z.object({from:z.string().date().default('2027-01-01'),to:z.string().date().default(service.now().toISOString().slice(0,10))}).strict(),params);
+ requireSuperadmin(user);const d=validate(z.object({from:z.string().date().default('2026-12-01'),to:z.string().date().default(service.now().toISOString().slice(0,10))}).strict(),params);
  const result=await service.tx(async db=>{
   await service.snapshot(db);const c=await service.config(db);
   const bookings=(await db.query(`select b.*,p.business_id from qori_demo_bookings b left join qori_sales_prospects p on p.id=b.prospect_id where b.created_at>=($1::date::timestamp at time zone 'America/Bogota') and b.created_at<(($2::date+1)::timestamp at time zone 'America/Bogota')`,[d.from,d.to])).rows;

@@ -44,9 +44,9 @@ function createService({now=clock,deliver=require('./sellerWelcomeMailService').
    if(d.session_id)await assertAvailable(db,d.session_id,await config(db));
    const seller=d.prospect_id?(await db.query('select seller_id from qori_sales_prospects where id=$1',[d.prospect_id])).rows[0].seller_id:user.id;
    await advisorById(seller,db);
-   const existing=(await db.query('select token from qori_demo_invitations where seller_id=$1 and prospect_id is not distinct from $2 and session_id is not distinct from $3 and revoked_at is null limit 1',[seller,d.prospect_id,d.session_id])).rows[0];
+   const existing=(await db.query('select token from qori_demo_invitations where seller_id=$1 and prospect_id is not distinct from $2 and session_id is not distinct from $3 and revoked_at is null limit 1',[seller,null,null])).rows[0];
    const token=existing?.token||crypto.randomBytes(32).toString('base64url');
-   if(!existing)await db.query('insert into qori_demo_invitations(token,seller_id,prospect_id,session_id) values($1,$2,$3,$4)',[token,seller,d.prospect_id,d.session_id]);
+   if(!existing)await db.query('insert into qori_demo_invitations(token,seller_id,prospect_id,session_id) values($1,$2,$3,$4)',[token,seller,null,null]);
    return {url:new URL('/demostraciones/?i='+token,env.publicAppUrl).toString(),seller_id:seller};});
   return {...result,qr_data_url:await QRCode.toDataURL(result.url,{width:768,margin:4,errorCorrectionLevel:'M',color:{dark:'#012268',light:'#ffffff'}})};
  }

@@ -9,6 +9,9 @@ async function main(){
  const db=new Client({connectionString:url,ssl:false});await db.connect();try{
   const exists=(await db.query("select to_regclass('qori_demo_config') name")).rows[0].name;
   if(!exists){if(!process.argv.includes('--apply'))throw Error('Falta la migración. Añade --apply para aplicarla solo a esta base local.');await db.query('begin');try{await db.query(sql);await db.query('commit');}catch(e){await db.query('rollback');throw e;}}
+  const releaseFile='20261124150438_qori_demo_december_open_agenda.sql',releaseId=releaseFile.slice(0,-4),releaseSql=fs.readFileSync(path.join(__dirname,'../database/migrations',releaseFile),'utf8');
+  if(releaseSql!==fs.readFileSync(path.join(__dirname,'../supabase/migrations',releaseFile),'utf8'))throw Error('Las copias de la migración de diciembre difieren.');
+  if(!(await db.query("select 1 from pg_constraint where conrelid='qori_demo_sessions'::regclass and conname='qori_demo_sessions_local_date_check' and pg_get_constraintdef(oid) like '%2026-12-01%'")).rowCount){if(!process.argv.includes('--apply'))throw Error('Falta la migración de diciembre. Añade --apply.');await db.query('begin');try{await db.query(releaseSql);await db.query('commit');}catch(e){await db.query('rollback');throw e;}}
   const tables=(await db.query("select relname,relrowsecurity from pg_class where relname like 'qori_demo_%' and relkind='r'")).rows;
   if(tables.length!==10||tables.some(t=>!t.relrowsecurity))throw Error('Faltan tablas o RLS.');
   const grants=(await db.query("select grantee,table_name,privilege_type from information_schema.role_table_grants where table_name like 'qori_demo_%' and grantee in('anon','authenticated','PUBLIC')")).rows;

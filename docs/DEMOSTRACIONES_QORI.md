@@ -17,7 +17,15 @@ Vista previa local preparada: **http://127.0.0.1:4877/qa**. Tiene una base indep
 
 El prospecto reserva sin cuenta ni compra. La confirmación incluye el Meet de su ocurrencia y **Ver planes y suscribirme**, que usa el mecanismo firmado existente `prospect_ref` y `advisor`. Si ya existe negocio vinculado, ofrece entrar a su cuenta. Un conflicto ambiguo conserva la reserva y solicita resolución administrativa antes de ofrecer una suscripción atribuida.
 
-## Primera habilitación administrativa
+## Agenda desde diciembre de 2026
+
+Por instrucción expresa del responsable, la migración `20261124150438_qori_demo_december_open_agenda` cambia el inicio al **1 de diciembre de 2026**, elimina la fecha final y habilita la configuración existente. Conserva cupo, anticipación, canales y reservas previas; no confirma automáticamente los Meet pendientes. La ventana de 60 días avanza diariamente, por lo que no representa una fecha de cierre. El cambio queda auditado.
+
+Cada embajador comparte **un único enlace estable**. Compartir desde CRM o desde una sesión devuelve el mismo formulario. Los enlaces anteriores siguen siendo válidos. En el formulario, el prospecto elige jornada, día y hora; el selector solo muestra ocurrencias disponibles y conserva los datos escritos al cambiar la selección.
+
+En Seller, **Selector rápido de sesión** filtra la agenda y los inscritos.
+
+## Configuración administrativa
 
 1. Abrir `/admin/#demostraciones` y pulsar **Configurar y habilitar**.
 2. Revisar modalidad, cupo, primera fecha, anticipación y días visibles. Correo y otras opciones están plegadas.
@@ -27,11 +35,11 @@ El prospecto reserva sin cuenta ni compra. La confirmación incluye el Meet de s
 
 **Ver agenda** muestra fechas e inscritos; **Pausar nuevas reservas** conserva las reservas existentes.
 
-La migración deja `approved=false`, `enabled=false` y el canal automático apagado. La configuración se muestra como propuesta. Admin debe revisarla, marcar aceptación explícita y guardar antes de publicar horarios.
+La migración original dejó `approved=false`, `enabled=false` y el canal automático apagado. La migración de diciembre habilita las reservas por la nueva instrucción expresa; los canales conservan su estado. La configuración se muestra como propuesta. Admin debe revisarla, marcar aceptación explícita y guardar antes de publicar horarios.
 
 Propuestas editables: grupal, ocho cupos, dos horas de anticipación, 60 días desde hoy, confirmación al completar el formulario, correo, recordatorios a 24 y una hora, asistencia por Admin/anfitrión autorizado, seguimiento a 24 horas, ventana de conversión de 30 días. El correo requiere además configuración de servidor. WhatsApp automático permanece deshabilitado; **Abrir WhatsApp con texto preparado** es una acción manual.
 
-Las recurrencias empiezan el **5 de enero de 2027**, martes, miércoles y jueves. No se adelantan para llenar el horizonte. Duración inicial: 60 minutos. Todos los cálculos y etiquetas usan `America/Bogota`.
+Las recurrencias empiezan el **1 de diciembre de 2026**, martes, miércoles y jueves. No se adelantan para llenar el horizonte. Duración inicial: 60 minutos. Todos los cálculos y etiquetas usan `America/Bogota`.
 
 | Hora de Colombia | Meet canónico | Estado inicial |
 | --- | --- | --- |
@@ -47,7 +55,7 @@ Cambiar Meet de una sesión actualiza su confirmación y prepara aviso. Cambiar 
 ## Operación del embajador
 
 1. Preguntar qué necesita el negocio: atracción, seguimiento o recompra.
-2. Abrir **Demostraciones**, elegir una fecha disponible y **Invitar a esta fecha**, o generar un QR general. Desde CRM se conserva el contexto del contacto sin publicar sus datos.
+2. Abrir **Demostraciones**, elegir una fecha disponible y **Compartir formulario**, o generar un QR general. Desde CRM se conserva el contexto del contacto sin publicar sus datos.
 3. El prospecto completa sus propios datos, elige fecha y obtiene su invitación. El embajador no necesita crearle una cuenta ni pedir contraseñas.
 4. Consultar **Mis prospectos inscritos**, filtrar fecha o asistencia y abrir CRM. Las listas no muestran inscritos de otros embajadores.
 5. Registrar necesidad, notas y fecha acordada en **Próxima acción**. Se actualizan las notas y `next_contact_at` del CRM existente.

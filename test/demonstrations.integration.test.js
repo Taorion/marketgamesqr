@@ -5,7 +5,7 @@ const {query,pool}=require('../backend/src/config/db');
 const {createService,policy}=require('../backend/src/services/demonstrationService');
 const {worker}=require('../backend/src/services/demonstrationWorker');
 const jwt=require('jsonwebtoken'),sharp=require('sharp'),jsQR=require('jsqr');
-let time=new Date('2026-11-24T15:00:00Z'),operational=false,failMail=false,sent=[];
+let time=new Date('2027-01-04T15:00:00Z'),operational=false,failMail=false,sent=[];
 const s=createService({now:()=>new Date(time),mailOperational:()=>operational,deliver:async(p,k)=>{if(failMail)throw Error('mock provider failure');sent.push({p,k});return 'mock-'+k;}});
 require('../backend/src/services/demonstrationRuntime').service=s;
 let server,base,seller,other,admin,invite,slots,first,second;
@@ -37,7 +37,7 @@ test('Commercial demonstrations: local PostgreSQL, controlled clock and simulate
   assert.equal(slots.filter(s=>policy.colombiaDate(s.starts_at)==='2027-01-05').length,4);
   const firstDay=slots.slice(0,4);assert.deepEqual(firstDay.map(s=>s.meet_url),['https://meet.google.com/apc-mdfv-pjz','https://meet.google.com/hmm-bwho-vxy','https://meet.google.com/djh-wqny-ggd','https://meet.google.com/xpt-jroa-aec']);assert.equal(new Date(firstDay[0].starts_at).toISOString(),'2027-01-05T13:00:00.000Z');
   const count=slots.length;assert.equal((await s.workspace(admin)).sessions.length,count);assert.equal((await s.landing(invite)).sessions.filter(s=>policy.colombiaDate(s.starts_at)==='2027-01-06').length,3);
-  time=new Date('2026-11-01T12:00:00Z');assert.equal((await s.landing(invite)).sessions.length,0);time=new Date('2027-01-04T15:00:00Z');
+  time=new Date('2026-10-01T12:00:00Z');assert.equal((await s.landing(invite)).sessions.length,0);time=new Date('2027-01-04T15:00:00Z');
  });
  await t.test('public reservation without business account and exact Meet; signed subscription prospect association',async()=>{
   first=await s.reserve(body(slots[0]));assert.equal(first.status,'CONFIRMED');assert.equal(first.session.meet_url,slots[0].meet_url);assert.ok(first.subscription.url);
@@ -144,4 +144,13 @@ test('Commercial demonstrations: local PostgreSQL, controlled clock and simulate
   // Account reassignment alone must not expose the old prospect record to either seller.
   await query('update qori_sales_accounts set seller_id=$2 where business_id=$1',[business.id,other.id]);for(const u of [seller,other])assert.ok(!(await s.workspace(u)).bookings.some(x=>x.id===b.id));
  });
+ await t.test('December opening has no final date, rolls forward and uses one stable link per ambassador',async()=>{
+  time=new Date('2026-11-24T15:00:00Z');await query("update qori_demo_templates set confirmed=not(weekday in(3,4) and local_time='10:00')");await s.saveConfig(admin,{settings:{...policy.DEFAULTS,email_enabled:false},enabled:true,accept_proposals:true});
+  const canonical=await s.invite(seller,{}),token=new URL(canonical.url).searchParams.get('i');const list=(await s.landing(token)).sessions;assert.equal(policy.START,'2026-12-01');assert.equal(policy.DEFAULTS.end_date,null);assert.equal(list[0].starts_at.toISOString?.()||new Date(list[0].starts_at).toISOString(),'2026-12-01T13:00:00.000Z');assert.equal(list.filter(x=>policy.colombiaDate(x.starts_at)==='2026-12-01').length,4);assert.equal(list.filter(x=>policy.colombiaDate(x.starts_at)==='2026-12-02').length,3);
+  const fromSession=await s.invite(seller,{session_id:list[2].id});assert.equal(fromSession.url,canonical.url);const reservation=await s.reserve(body(list[2],{invitation:token}));assert.equal(reservation.session.meet_url,'https://meet.google.com/djh-wqny-ggd');const contact=await s.booking({query},reservation.id);assert.equal((await s.invite(seller,{prospect_id:contact.prospect_id})).url,canonical.url);assert.equal(contact.owner_id,seller.id);
+  await assert.rejects(query("update qori_demo_sessions set local_date='2026-11-30' where id=$1",[list[0].id]),/check constraint/);
+  time=new Date('2028-05-01T15:00:00Z');const later=(await s.landing(token)).sessions;assert.ok(later.length);assert.ok(later.every(x=>new Date(x.starts_at)>time));assert.ok(later.every(x=>new Date(x.starts_at)<=new Date(time.getTime()+60*86400000)));assert.equal((await s.config()).settings.end_date,null);
+  time=new Date('2027-01-04T15:00:00Z');
+ });
+
 });
