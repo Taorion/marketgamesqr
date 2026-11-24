@@ -124,6 +124,12 @@ El verificador rechaza hosts remotos y bases sin nombre `qori_*qa`; no lee `DATA
 
 ## Pruebas y límites de evidencia
 
+### Selector de agenda por fecha y hora
+
+En Seller y Administración, selecciona **Fecha de Colombia** para consultar un día. **Hora de inicio** permite acotar una franja o consultar todas las horas. **Solo disponibles para reservar** utiliza la disponibilidad validada por el servidor; no considera reservable una sesión únicamente por estar habilitada. El selector rápido y los prospectos inscritos siguen estos filtros. Cambiar fecha u hora elimina una selección de sesión anterior que impediría ver resultados. **Actualizar agenda** conserva los filtros; **Limpiar fecha y hora** vuelve a mostrar todas las sesiones.
+
+Corrección del selector: 34 pruebas aprobadas, incluyendo fecha/hora tras seleccionar otra sesión, inscritos correspondientes, conservación al actualizar, disponibilidad y resultados vacíos. Revisión en Chrome a 1440, 390 y 320 px con zona Pacific/Auckland y presentación Colombia, sin desplazamiento horizontal. Sin migraciones nuevas ni envíos a prospectos reales.
+
 Resultado final: **31/31** pruebas del módulo e integración de interfaz; **21/21** regresiones de referido, QR y cierre comercial. La migración también se aplicó desde cero sobre el esquema Qori en `qori_demonstrations_schema_qa`: diez tablas con RLS, cero concesiones públicas directas, doce franjas y dos pendientes. Las pruebas no cubren toda la suite histórica del repositorio.
 
 Las suites cubren recurrencias, los cuatro Meet, aprobación pendiente, zona de servidor distinta, límites de fechas, cupo concurrente, idempotencia, conflictos y ambigüedad, referidos, aislamiento, reprogramación y rollback, cancelación, cambios de Meet/fecha, recuperación, fallos/reintentos y recordatorios, asistencia histórica, seguimiento, RLS y conversión con pago verificado. UI con JSDOM usa HTTP y PostgreSQL reales locales: formulario, error conservando datos, confirmación, enlace de suscripción, cambio de sesión, navegación Seller y navegación Admin.

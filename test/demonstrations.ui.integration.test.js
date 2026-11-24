@@ -28,11 +28,26 @@ test('Public and staff UI use real local API: booking, confirmation, move, CRM a
  await t.test('reprogramming changes session without losing prospect or ambassador',async()=>{
   const before=await s.manage(reservation),f=w.document.querySelector('#move');assert.ok(f.elements.session_id.options.length);const target=f.elements.session_id.value;f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await until(()=>w.document.querySelector('#move')!==f);const after=await s.manage(reservation);assert.equal(after.session.id,target);assert.equal(after.id,before.id);assert.equal(new URL(after.subscription.url).searchParams.get('advisor'),seller.id);
  });
- await t.test('staff agenda shows this prospect and opens canonical CRM; QR uses personal invitation',async()=>{
+ await t.test('staff agenda shows this prospect and opens canonical CRM; QR uses personal invitation',async staffTest=>{
   const staff=dom(),sw=staff.window;sw.eval(source('demostraciones/workspace.js'));const host=sw.document.querySelector('main');let opened;
   const jwt=require('jsonwebtoken').sign({sub:seller.id,password_version:seller.password_version||0},process.env.JWT_SECRET);
   const request=async(p,b)=>{const r=await fetch(base+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},...(b?{body:JSON.stringify(b)}:{})});const result=await r.json();if(!r.ok)throw Error(result.error?.message);return result;};
   await sw.QoriDemonstrations.render(host,{request,openCrm:id=>opened=id});assert.ok(host.textContent.includes('UI Business'),host.textContent);const b=host.querySelector('[data-action=crm]');b.click();await until(()=>opened);assert.ok(opened.includes('@example.test'));
+  await staffTest.test('date and time replace stale session selection, scope prospects, survive refresh and report empty results',async()=>{
+   const change=(id,value)=>{const el=host.querySelector(id);el.value=value;el.dispatchEvent(new sw.Event('change',{bubbles:true}));};
+   const state=await request('/api/seller/demonstrations/workspace'),available=new Set(state.available.map(s=>s.id));
+   const booked=await s.manage(reservation),colombia=v=>new Date(new Date(v).getTime()-5*3600000).toISOString().slice(0,16);
+   change('#demoJump',booked.session.id);assert.equal(host.querySelectorAll('[data-session-card]').length,1);assert.ok(host.querySelector('#demoBookings').textContent.includes('UI Business'));
+   const other=state.available.find(x=>colombia(x.starts_at).slice(0,10)!==colombia(booked.session.starts_at).slice(0,10));assert.ok(other);
+   change('#demoDate',colombia(other.starts_at).slice(0,10));change('#demoTime','');assert.equal(host.querySelector('#demoJump').value,'');
+   assert.ok(host.querySelectorAll('[data-session-card]').length);assert.ok([...host.querySelectorAll('[data-session-card]')].every(x=>x.dataset.date===colombia(other.starts_at).slice(0,10)));assert.ok(!host.querySelector('#demoBookings').textContent.includes('UI Business'));
+   change('#demoTime',colombia(other.starts_at).slice(11));assert.equal(host.querySelectorAll('[data-session-card]').length,1);
+   const old=host.querySelector('#demoDate');host.querySelector('[data-action=reload]').click();await until(()=>host.querySelector('#demoDate')!==old);assert.equal(host.querySelector('#demoDate').value,colombia(other.starts_at).slice(0,10));assert.equal(host.querySelector('#demoTime').value,colombia(other.starts_at).slice(11));assert.equal(host.querySelectorAll('[data-session-card]').length,1);
+   change('#demoDate','2027-01-10');assert.equal(host.querySelectorAll('[data-session-card]').length,0);assert.ok(host.querySelector('#demoSessionList').textContent.includes('No hay sesiones'));assert.ok(host.querySelector('#demoAgendaResults').textContent.includes('0 sesiones'));
+   host.querySelector('[data-action=clear-session]').click();assert.equal(host.querySelector('#demoDate').value,'');assert.equal(host.querySelector('#demoTime').value,'');assert.ok(host.querySelector('#demoBookings').textContent.includes('UI Business'));
+   host.querySelector('#demoAvailable').click();assert.equal(host.querySelectorAll('[data-session-card]').length,available.size);assert.ok([...host.querySelectorAll('[data-session-card]')].every(x=>x.dataset.available==='true'));assert.ok([...host.querySelectorAll('#demoJump option')].filter(o=>o.value).every(o=>available.has(o.value)));
+   host.querySelector('[data-action=clear-session]').click();assert.equal(host.querySelector('#demoAvailable').checked,false);
+  });
   const share=host.querySelector('#demoInviteLink');assert.ok(share, 'El enlace debe ser visible sin abrir un diálogo');
   assert.equal(host.querySelector('[data-open-registration]').href,share.value);const shareUrl=new URL(share.value);
   const landing=await (await fetch(base+'/api/demonstrations/invitation/'+shareUrl.searchParams.get('i'))).json();assert.equal(landing.ambassador,seller.full_name);assert.ok(landing.sessions.length);
