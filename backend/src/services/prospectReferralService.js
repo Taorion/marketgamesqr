@@ -16,13 +16,13 @@ const eligible = p => p && !p.business_id && !p.closed_at && ['NEW','CONTACTED',
 async function audit(db, actorId, action, id, detail) {
   await db.query('insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,$2,\'prospect\',$3,$4::jsonb)', [actorId,action,id,JSON.stringify(detail)]);
 }
-async function referral(user, id) {
+async function referral(user, id, db = { query }) {
   validate(uuid,id);
-  const p = (await query('select * from qori_sales_prospects where id=$1',[id])).rows[0];
+  const p = (await db.query('select * from qori_sales_prospects where id=$1',[id])).rows[0];
   if (!p) throw notFound('Prospecto no encontrado.');
   requireOwner(user,p.seller_id);
   if (!eligible(p)) throw badRequest('Este contacto ya fue inscrito o su seguimiento está cerrado.');
-  await advisorById(p.seller_id);
+  await advisorById(p.seller_id,db);
   const token = jwt.sign({prospect_id:p.id,seller_id:p.seller_id,contact_key:contactKey(p.email)},signingKey(),{algorithm:'HS256',audience,expiresIn:'30d'});
   const base = env.publicAppUrl.replace(/\/$/,'');
   const plan_referral_url=base+'/paquetes/?'+new URLSearchParams({advisor:p.seller_id,prospect_ref:token});

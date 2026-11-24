@@ -253,7 +253,9 @@ app.get(['/customer','/customer/','/customer/index.html'],(req,res,next)=>{
  next();
 });
 app.use("/api/customer", require("./routes/customerRoutes").router);
+app.use("/api/seller/demonstrations", require("./routes/demonstrationRoutes").staffRouter);
 app.use("/api/seller", require("./routes/qoriSellerRoutes"));
+app.use("/api/demonstrations", require("./routes/demonstrationRoutes").publicRouter);
 app.get('/inscripcion/:token',rateLimit({keyPrefix:'seller-signup-qr',max:120,windowMs:60000}),async(req,res,next)=>{
   res.set({'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'});
   try{res.redirect(302,await require('./services/sellerReferralQrService').resolve(req.params.token));}
@@ -326,6 +328,7 @@ app.get("/empresa/agenda-sw.js", (_req, res) => {
 app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa"), staticOptions));
 app.use("/admin", express.static(path.join(__dirname, "../..", "admin"), staticOptions));
 app.use("/seller", express.static(path.join(projectRoot,"seller"), staticOptions));
+app.use("/demostraciones", express.static(path.join(projectRoot,"demostraciones"), staticOptions));
 app.use("/conoce-qori", express.static(path.join(projectRoot,"conoce-qori"), staticOptions));
 app.use("/pense-en-ti", express.static(path.join(projectRoot,"pense-en-ti"), staticOptions));
 app.use("/paquetes", express.static(path.join(__dirname, "../..", "paquetes"), staticOptions));

@@ -45,4 +45,4 @@ async function close(user,id,payload){
   return {ok:true,closed_at:result.closed_at};
  });
 }
-module.exports={preview,close};
+module.exports={preview,close,validPayment};

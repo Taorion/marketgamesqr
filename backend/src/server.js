@@ -10,6 +10,8 @@ const stopGiftDelivery = require('./services/giftDeliveryService').start();
 const stopSubscriptionRenewals = require('./services/subscriptionAutoRenewalService').start();
 const stopSellerCommissions = require('./services/sellerCommissionWorker').startSellerCommissionWorker();
 
+const stopDemonstrations = require('./services/demonstrationWorker').start();
+
 const server = app.listen(env.port, () => {
   console.log(`Sales Machine Portal RMS running on http://localhost:${env.port}`);
   startDeactivatedUserCleanup();
@@ -18,6 +20,7 @@ const stopSummitLive = require('./services/summitLiveService').attach(server);
 
 const stopPlay = require('./play/realtime').attach(server);
 async function shutdown() {
+  await stopDemonstrations();
   stopSummitLive();
   await stopSubscriptionRenewals();
   await stopPlay();
