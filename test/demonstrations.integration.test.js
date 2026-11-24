@@ -127,7 +127,7 @@ test('Commercial demonstrations: local PostgreSQL, controlled clock and simulate
   const state=await s.manage(r.token);assert.ok(state.communications.some(x=>x.kind==='REMINDER_1'&&x.status==='ACCEPTED'));
  });
  await t.test('administrative cancellation offers an atomic move and additional confirmation remains distinct',async()=>{
-  time=new Date('2027-01-04T15:00:00Z');const target=(await s.landing(invite)).sessions.find(x=>new Date(x.starts_at)>new Date('2027-01-20T00:00:00Z'));const r=await s.reserve(body(target)),session=await s.session({query},target.id);await s.changeSession(admin,session.id,sessionEdit(session,{status:'CANCELLED'}));assert.equal((await s.manage(r.token)).status,'CANCELLED');
+  time=new Date('2027-01-04T15:00:00Z');const target=(await s.landing(invite)).sessions.find(x=>new Date(x.starts_at)>new Date('2027-01-12T00:00:00Z'));const r=await s.reserve(body(target)),session=await s.session({query},target.id);await s.changeSession(admin,session.id,sessionEdit(session,{status:'CANCELLED'}));assert.equal((await s.manage(r.token)).status,'CANCELLED');
   const next=(await s.landing(invite)).sessions.find(x=>x.id!==target.id);assert.equal((await s.change(r.token,{action:'MOVE',session_id:next.id})).status,'CONFIRMED');
   await s.saveConfig(admin,{settings:{...policy.DEFAULTS,additional_confirmation:true},enabled:true,accept_proposals:true});const pending=await s.reserve(body(next));assert.equal(pending.status,'PENDING_CONFIRMATION');assert.equal((await s.change(pending.token,{action:'CONFIRM'})).status,'CONFIRMED');
   await s.saveConfig(admin,{settings:{...policy.DEFAULTS,email_enabled:true},enabled:true,accept_proposals:true});
@@ -149,7 +149,22 @@ test('Commercial demonstrations: local PostgreSQL, controlled clock and simulate
   const canonical=await s.invite(seller,{}),token=new URL(canonical.url).searchParams.get('i');const list=(await s.landing(token)).sessions;assert.equal(policy.START,'2026-12-01');assert.equal(policy.DEFAULTS.end_date,null);assert.equal(list[0].starts_at.toISOString?.()||new Date(list[0].starts_at).toISOString(),'2026-12-01T13:00:00.000Z');assert.equal(list.filter(x=>policy.colombiaDate(x.starts_at)==='2026-12-01').length,4);assert.equal(list.filter(x=>policy.colombiaDate(x.starts_at)==='2026-12-02').length,3);
   const fromSession=await s.invite(seller,{session_id:list[2].id});assert.equal(fromSession.url,canonical.url);const reservation=await s.reserve(body(list[2],{invitation:token}));assert.equal(reservation.session.meet_url,'https://meet.google.com/djh-wqny-ggd');const contact=await s.booking({query},reservation.id);assert.equal((await s.invite(seller,{prospect_id:contact.prospect_id})).url,canonical.url);assert.equal(contact.owner_id,seller.id);
   await assert.rejects(query("update qori_demo_sessions set local_date='2026-11-30' where id=$1",[list[0].id]),/check constraint/);
-  time=new Date('2028-05-01T15:00:00Z');const later=(await s.landing(token)).sessions;assert.ok(later.length);assert.ok(later.every(x=>new Date(x.starts_at)>time));assert.ok(later.every(x=>new Date(x.starts_at)<=new Date(time.getTime()+60*86400000)));assert.equal((await s.config()).settings.end_date,null);
+  time=new Date('2028-05-01T15:00:00Z');const later=(await s.landing(token)).sessions;assert.ok(later.length);assert.ok(later.every(x=>new Date(x.starts_at)>time));assert.ok(later.every(x=>new Date(x.starts_at)<=new Date(time.getTime()+15*86400000)));assert.equal((await s.config()).settings.end_date,null);
+  time=new Date('2027-01-04T15:00:00Z');
+ });
+
+ await t.test('15-day migration preserves existing bookings and settings; server rejects outside window and rolls daily',async()=>{
+  const fs=require('node:fs'),file='20261124173537_qori_demo_fifteen_day_booking_window.sql',sql=fs.readFileSync('database/migrations/'+file,'utf8');
+  assert.equal(sql,fs.readFileSync('supabase/migrations/'+file,'utf8'));assert.equal(policy.DEFAULTS.horizon_days,15);
+  await s.saveConfig(admin,{settings:{...policy.DEFAULTS,horizon_days:60,email_enabled:true},enabled:true,accept_proposals:true});
+  const far=(await s.landing(invite)).sessions.find(x=>new Date(x.starts_at)>new Date(time.getTime()+16*86400000));assert.ok(far);const existing=await s.reserve(body(far));
+  const before=await s.config(),count=(await query('select count(*) n from qori_demo_bookings')).rows[0].n;
+  await s.tx(db=>db.query(sql));const after=await s.config();assert.deepEqual(after.settings,{...before.settings,horizon_days:15});assert.equal(after.enabled,before.enabled);assert.equal(after.approved,before.approved);
+  assert.equal((await query('select count(*) n from qori_demo_bookings')).rows[0].n,count);assert.equal((await s.manage(existing.token)).session.id,far.id);
+  const landing=await s.landing(invite);assert.equal(landing.booking_window.days,15);assert.equal(landing.booking_window.until,new Date(time.getTime()+15*86400000).toISOString());assert.ok(landing.sessions.every(x=>new Date(x.starts_at)<=new Date(landing.booking_window.until)));
+  const result=await api('/reserve',body(far));assert.equal(result.status,400);assert.equal(result.data.token,undefined);
+  const boundary={...slots[0],starts_at:new Date(time.getTime()+15*86400000),status:'ENABLED',confirmed_template:true,meet_url:'https://meet.google.com/apc-mdfv-pjz',capacity:8};assert.equal(policy.available(boundary,after,time,0),true);assert.equal(policy.available({...boundary,starts_at:new Date(new Date(boundary.starts_at).getTime()+1)},after,time,0),false);
+  time=new Date(time.getTime()+86400000);const tomorrow=await s.landing(invite);assert.equal(tomorrow.booking_window.until,new Date(time.getTime()+15*86400000).toISOString());assert.ok(tomorrow.sessions.every(x=>new Date(x.starts_at)>time));
   time=new Date('2027-01-04T15:00:00Z');
  });
 

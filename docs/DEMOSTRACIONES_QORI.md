@@ -19,7 +19,7 @@ El prospecto reserva sin cuenta ni compra. La confirmación incluye el Meet de s
 
 ## Agenda desde diciembre de 2026
 
-Por instrucción expresa del responsable, la migración `20261124150438_qori_demo_december_open_agenda` cambia el inicio al **1 de diciembre de 2026**, elimina la fecha final y habilita la configuración existente. Conserva cupo, anticipación, canales y reservas previas; no confirma automáticamente los Meet pendientes. La ventana de 60 días avanza diariamente, por lo que no representa una fecha de cierre. El cambio queda auditado.
+Por instrucción expresa del responsable, la migración `20261124150438_qori_demo_december_open_agenda` cambia el inicio al **1 de diciembre de 2026**, elimina la fecha final y habilita la configuración existente. Conserva cupo, anticipación, canales y reservas previas; no confirma automáticamente los Meet pendientes. La ventana de reservas avanza diariamente, por lo que no representa una fecha de cierre. La actualización `20261124173537_qori_demo_fifteen_day_booking_window` la establece en **15 días** por solicitud expresa, sin alterar reservas existentes ni las demás opciones. El cambio queda auditado.
 
 Cada embajador comparte **un único enlace estable**. Compartir desde CRM o desde una sesión devuelve el mismo formulario. Los enlaces anteriores siguen siendo válidos. En el formulario, el prospecto elige jornada, día y hora; el selector solo muestra ocurrencias disponibles y conserva los datos escritos al cambiar la selección.
 
@@ -37,7 +37,7 @@ En Seller, **Selector rápido de sesión** filtra la agenda y los inscritos.
 
 La migración original dejó `approved=false`, `enabled=false` y el canal automático apagado. La migración de diciembre habilita las reservas por la nueva instrucción expresa; los canales conservan su estado. La configuración se muestra como propuesta. Admin debe revisarla, marcar aceptación explícita y guardar antes de publicar horarios.
 
-Propuestas editables: grupal, ocho cupos, dos horas de anticipación, 60 días desde hoy, confirmación al completar el formulario, correo, recordatorios a 24 y una hora, asistencia por Admin/anfitrión autorizado, seguimiento a 24 horas, ventana de conversión de 30 días. El correo requiere además configuración de servidor. WhatsApp automático permanece deshabilitado; **Abrir WhatsApp con texto preparado** es una acción manual.
+Propuestas editables: grupal, ocho cupos, dos horas de anticipación, 15 días desde ahora, confirmación al completar el formulario, correo, recordatorios a 24 y una hora, asistencia por Admin/anfitrión autorizado, seguimiento a 24 horas, ventana de conversión de 30 días. El correo requiere además configuración de servidor. WhatsApp automático permanece deshabilitado; **Abrir WhatsApp con texto preparado** es una acción manual.
 
 Las recurrencias empiezan el **1 de diciembre de 2026**, martes, miércoles y jueves. No se adelantan para llenar el horizonte. Duración inicial: 60 minutos. Todos los cálculos y etiquetas usan `America/Bogota`.
 
@@ -144,3 +144,14 @@ Revisión visual en Chrome con superficies de 390 y 320 px: landing y formulario
 4. Revisar configuración, dos franjas pendientes, enlaces y capacidad; guardar aprobación.
 5. Configurar correo y probar únicamente con destinatarios autorizados; revisar entrega y recuperación.
 6. Ejecutar recorrido móvil publicado y luego habilitar agenda. La publicación del módulo no aprueba la configuración ni activa los canales de comunicación.
+
+
+## Inscripción directa o acompañada · ventana de 15 días
+
+El embajador conserva un único enlace y QR. En **Seller → Demostraciones**, **Copiar enlace** permite enviarlo al prospecto; **Inscribir a un prospecto** abre ese mismo formulario para completar sus datos con su autorización. Se eligen jornada, día y hora entre las sesiones que devuelve el servidor. El formulario muestra el límite exacto en hora de Colombia. Deben utilizarse el nombre y correo del prospecto, nunca los del embajador por comodidad.
+
+Verificación de esta actualización: 36 pruebas aprobadas. Los recorridos directo y acompañado usan HTTP y PostgreSQL locales; se comprobó la agenda del propietario, el Meet elegido, la asociación de suscripción y el formulario vacío para la siguiente persona. Chrome a 1440, 390 y 320 px, zona Pacific/Auckland: sin desbordamiento horizontal, reserva ficticia completa y confirmación correcta. Sin destinatarios reales ni prueba en teléfono físico.
+
+Al guardar, la confirmación muestra el Meet de la sesión y el acceso de gestión. El embajador debe entregar este acceso al prospecto; el estado del correo se muestra por separado. **Inscribir a otro prospecto** abre un formulario vacío sin modificar la reserva anterior. Seller conserva los inscritos en su fecha y hora y la asociación comercial habitual.
+
+Administración: la migración auditada cambia únicamente `horizon_days` a 15. No cancela ni elimina reservas posteriores ya existentes, no cambia los Meet pendientes y no activa canales. El horizonte es móvil: ahora + 15 días; el servidor también rechaza solicitudes directas fuera de esa ventana. Continúa el inicio del 1 de diciembre de 2026 sin fecha final. Validación local: `node scripts/verify-demonstrations-local.cjs --apply` sobre una base QA local, seguido de las suites de demostraciones. Publicación mediante el runner de migraciones existente.
