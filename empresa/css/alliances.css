@@ -117,8 +117,13 @@
 .qa-workspace [hidden],.qa-dialog [hidden]{display:none!important}
 /* The portal theme assigns important global colors and corner radii. Keep these overrides local. */
 #alliancesWorkspace .qa-hero{color:#fff!important;border-radius:24px!important}
-#alliancesWorkspace .qa-hero h2{color:#fff!important}
-#alliancesWorkspace .qa-hero p{color:#e0edf3!important}
+#alliancesWorkspace .qa-hero :is(h2,p){color:#fff!important;-webkit-text-fill-color:#fff!important;opacity:1!important}
+#alliancesWorkspace .qa-hero p{line-height:1.75!important}
+#alliancesWorkspace .qa-panel p,#alliancesWorkspace .qa-card p{line-height:1.7!important}
+#alliancesWorkspace .qa-demo-guide{margin:20px 0;padding:20px 24px;background:#f2f8fb;border:1px solid #c7dfe9;border-left:4px solid #2876a0;border-radius:14px}
+#alliancesWorkspace .qa-demo-guide h3{margin:0 0 8px;color:#173347!important;font-size:17px}
+#alliancesWorkspace .qa-demo-guide p{margin:6px 0;color:#35566a!important;font-size:13px;line-height:1.7!important}
+#alliancesWorkspace .qa-demo-guide .qa-toolbar{padding:0;border:0;background:transparent;margin:14px 0 0}
 #alliancesWorkspace .qa-hero .qa-eyebrow{color:#f4d191!important}
 #alliancesWorkspace :is(.qa-card,.qa-panel,.qa-stat,.qa-toolbar,.qa-empty){border-radius:16px!important}
 #alliancesWorkspace .qa-badge{border-radius:30px!important}

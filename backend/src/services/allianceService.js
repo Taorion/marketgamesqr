@@ -11,6 +11,7 @@ const R=require('./allianceRules');
 const token=()=>crypto.randomBytes(32).toString('hex');
 const url=(path)=>new URL(path,env.publicAppUrl).toString();
 const eligible=b=>b?.is_active&&planFromBusiness(b).portal_access_allowed;
+const isDemo=b=>Boolean(b?.is_seller_demo||(b?.settings?.internal_account===true&&b?.settings?.alliance_demo===true));
 const digest=v=>crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');
 async function event(c,a,user,action,details={}){await c.query('insert into qori_alliance_events(alliance_id,actor_id,action,details) values($1,$2,$3,$4)',[a.id,user?.id||null,action,details]);}
 async function agreement(c,id,businessId,lock=false){
@@ -32,14 +33,16 @@ async function context(user){
       (select count(*)::int from qori_alliance_tickets where alliance_id=a.id) delivered
       from qori_alliances a join businesses i on i.id=a.issuer_id join businesses n on n.id=a.ally_id
       where a.issuer_id=$1 or a.ally_id=$1 order by a.created_at desc`,[user.business_id]),
-    query('select qr_balance from business_qr_credit_accounts where business_id=$1',[user.business_id]),
+    query('select c.qr_balance,b.is_seller_demo,b.settings from businesses b left join business_qr_credit_accounts c on c.business_id=b.id where b.id=$1',[user.business_id]),
     query("select id,name from business_inventory_products where business_id=$1 and status='ACTIVE' and currency='COP' order by name",[user.business_id]),
     query('select id,name,address from branches where business_id=$1 and is_active=true order by name',[user.business_id])]);
-  return {business_id:user.business_id,alliances:a.rows,ticket_balance:Number(b.rows[0]?.qr_balance||0),products:p.rows,branches:s.rows};
+  return {business_id:user.business_id,demo_mode:isDemo(b.rows[0]),alliances:a.rows,ticket_balance:Number(b.rows[0]?.qr_balance||0),products:p.rows,branches:s.rows};
 }
 async function lookup(user,slug){
   const b=(await query('select * from businesses where slug=$1 and id<>$2',[String(slug).trim().toLowerCase(),user.business_id])).rows[0];
   if(!eligible(b))throw notFound('No encontramos un negocio activo con ese identificador.');
+  const own=(await query('select is_seller_demo,settings from businesses where id=$1',[user.business_id])).rows[0];
+  if(isDemo(own)!==isDemo(b))throw forbidden('Las alianzas de demostración solo pueden conectar negocios de demostración.');
   return {id:b.id,name:b.name,slug:b.slug};
 }
 async function save(user,input,id){

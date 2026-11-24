@@ -27,6 +27,16 @@ test('business-provided strings are rendered as text, not executable markup',asy
  w.authHeaders=()=>({});w.api=async()=>({business_id:'issuer',alliances:[{id:'x',issuer_id:'issuer',rules:{...r,name:'<img src=x onerror=alert(1)>',benefit_label:'<script>bad()</script>'},status:'ACTIVE',ally_name:'<svg onload=bad()>',issuer_name:'Qori'}]});
  try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();assert.equal(w.document.querySelector('#alliancesWorkspace img'),null);assert.equal(w.document.querySelector('#alliancesWorkspace script'),null);assert.match(w.document.body.textContent,/<img src=x/);}finally{dom.window.close();}
 });
+test('demo workspace explains the real examples without adding training copy to other accounts',async()=>{
+ for(const demo_mode of [true,false]){
+  const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;
+  w.authHeaders=()=>({});w.api=async()=>({business_id:'issuer',demo_mode,alliances:[]});
+  try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();
+   assert.equal(Boolean(w.document.querySelector('.qa-demo-guide')),demo_mode);
+   if(demo_mode){assert.match(w.document.querySelector('.qa-demo-guide').textContent,/Pan compartido/);assert.match(w.document.querySelector('.qa-demo-guide').textContent,/No se cobra/);}
+  }finally{dom.window.close();}
+ }
+});
 const publicOffer={...r,issuer:{name:'Origen'},ally:{name:'Vida'},branding:{display_name:'Vida',message:'Por venir de nuestra parte',invitation:'Recibe tu ticket',presentation:'',logo_url:'',collect_phone:false,collect_email:true},accepting:true};
 test('actual portal HTML renders Alianzas when the module loads after the view was selected',async()=>{
  const dom=setup(read('empresa/index.html')),w=dom.window;let calls=0;
@@ -56,7 +66,7 @@ test('the portal hook and view observer share one load and failed loads remain r
 });
 test('portal HTML versions both the shell integration and the self-initializing module',()=>{
  const dom=setup(read('empresa/index.html'));
- try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-v2-20261124'));}finally{dom.window.close();}
+ try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-demo-v3-20261124'));}finally{dom.window.close();}
 });
 test('a synchronous expired-session failure does not permanently block initialization',async()=>{
  const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;

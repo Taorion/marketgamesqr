@@ -91,4 +91,25 @@ La suite focalizada terminó con **44 pruebas aprobadas, cero fallos y cero omit
 
 La revisión visual de escritorio/móvil quedó **pendiente**: el navegador integrado no estaba disponible y Computer Use detuvo el acceso a Chrome al no poder verificar su URL con confianza. No se afirma prueba de cámara física, ausencia de desbordamientos visuales ni flujo manual completo en navegador.
 
-Pendiente antes de publicación: revisión visual y funcional en navegador, migración en entorno de despliegue, comprobación de permisos reales del rol de base de datos y verificación de versión/health y comportamiento público después del despliegue. No se hizo push, despliegue ni cambio en datos reales.
+La implementación inicial y su migración ya están publicadas. Los releases posteriores verifican el SHA servido, salud y recursos versionados; la revisión visual en navegador sigue pendiente por indisponibilidad de la herramienta.
+
+## Contraste y ejemplos de Demo Qori (24 de noviembre de 2026)
+
+El tema global `portal-clean-v39.css` tenía selectores con varios identificadores dentro de `:not()`, cuya prioridad superaba la del módulo. Se excluye únicamente `#alliancesWorkspace` de esas cinco reglas de tipografía. La cabecera declara blanco tanto en `color` como en `-webkit-text-fill-color`. Las demás secciones conservan el tema anterior. Se versionan el tema global, el CSS y el JavaScript de Alianzas.
+
+En **Qori Seller → Demo Qori → Ofrece → Alianzas**:
+
+| Pestaña | Ejemplo | Qué muestra |
+| --- | --- | --- |
+| Creadas por mí | Demo · Pan compartido | Comisión fija de $1.000, 5 tickets, 4 compras (una anulada), pagos total/parcial y saldo por recuperar. |
+| Recibidas | Demo · Recomendación con 10% | Comisión sobre el importe pagado después de un descuento de $3.000; 3 tickets y 2 compras. |
+| Recibidas | Demo · Propuesta por aceptar | Acuerdo de $1.500 por compra, listo para revisar y aceptar. |
+| Creadas por mí | Demo · Mi primera alianza | Borrador editable, sin operaciones. |
+
+La primera alianza muestra $3.000 efectivos, $2.400 de pagos registrados, $1.600 pendientes y $1.000 por recuperar debido a la compra anulada. La segunda muestra $4.400 efectivos, $1.700 pagados y $2.700 pendientes. Todo es ficticio, sin cobros, transferencias ni comunicaciones externas.
+
+Para practicar: abrir **Pan compartido**, entrar por su QR de captación con datos ficticios, conservar el ticket y confirmar una compra de al menos $12.000 en el Validador de Demo Qori. La nueva compra debe generar una sola comisión de $1.000. El registro de un pago de comisión se permite en Demo porque solo registra una liquidación ficticia; las rutas de cobros, proveedores y envíos siguen bloqueadas.
+
+`scripts/seed-alliance-demo.js` es una herramienta de operador, nunca se ejecuta al iniciar el servidor. Por defecto revierte toda la carga. `--local` fija la base QA aislada y `--apply` guarda los ejemplos. En producción exige el ID y slug de la cuenta Demo Qori existente. Crea dos negocios aliados internos sin credenciales de acceso; valida su procedencia antes de reutilizarlos. Una sola transacción y un bloqueo de aplicación protegen la carga; el script la repite antes de terminar para comprobar que no se duplican tickets, ventas, pagos ni descuentos. Reutiliza el servicio de Alianzas, el canje canónico del Validador y la anulación existente de Ventas.
+
+Las alianzas de demostración no pueden vincularse con negocios reales. Pruebas locales: 53 casos aprobados, incluidos aislamiento, excepción limitada de registro de pagos, guía de demo y regresión de los selectores globales. Estas pruebas de CSS/DOM no sustituyen una revisión visual.

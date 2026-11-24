@@ -4328,7 +4328,7 @@ html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where
   .rms-machine-head-copy h2,
   .table-card-head h3,
   .login-copy h2
-) {
+):not(:where(#alliancesWorkspace *)) {
   color: var(--qori-blue-deep) !important;
   letter-spacing: 0 !important;
 }
@@ -4341,7 +4341,7 @@ html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) .portal-shell :where
   .view-head p,
   .table-card-subtitle,
   .placeholder-card p
-) {
+):not(:where(#alliancesWorkspace *)) {
   color: var(--qori-muted) !important;
 }
 
@@ -5511,13 +5511,13 @@ html body:not(#qoriV131FinalA#qoriV131FinalB) {
   letter-spacing: 0 !important;
 }
 
-html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell :where(h1, h2, h3, h4, h5, h6, .view-title, .table-card-head strong) {
+html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell :where(h1, h2, h3, h4, h5, h6, .view-title, .table-card-head strong):not(:where(#alliancesWorkspace *)) {
   color: var(--qori-blue-deep) !important;
   font-family: "Plus Jakarta Sans", "Satoshi", "Manrope", "Inter", system-ui, sans-serif !important;
   letter-spacing: -0.015em !important;
 }
 
-html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell :where(p, small, .muted, .table-secondary, .table-muted, .form-message, .section-footnote) {
+html body:not(#qoriV131FinalA#qoriV131FinalB) .portal-shell :where(p, small, .muted, .table-secondary, .table-muted, .form-message, .section-footnote):not(:where(#alliancesWorkspace *)) {
   color: var(--qori-muted) !important;
   line-height: 1.45 !important;
 }
@@ -5906,7 +5906,7 @@ html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell :where(button, input
   letter-spacing: 0 !important;
 }
 
-html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell :where(h1, h2, h3, h4, h5, h6, .view-head h2, .table-card-head strong) {
+html body:not(#qoriV132A#qoriV132B#qoriV132C) .portal-shell :where(h1, h2, h3, h4, h5, h6, .view-head h2, .table-card-head strong):not(:where(#alliancesWorkspace *)) {
   font-family: "Plus Jakarta Sans", "Manrope", "Inter", system-ui, sans-serif !important;
   color: var(--qori-blue-deep) !important;
   letter-spacing: 0 !important;

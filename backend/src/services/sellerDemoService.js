@@ -44,6 +44,9 @@ function enforceDemoRequest(req){
  const scoped=path.match(/^\/api\/(?:portal\/)?businesses\/([^/]+)/);
  if(scoped&&scoped[1]!==req.user.business_id)throw forbidden('La demostración solo permite acceder a Demo Qori.');
  if(['GET','HEAD'].includes(req.method))return;
+ // This only records a fictional settlement in Demo Qori; it never moves money.
+ // Participant/issuer authorization remains enforced by allianceService.
+ if(req.method==='POST'&&/^\/api\/business\/alliances\/[0-9a-f-]{36}\/payments(?:\/[0-9a-f-]{36}\/reverse)?$/.test(path))return;
  // Keep all training modules visible; do not connect providers, publish externally or create paid checkouts.
  if(/\/(?:users|sellers|profile|payments|billing|subscription|storage|checkout|email-connection|whatsapp-connection)(?:\/|$)/i.test(path)
   || /(?:send|dispatch|connection|checkout|auto-renewal|publish|invitation)/i.test(path)

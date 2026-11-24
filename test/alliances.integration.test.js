@@ -30,6 +30,14 @@ test('Alianzas: real PostgreSQL, canonical tickets and paid sale integration',as
     await assert.rejects(()=>S.detail(third,a.id),/no encontrada/);
     await assert.rejects(()=>S.action(owner,a.id,{action:'ACCEPT',revision:a.revision}),/aliado/);
   });
+  await t.test('demonstration partners cannot connect to real businesses',async()=>{
+    const demo=await business('Aliado ficticio');
+    await query("update businesses set settings=settings||'{\"internal_account\":true,\"alliance_demo\":true}'::jsonb where id=$1",[demo.business_id]);
+    await assert.rejects(()=>S.lookup(owner,demo.business.slug),/demostración/);
+    await assert.rejects(()=>S.lookup(demo,owner.business.slug),/demostración/);
+    await assert.rejects(()=>S.save(owner,{ally_slug:demo.business.slug,rules}),/demostración/);
+    assert.equal((await S.context(demo)).demo_mode,true);assert.equal((await S.context(owner)).demo_mode,false);
+  });
   await t.test('mutual acceptance then customization',async()=>{await act(owner,'PROPOSE');await act(ally,'ACCEPT');await S.personalize(ally,a.id,branding);assert.equal((await S.publicAgreement(a.public_token)).accepting,false);});
   await t.test('concurrent batch retries debit issuer once and never credit ally',async()=>{
     const request_key=key();const b=await Promise.all([1,2,3].map(()=>S.issue(owner,a.id,{quantity:3,request_key})));assert.equal(new Set(b.map(x=>x.id)).size,1);assert.equal(await balance(owner),17);assert.equal(await balance(ally),7);
