@@ -92,10 +92,17 @@ test('Public and staff UI use real local API: booking, confirmation, move, CRM a
  });
  await t.test('real Seller navigation renders Demonstrations and CRM invite actions',async()=>{
   const jwt=require('jsonwebtoken').sign({sub:seller.id,password_version:seller.password_version||0},process.env.JWT_SECRET);
-  assert.match(source('seller/index.html'),/app\.js\?v=demonstrations-20261124-2/);
+  assert.match(source('seller/index.html'),/app\.js\?v=demonstrations-20261124-10/);
   const page=await JSDOM.fromURL(base+'/seller/#demostraciones',{runScripts:'dangerously',resources:'usable',pretendToBeVisual:true,beforeParse(w){w.fetch=(p,o)=>fetch(new URL(p,base),o);w.sessionStorage.setItem('qori-seller-token',jwt);w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.remove();};}});doms.push(page);
   await until(()=>page.window.document.querySelector('#demoBookings'));assert.equal(page.window.document.querySelector('[data-view=demonstrations]').getAttribute('aria-current'),'page');assert.ok(page.window.document.querySelector('#demoBookings').textContent.includes('UI Business'));
   page.window.document.querySelector('[data-view=crm]').click();await until(()=>page.window.document.querySelector('[data-demo-prospect]'));assert.ok(page.window.document.querySelector('[data-demo-prospect]').textContent.includes('Invitar'));
+ });
+ await t.test('an administrator using Seller sees their own invitation and QR without losing admin controls',async()=>{
+  const jwt=require('jsonwebtoken').sign({sub:admin.id,password_version:admin.password_version||0},process.env.JWT_SECRET);
+  const page=await JSDOM.fromURL(base+'/seller/#demostraciones',{runScripts:'dangerously',resources:'usable',pretendToBeVisual:true,beforeParse(w){w.fetch=(p,o)=>fetch(new URL(p,base),o);w.sessionStorage.setItem('qori-seller-token',jwt);w.HTMLElement.prototype.scrollIntoView=function(){};}});doms.push(page);
+  await until(()=>page.window.document.querySelector('#demoInviteQr'));const doc=page.window.document;assert.equal(doc.querySelectorAll('#demoInviteLink').length,1);assert.equal(doc.querySelectorAll('#demoInviteQr').length,1);assert.ok(doc.querySelector('#demoAdminHome'));assert.ok(doc.querySelector('[data-action=show-settings]'));assert.equal(doc.querySelector('[data-open-registration]').href,doc.querySelector('#demoInviteLink').value);
+  const invitationToken=new URL(doc.querySelector('#demoInviteLink').value).searchParams.get('i');assert.equal((await query('select seller_id from qori_demo_invitations where token=$1',[invitationToken])).rows[0].seller_id,admin.id);assert.equal((await s.landing(invitationToken)).ambassador,admin.full_name);
+  doc.querySelector('[data-view=crm]').click();await until(()=>!doc.querySelector('#demoInviteQr'));doc.querySelector('[data-view=demonstrations]').click();await until(()=>doc.querySelector('#demoInviteQr'));assert.equal(new URL(doc.querySelector('#demoInviteLink').value).searchParams.get('i'),invitationToken);
  });
  await t.test('existing Admin navigation opens the integrated module',async()=>{
   const jwt=require('jsonwebtoken').sign({sub:admin.id,password_version:admin.password_version||0},process.env.JWT_SECRET);

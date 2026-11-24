@@ -164,3 +164,8 @@ La tarjeta superior muestra un único enlace y QR permanentes por embajador. **A
 Se retiraron los botones de invitación repetidos dentro de sesiones e inscritos de Demostraciones. El acceso contextual desde CRM conserva sus controles de autorización. No hay nuevos enlaces por fecha: el formulario elige entre las sesiones disponibles de los próximos 15 días. No se cambian reservas ni configuración administrativa.
 
 Validación: 37 pruebas aprobadas. Compartir archivo/enlace, cancelación y alternativas se verificaron con adaptadores del navegador simulados; la interfaz real y apertura del formulario se revisaron en Chrome a 1440, 390 y 320 px, sin desbordamiento horizontal y con QR cargado. No se enviaron mensajes ni archivos a contactos reales; el selector nativo de aplicaciones depende del dispositivo.
+
+
+### Cuenta administrativa dentro de Seller
+
+La tarjeta personal de invitación se muestra en `/seller/#demostraciones` también cuando la cuenta tiene permisos de administrador. El rol administrativo ya no la oculta. Se conserva el enlace de la cuenta autenticada, validado por el servicio existente, y los controles administrativos siguen disponibles. En `/admin/#demostraciones` se mantiene la vista de administración global. Esta distinción es de presentación y no cambia permisos ni atribución.
