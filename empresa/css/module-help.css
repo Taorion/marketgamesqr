@@ -1,39 +1,61 @@
-/* One native disclosure, outside module render roots and legacy hero typography. */
-#workspace #portalModuleHelp{
-  box-sizing:border-box;min-width:0;max-width:100%;margin:0 0 20px;
-  border:1px solid #cddfe8!important;border-radius:14px!important;
-  background:#f5f9fc!important;color:#173347!important;box-shadow:none!important;
+/* Shared native disclosure: all presentation stays inside the module guide. */
+#workspace #portalModuleHelp {
+  box-sizing:border-box; min-width:0; max-width:100%; margin:0 0 24px;
+  border:1px solid #cfdfef!important; border-radius:18px!important;
+  background:#fff!important; color:#173653!important; box-shadow:0 4px 18px #17365306!important;
 }
 #workspace #portalModuleHelp[hidden]{display:none!important}
 #workspace #portalModuleHelp *{box-sizing:border-box;min-width:0;overflow-wrap:anywhere}
-#workspace #portalModuleHelp>summary{
-  display:flex;align-items:center;gap:12px;min-height:52px;padding:14px 18px;
-  list-style:none;cursor:pointer;font-size:13px;line-height:1.5;color:#173347!important;
+#workspace #portalModuleHelp>summary {
+  display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center;
+  gap:14px; min-height:78px; padding:18px 22px; border-radius:17px;
+  list-style:none; cursor:pointer; color:#173653!important; transition:background-color 150ms ease;
 }
 #workspace #portalModuleHelp>summary::-webkit-details-marker{display:none}
 #workspace #portalModuleHelp>summary::marker{content:""}
-#workspace #portalModuleHelp>summary:focus-visible{outline:3px solid #2876a0;outline-offset:3px;border-radius:12px}
-#workspace #portalModuleHelp .module-help-icon{
-  flex:0 0 26px;width:26px;height:26px;border:1px solid #9cbacb;border-radius:50%;
-  display:grid;place-items:center;font-weight:800;color:#215671!important;background:#fff;
+#workspace #portalModuleHelp>summary:hover{background:#f4f8fd}
+#workspace #portalModuleHelp>summary:focus-visible{outline:3px solid #1769b0;outline-offset:3px}
+#workspace #portalModuleHelp .module-help-icon {
+  display:grid; place-items:center; width:38px; height:38px;
+  border:1px solid #c9def4; border-radius:12px; background:#eaf3fc;
+  color:#15528c!important; font-size:20px; font-weight:800;
 }
-#workspace #portalModuleHelp .module-help-heading{flex:1;font-weight:600;color:#173347!important}
-#workspace #portalModuleHelp [data-module-help-title]{font-weight:800;color:#173347!important}
-#workspace #portalModuleHelp .module-help-action{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#245e7b!important}
-#workspace #portalModuleHelp .module-help-action:after{content:"";width:8px;height:8px;flex-shrink:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px 5px}
-#workspace #portalModuleHelp[open] .module-help-action:after{transform:rotate(225deg);margin-top:6px;margin-bottom:0}
+#workspace #portalModuleHelp .module-help-heading{display:grid;gap:4px;color:#173653!important;font-size:15px;line-height:1.5;font-weight:600}
+#workspace #portalModuleHelp .module-help-kicker{color:#536e88!important;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+#workspace #portalModuleHelp [data-module-help-title]{color:#124f87!important;font-weight:800}
+#workspace #portalModuleHelp .module-help-action {
+  display:inline-flex; align-items:center; justify-content:center; gap:12px;
+  min-height:38px; padding:8px 13px; border:1px solid #c8dcef; border-radius:10px;
+  background:#edf5ff; color:#174e80!important; font-size:12px; line-height:1.4; font-weight:800;
+}
+#workspace #portalModuleHelp .module-help-action::after{content:"";width:7px;height:7px;flex-shrink:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px 4px}
+#workspace #portalModuleHelp[open] .module-help-action::after{transform:rotate(225deg);margin:4px 2px 0}
 #workspace #portalModuleHelp .module-help-collapse{display:none}
 #workspace #portalModuleHelp[open] .module-help-collapse{display:inline}
 #workspace #portalModuleHelp[open] .module-help-expand{display:none}
-#workspace #portalModuleHelp .module-help-content{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:0 18px 20px}
-#workspace #portalModuleHelp .module-help-block{margin:0;font-size:13px;line-height:1.75!important;color:#294b61!important}
-#workspace #portalModuleHelp .module-help-label{display:block;margin:0 0 5px;font-weight:800;font-size:12px;color:#173347!important}
-#workspace #portalModuleHelp .module-help-example{border-left:2px solid #c7d9e4;padding-left:20px}
-@media(max-width:600px){
-  #workspace #portalModuleHelp>summary{padding:13px 14px;gap:10px;flex-wrap:wrap}
-  #workspace #portalModuleHelp .module-help-heading{flex-basis:calc(100% - 38px)}
-  #workspace #portalModuleHelp .module-help-action{margin-left:36px}
-  #workspace #portalModuleHelp .module-help-content{grid-template-columns:1fr;gap:16px;padding:0 14px 18px}
-  #workspace #portalModuleHelp .module-help-example{padding:14px 0 0;border-left:0;border-top:1px solid #c7d9e4}
+#workspace #portalModuleHelp[open]>summary{border-radius:17px 17px 0 0;border-bottom:1px solid #e0eaf4}
+#workspace #portalModuleHelp[open] .module-help-icon{color:#fff!important;background:#15528c;border-color:#15528c}
+#workspace #portalModuleHelp .module-help-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:20px;padding:22px}
+/* Match the legacy four-ID paragraph overrides only inside this guide. */
+html body:not(#moduleHelpThemeA#moduleHelpThemeB) #workspace #portalModuleHelp .module-help-block {
+  margin:0!important; padding:16px 18px; color:#334e68!important;
+  font-size:14px!important; line-height:1.75!important; text-align:left!important;
 }
+#workspace #portalModuleHelp .module-help-label{display:block;margin:0 0 8px;color:#173653!important;font-size:13px;line-height:1.4;font-weight:800}
+#workspace #portalModuleHelp .module-help-example{border:1px solid #d1e3f5;border-left:3px solid #357db7;border-radius:12px;background:#f0f6fd}
+#workspace #portalModuleHelp .module-help-example .module-help-label{color:#15528c!important}
+@media(max-width:780px){
+  #workspace #portalModuleHelp .module-help-content{grid-template-columns:minmax(0,1fr);gap:6px;padding:12px 16px 18px}
+}
+@media(max-width:600px){
+  #workspace #portalModuleHelp{margin-bottom:18px;border-radius:14px!important}
+  #workspace #portalModuleHelp>summary{grid-template-columns:34px minmax(0,1fr);padding:16px;gap:10px 12px;border-radius:13px}
+  #workspace #portalModuleHelp[open]>summary{border-radius:13px 13px 0 0}
+  #workspace #portalModuleHelp .module-help-icon{width:34px;height:34px;font-size:18px}
+  #workspace #portalModuleHelp .module-help-heading{font-size:14px}
+  #workspace #portalModuleHelp .module-help-action{grid-column:2;justify-self:start}
+  #workspace #portalModuleHelp .module-help-content{padding:8px 12px 14px}
+  html body:not(#moduleHelpThemeA#moduleHelpThemeB) #workspace #portalModuleHelp .module-help-block{padding:14px 12px}
+}
+@media(prefers-reduced-motion:reduce){#workspace #portalModuleHelp>summary{transition:none}}
 @media print{#workspace #portalModuleHelp{display:none!important}}
