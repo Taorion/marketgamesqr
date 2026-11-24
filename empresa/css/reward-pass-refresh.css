@@ -1,0 +1,156 @@
+/* Tarjeta regalo owns its presentation. The legacy portal uses four-ID
+   important theme selectors; match that specificity only within this module. */
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace {
+  --rp-ink: #122f53;
+  --rp-muted: #536781;
+  --rp-line: #dce6f1;
+  gap: 20px;
+}
+
+#rewardPassWorkspace .reward-pass-premium-hero {
+  align-items: center;
+  gap: 24px;
+  padding: clamp(24px, 3vw, 38px);
+  border-radius: 24px;
+  border-color: #264f81;
+  background: radial-gradient(ellipse at top right, #195e91 0%, transparent 65%), #102f58;
+  box-shadow: 0 12px 32px #102f5814;
+}
+
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .reward-pass-premium-hero h2 {
+  color: #fff !important;
+  font-size: clamp(28px, 3.2vw, 42px) !important;
+  line-height: 1.15 !important;
+  letter-spacing: -.035em !important;
+}
+
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .reward-pass-premium-hero :is(p, .reward-pass-premium-eyebrow, .reward-pass-premium-signal span) {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+  opacity: 1 !important;
+}
+
+#rewardPassWorkspace .reward-pass-premium-hero p { max-width: 60ch; font-size: 15px; }
+#rewardPassWorkspace .reward-pass-premium-eyebrow { letter-spacing: .035em; font-size: 11px; }
+#rewardPassWorkspace .reward-pass-premium-signal span { background: #ffffff12; border: 1px solid #ffffff30; }
+#rewardPassWorkspace .reward-pass-premium-actions { min-width: 210px; }
+
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .reward-pass-premium-actions .solid-button {
+  color: #102f58 !important;
+  -webkit-text-fill-color: #102f58;
+  background: #fff !important;
+  border: 1px solid #fff !important;
+  box-shadow: 0 4px 12px #071d3430 !important;
+}
+
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .reward-pass-premium-actions .ghost-button {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+  background: #ffffff12 !important;
+  border: 1px solid #ffffff70 !important;
+}
+
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace :is(.kpi-card, .reward-pass-chart-card, .reward-pass-command-card, .reward-pass-list-card) {
+  border: 1px solid #dce6f1 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 4px 18px #18365106 !important;
+}
+
+#rewardPassWorkspace .reward-pass-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+#rewardPassWorkspace .reward-pass-kpis .kpi-card { min-height: 116px; padding: 20px; }
+#rewardPassWorkspace .reward-pass-kpis .kpi-card::after { display: none; }
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .kpi-card strong {
+  font-size: clamp(20px, 2vw, 28px) !important;
+  line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  color: #122f53 !important;
+}
+#rewardPassWorkspace .reward-pass-premium-insight { border: 1px solid #d4e6f5; background: #eef6fc; border-radius: 16px; }
+#rewardPassWorkspace .reward-pass-chart-card { padding: 22px; }
+#rewardPassWorkspace .reward-pass-command-card { padding: 22px; }
+#rewardPassWorkspace .reward-pass-filter-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .reward-pass-filter-grid :is(input, select) {
+  min-height: 46px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  padding-block: 10px !important;
+  border: 1px solid #bacbde !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  color: #122f53 !important;
+}
+#rewardPassWorkspace input::placeholder { color: #62758b; opacity: 1; }
+#rewardPassWorkspace .reward-pass-list-card > .table-card-head { padding: 20px; gap: 14px; }
+#rewardPassWorkspace .reward-pass-list-card td { padding-block: 16px; }
+#rewardPassWorkspace .reward-pass-list-card tbody tr:hover { background: #f3f8fd; }
+#rewardPassWorkspace .reward-pass-pagination { flex-wrap: wrap; }
+
+/* Keep the issuing header and protected card preview readable regardless of
+   whether the application has moved the dialog outside the workspace. */
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassCreateModal .modal-head {
+  background: #102f58 !important;
+  border-bottom: 1px solid #264f81 !important;
+}
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassCreateModal .modal-head :is(h3, p, .mono-label, .icon-button) {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
+#rewardPassCreateModal .reward-pass-layout { background: #f4f7fb; }
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassCreateModal .reward-pass-ticket-context {
+  padding: 14px 16px !important;
+  border: 1px solid #cbdff1 !important;
+  border-radius: 12px !important;
+  color: #174773 !important;
+  background: #edf5fd !important;
+  line-height: 1.5;
+}
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassCreateModal .reward-pass-card-preview {
+  background: linear-gradient(125deg, #102f58, #185781) !important;
+  border: 1px solid #2c6590 !important;
+  border-radius: 20px !important;
+  aspect-ratio: auto !important;
+}
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassCreateModal .reward-pass-card-inner :is(span, strong, p, small) {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) :is(#rewardPassWorkspace, #rewardPassCreateModal, #rewardPassDetailModal) :is(button, input, select, textarea, a):focus-visible {
+  outline: 3px solid #2185cc !important;
+  outline-offset: 3px !important;
+}
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) #rewardPassWorkspace .reward-pass-premium-actions button:focus-visible { outline-color: #fff !important; }
+html body:not(#rpThemeA#rpThemeB#rpThemeC#rpThemeD) :is(#rewardPassWorkspace, #rewardPassCreateModal, #rewardPassDetailModal) button {
+  min-height: 44px;
+  white-space: normal;
+}
+
+@media (max-width: 1100px) {
+  #rewardPassWorkspace .reward-pass-premium-hero { grid-template-columns: minmax(0, 1fr); }
+  #rewardPassWorkspace .reward-pass-premium-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
+  #rewardPassWorkspace .reward-pass-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  #rewardPassWorkspace .reward-pass-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #rewardPassWorkspace .reward-pass-kpis .kpi-card { padding: 16px; }
+  #rewardPassWorkspace .reward-pass-chart-card, #rewardPassWorkspace .reward-pass-command-card { padding: 18px; }
+  #rewardPassWorkspace .reward-pass-mobile-card { border-radius: 14px; background: #fff; }
+  #rewardPassWorkspace .reward-pass-mobile-card-head, #rewardPassWorkspace .reward-pass-mobile-card-states { flex-wrap: wrap; }
+  #rewardPassWorkspace .reward-pass-bar-row > span { flex-wrap: wrap; gap: 4px 12px; }
+}
+@media (max-width: 520px) {
+  #rewardPassWorkspace .reward-pass-premium-hero { padding: 24px 18px; border-radius: 18px; }
+  #rewardPassWorkspace .reward-pass-premium-actions, #rewardPassWorkspace .reward-pass-filter-grid { grid-template-columns: minmax(0, 1fr); }
+  #rewardPassWorkspace .reward-pass-premium-eyebrow { white-space: normal; }
+  #rewardPassWorkspace .reward-pass-premium-signal { display: flex; }
+  #rewardPassWorkspace .reward-pass-premium-signal span { font-size: 11px; }
+}
+@media (max-width: 440px) {
+  #rewardPassWorkspace .reward-pass-kpis { grid-template-columns: minmax(0, 1fr); }
+}
