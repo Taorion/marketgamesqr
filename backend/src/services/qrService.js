@@ -263,7 +263,7 @@ async function getQrDetails(tokenInput, user) {
     };
   }
 
-  if (!canAccessBusiness(user, qr.business_id)) {
+  if ((qr.metadata?.source === 'QORI_ALLIANCE' && user.business_id !== qr.business_id) || !canAccessBusiness(user, qr.business_id)) {
     await logValidation(query, {
       business_id: qr.business_id,
       campaign_id: qr.campaign_id,
@@ -332,6 +332,7 @@ async function getQrDetails(tokenInput, user) {
   }
   return {
     points_ticket: pointsTicket,
+    alliance: qr.metadata?.source === 'QORI_ALLIANCE' ? { ally_name: qr.metadata.ally_name, terms: qr.metadata.terms } : null,
     status: effectiveStatus,
     allowed: effectiveStatus === "ACTIVE",
     message: buildStatusMessage(effectiveStatus),
@@ -636,7 +637,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       throw notFound("El QR no existe.");
     }
 
-    if (!canAccessBusiness(user, qr.business_id)) {
+    if ((qr.metadata?.source === 'QORI_ALLIANCE' && user.business_id !== qr.business_id) || !canAccessBusiness(user, qr.business_id)) {
       await logValidation(client, {
         business_id: qr.business_id,
         campaign_id: qr.campaign_id,
@@ -709,6 +710,11 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       if(checkoutPayload.mode!=='STANDALONE')throw badRequest('Este producto ya está pagado. Usa la entrega del beneficio sin compra adicional.');
       if(String(checkoutPayload.beneficiary?.email||'').trim().toLowerCase()!==String(paid.rows[0].recipient_email||qr.player_email||'').trim().toLowerCase())throw badRequest('Verifica el correo del destinatario de este regalo.');
     }
+    const allianceTicket = qr.metadata?.source === 'QORI_ALLIANCE'
+      ? await require('./allianceService').validateRedemption(client,qr,user,checkoutPayload,calculateBenefitCheckout({
+        benefitType:qr.benefit_type,benefitValue:qr.benefit_value||{},label:qr.reward_name||qr.benefit_value?.label,
+        mode:checkoutPayload.mode,purchase:checkoutPayload.purchase||{},
+      })) : null;
     const identity = await resolveBeneficiary(client, {
       businessId: qr.business_id,
       campaignId: qr.campaign_id,
@@ -835,6 +841,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       }
     }
 
+    await require('./allianceService').accrue(client,allianceTicket,businessSale,checkout,user);
     await client.query(
       `update qr_codes
        set status = 'REDEEMED', redeemed_at = now(), redeemed_by_user_id = $2, player_id=$3, sale_id=$4

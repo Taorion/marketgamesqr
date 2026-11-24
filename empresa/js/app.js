@@ -1699,6 +1699,7 @@ const SIDEBAR_GROUP_ICONS = Object.freeze({
   admin: "settings",
 });
 const sidebarSectionByView = Object.freeze({
+  alliances: "offer",
   "catalog-orders": "offer",
   campaigns: "gos",
   "strategic-qr": "offer",
@@ -5921,6 +5922,7 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 }
 
 const viewFeatureMap = {
+  alliances: null,
   "catalog-orders": null,
   quotes: "quotes",
   "courtesies": "product_gifts",
@@ -7754,6 +7756,7 @@ function setView(view) {
   }
   state.currentView = view;
   if (view === 'catalog-orders') window.QoriCatalogOrders?.mount(document.getElementById('catalogOrdersRoot'), catalogOrdersApi, session?.user?.id);
+  if (view === "alliances") window.QoriAlliances?.open();
   if (view === "stamp-cards") window.StampCards?.open();
   if (view === "quotes") window.Quotes?.open();
   if (view === "courtesies") window.QoriBusinessCourtesies?.open();
@@ -19639,7 +19642,7 @@ function setValidatorResult(mode, title, message, data = null) {
   const isTransferableTicket = validatorIsTransferableTicket(data);
   const isProduct = data?.kind === "inventory_product";
   validatorResultTitle.textContent = title;
-  validatorResultMessage.textContent = message;
+  validatorResultMessage.textContent = data?.alliance ? `${message} Recomendado por ${data.alliance.ally_name}. ${data.alliance.terms}` : message;
   validatorResultChip.className = `result-chip ${mode}`;
   validatorResultChip.textContent = mode === "ok" ? "Aprobado" : mode === "danger" ? "Rechazado" : "Pendiente";
   validatorDetectedType.textContent = validatorKindLabel(data);

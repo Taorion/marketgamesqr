@@ -60,7 +60,12 @@ async function validateQr(req, res, next) {
 async function redeem(req, res, next) {
   try {
     const checkout = validate(redeemCheckoutSchema, req.body || {});
-    res.json(await redeemQr(req.params.token, req.user, checkout));
+    const result=await redeemQr(req.params.token, req.user, checkout);
+    if(req.user.business_id){
+      require('../middleware/businessResponseCache').clearBusinessResponseCache(req.user.business_id);
+      require('../services/commandCenterAnalyticsService').clearCommandCenterAnalyticsCache(req.user.business_id);
+    }
+    res.json(result);
   } catch (error) {
     next(error);
   }
