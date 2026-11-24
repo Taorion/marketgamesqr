@@ -30,6 +30,13 @@ test('Public and staff UI use real local API: booking, confirmation, move, CRM a
   const jwt=require('jsonwebtoken').sign({sub:seller.id,password_version:seller.password_version||0},process.env.JWT_SECRET);
   const request=async(p,b)=>{const r=await fetch(base+p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},...(b?{body:JSON.stringify(b)}:{})});const result=await r.json();if(!r.ok)throw Error(result.error?.message);return result;};
   await sw.QoriDemonstrations.render(host,{request,openCrm:id=>opened=id});assert.ok(host.textContent.includes('UI Business'),host.textContent);const b=host.querySelector('[data-action=crm]');b.click();await until(()=>opened);assert.ok(opened.includes('@example.test'));
+  const share=host.querySelector('#demoInviteLink');assert.ok(share, 'El enlace debe ser visible sin abrir un diálogo');
+  assert.equal(host.querySelector('[data-open-registration]').href,share.value);const shareUrl=new URL(share.value);
+  const landing=await (await fetch(base+'/api/demonstrations/invitation/'+shareUrl.searchParams.get('i'))).json();assert.equal(landing.ambassador,seller.full_name);assert.ok(landing.sessions.length);
+  let copied='';Object.defineProperty(sw.navigator,'clipboard',{value:{writeText:async text=>{copied=text;}}});host.querySelector('[data-action=copy-link]').click();await until(()=>copied);assert.equal(copied,share.value);
+  const saved=(await query('select approved,enabled from qori_demo_config')).rows[0];
+  try{await query('update qori_demo_config set enabled=false');await sw.QoriDemonstrations.render(host,{request,openCrm:id=>opened=id});assert.equal(host.querySelector('#demoInviteLink').value,share.value);assert.ok(host.textContent.includes('Agenda pendiente de habilitación administrativa'));const disabled=await (await fetch(base+'/api/demonstrations/invitation/'+shareUrl.searchParams.get('i'))).json();assert.equal(disabled.enabled,false);assert.equal(disabled.sessions.length,0);}
+  finally{await query('update qori_demo_config set enabled=$1,approved=$2',[saved.enabled,saved.approved]);}
   host.querySelector('[data-action=invite]').click();await until(()=>host.querySelector('dialog img'));assert.ok(host.querySelector('dialog input').value.includes('/demostraciones/?i='));assert.ok(host.querySelector('dialog a[download]'));
  });
  await t.test('admin interface loads pending templates and saves only with explicit checkbox',async()=>{
