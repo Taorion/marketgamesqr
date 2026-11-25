@@ -42,6 +42,11 @@ html body:not(#moduleHelpThemeA#moduleHelpThemeB) #workspace #portalModuleHelp .
   font-size:14px!important; line-height:1.75!important; text-align:left!important;
 }
 #workspace #portalModuleHelp .module-help-label{display:block;margin:0 0 8px;color:#173653!important;font-size:13px;line-height:1.4;font-weight:800}
+#workspace #portalModuleHelp .module-help-steps-title{margin-top:22px}
+html body:not(#moduleHelpThemeA#moduleHelpThemeB) #workspace #portalModuleHelp .module-help-steps{display:block;margin:0;padding:0 0 0 22px;list-style:decimal outside;color:#334e68!important;font:inherit;text-align:left}
+html body:not(#moduleHelpThemeA#moduleHelpThemeB) #workspace #portalModuleHelp .module-help-steps>li{display:list-item;margin:0 0 12px;padding:0 0 0 4px;color:#334e68!important;font:inherit;line-height:1.75}
+#workspace #portalModuleHelp .module-help-steps>li:last-child{margin-bottom:0}
+#workspace #portalModuleHelp .module-help-steps>li::marker{color:#15528c;font-weight:800}
 #workspace #portalModuleHelp .module-help-example{border:1px solid #d1e3f5;border-left:3px solid #357db7;border-radius:12px;background:#f0f6fd}
 #workspace #portalModuleHelp .module-help-example .module-help-label{color:#15528c!important}
 @media(max-width:780px){

@@ -21,7 +21,7 @@ const sessionEdit=(session,over={})=>({meet_url:session.meet_url,status:session.
 after(async()=>{if(server)await new Promise(r=>server.close(r));await pool.end();});
 test('Commercial demonstrations: local PostgreSQL, controlled clock and simulated delivery',async t=>{
  assert.equal((await query('select current_database() db')).rows[0].db,'qori_demonstrations_qa');
- await query('truncate qori_demo_messages,qori_demo_incidents,qori_demo_events,qori_demo_visits,qori_demo_access,qori_demo_bookings,qori_demo_invitations,qori_demo_sessions');
+ await query('truncate qori_demo_feedback,qori_demo_feedback_forms,qori_demo_messages,qori_demo_incidents,qori_demo_events,qori_demo_visits,qori_demo_access,qori_demo_bookings,qori_demo_invitations,qori_demo_sessions');
  await query('update qori_demo_config set approved=false,enabled=false,settings=$1',[policy.DEFAULTS]);
  await query("update qori_demo_templates set confirmed=not(weekday in(3,4) and local_time='10:00'),duration_minutes=60");
  seller=await person();other=await person();admin=await person('QORI_SUPERADMIN');server=require('../backend/src/app').app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
@@ -110,7 +110,7 @@ test('Commercial demonstrations: local PostgreSQL, controlled clock and simulate
   const m=await require('../backend/src/services/demonstrationMetrics').metrics(s,admin,{from:'2026-11-01',to:'2027-01-08'});assert.ok(m.reservations>0);assert.ok(m.attendance.absent>=1);assert.equal(m.conversion.paid_reservations,0);assert.ok(m.conversion.unidentified_reservations>0);assert.ok(m.reschedules.public>0);assert.ok(m.reschedules.admin>0);
  });
  await t.test('tables are RLS-protected and sensitive data never appears in anonymous schedule',async()=>{
-  const tables=(await query("select relname,relrowsecurity from pg_class where relname like 'qori_demo_%' and relkind='r'")).rows;assert.equal(tables.length,10);assert.ok(tables.every(t=>t.relrowsecurity));const publicData=JSON.stringify(await s.landing(invite));assert.ok(!publicData.includes('@example.test'));assert.ok(!publicData.includes('token_hash'));assert.ok(!publicData.includes('meet.google.com'));
+  const tables=(await query("select relname,relrowsecurity from pg_class where relname like 'qori_demo_%' and relkind='r'")).rows;assert.equal(tables.length,12);assert.ok(tables.every(t=>t.relrowsecurity));const publicData=JSON.stringify(await s.landing(invite));assert.ok(!publicData.includes('@example.test'));assert.ok(!publicData.includes('token_hash'));assert.ok(!publicData.includes('meet.google.com'));
  });
  await t.test('private API scopes and pending templates are enforced after explicit administrative confirmation',async()=>{
   assert.equal((await api('/workspace',null,seller)).status,200);

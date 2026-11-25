@@ -1,5 +1,25 @@
 # Qori - Ideas para tu negocio
 
+## Formulario de cierre e intereses · 25 de noviembre de 2026
+
+En **Admin → Demostraciones → sesión → Abrir formulario de cierre**, Administración o un anfitrión autorizado habilita el formulario de esa sesión y obtiene su enlace y QR. Se comparte al finalizar la demostración. Solo se puede abrir después del inicio de la sesión; permanece disponible 24 horas o hasta pulsar **Cerrar recepción de respuestas**. Reabrirlo después del cierre genera un acceso nuevo y deja inválido el anterior. Cancelar o cambiar la fecha de la sesión cierra la recepción vigente.
+
+El prospecto escribe su **cédula y correo de reserva**, selecciona sus intereses, explica qué descubrió, qué quiere aplicar y sus dudas, y elige cómo continuar. Confirma que participó y autoriza compartir sus respuestas con Qori y el embajador responsable. No necesita una cuenta de embajador. Las inscripciones nuevas piden cédula; las anteriores sin cédula requieren además el enlace privado de gestión de su propia reserva para asociar la primera respuesta. No se reasigna un prospecto por coincidencia de cédula ni se cambia su propietario comercial.
+
+En **Seller → Demostraciones → Mis prospectos inscritos**, el botón **Ver intereses y hallazgos** muestra las respuestas de los prospectos cuyo propietario comercial vigente es el embajador autenticado. Administración conserva supervisión global; el permiso de anfitrión permite abrir el formulario y registrar asistencia, pero no concede acceso a respuestas de prospectos ajenos. La API vuelve a comprobar propiedad en cada consulta, incluida una petición directa por ID. El filtro **Con formulario de cierre** facilita encontrar las respuestas recibidas.
+
+Una primera respuesta válida cambia una asistencia pendiente a **Asistió · Confirmada por formulario**. Es una declaración del participante, no una comprobación de conexión a Meet ni una validación de identidad por cédula. La ausencia de respuesta permanece pendiente; Administración o el anfitrión pueden registrar ausencia o corregir asistencia. El formulario conserva cualquier corrección explícita previa del personal. Cada participación admite una respuesta; un reintento conserva la primera, sin sobrescribirla. Una reserva cancelada, trasladada a otra sesión o no confirmada no puede utilizar el formulario de la sesión anterior.
+
+Las respuestas se guardan en `qori_demo_feedback`, relacionadas con reserva, visita y sesión; los accesos de recepción en `qori_demo_feedback_forms`. Ambas tablas tienen RLS y carecen de permisos directos para `PUBLIC`, `anon` y `authenticated`, siguiendo el [patrón de RLS de Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security). La API pública solo entrega la fecha del formulario y una confirmación genérica; no permite buscar, leer ni editar respuestas por cédula. El código de sesión se comparte como fragmento URL y las respuestas se envían en el cuerpo de la petición. No se generan ventas, comisiones, suscripciones ni mensajes automáticos por completar el formulario. La elección de no recibir contacto cierra el seguimiento de esa reserva.
+
+Migración aditiva: `20261125141127_qori_demo_closing_feedback.sql`, idéntica en `database/migrations` y `supabase/migrations`. Conserva reservas e historial anteriores. El verificador local comprueba las doce tablas y sus permisos. Pruebas: 38 regresiones de agenda/reservas/interfaz y 17 de cierre con PostgreSQL y HTTP locales, incluidos concurrencia, aislamiento entre cuentas, reasignación, consentimiento, reservas antiguas, texto no ejecutable, apertura/cierre y vencimiento. No se enviaron comunicaciones reales ni respuestas ficticias a producción. La revisión visual en navegador no está acreditada por estas pruebas.
+
+```powershell
+node scripts/verify-demonstrations-local.cjs --apply
+node --test --test-concurrency=1 test/demonstrations.integration.test.js test/demonstrations.ui.integration.test.js
+node --test test/demonstrationFeedback.integration.test.js
+```
+
 Módulo publicado el 24 de noviembre de 2026, con migración aplicada. La habilitación de reservas es una decisión separada que se guarda desde Administración. No se enviaron correos o WhatsApp reales durante las pruebas.
 
 ## Accesos

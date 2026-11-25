@@ -15,8 +15,11 @@ async function main(){
   const windowFile='20261124173537_qori_demo_fifteen_day_booking_window.sql',windowSql=fs.readFileSync(path.join(__dirname,'../database/migrations',windowFile),'utf8');
   if(windowSql!==fs.readFileSync(path.join(__dirname,'../supabase/migrations',windowFile),'utf8'))throw Error('Las copias de la migración de 15 días difieren.');
   if(!(await db.query("select 1 from qori_demo_events where action='BOOKING_WINDOW_FIFTEEN_DAYS' limit 1")).rowCount){if(!process.argv.includes('--apply'))throw Error('Falta la migración de 15 días. Añade --apply.');await db.query('begin');try{await db.query(windowSql);await db.query('commit');}catch(e){await db.query('rollback');throw e;}}
+  const feedbackFile='20261125141127_qori_demo_closing_feedback.sql',feedbackSql=fs.readFileSync(path.join(__dirname,'../database/migrations',feedbackFile),'utf8');
+  if(feedbackSql!==fs.readFileSync(path.join(__dirname,'../supabase/migrations',feedbackFile),'utf8'))throw Error('Las copias de la migración de cierre difieren.');
+  if(!(await db.query("select to_regclass('qori_demo_feedback') name")).rows[0].name){if(!process.argv.includes('--apply'))throw Error('Falta la migración de cierre. Añade --apply.');await db.query('begin');try{await db.query(feedbackSql);await db.query('commit');}catch(e){await db.query('rollback');throw e;}}
   const tables=(await db.query("select relname,relrowsecurity from pg_class where relname like 'qori_demo_%' and relkind='r'")).rows;
-  if(tables.length!==10||tables.some(t=>!t.relrowsecurity))throw Error('Faltan tablas o RLS.');
+  if(tables.length!==12||tables.some(t=>!t.relrowsecurity))throw Error('Faltan tablas o RLS.');
   const grants=(await db.query("select grantee,table_name,privilege_type from information_schema.role_table_grants where table_name like 'qori_demo_%' and grantee in('anon','authenticated','PUBLIC')")).rows;
   if(grants.length)throw Error('Hay privilegios directos inesperados.');
   const templates=(await db.query('select weekday,local_time,meet_url,confirmed from qori_demo_templates order by weekday,local_time')).rows;

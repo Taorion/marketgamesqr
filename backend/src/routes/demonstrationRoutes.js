@@ -11,6 +11,8 @@ const limiter=(prefix,max)=>rateLimit({keyPrefix:prefix,max,windowMs:60000,keyFr
 router.get('/invitation/:token',limiter('demo-view',120),handle(r=>s.landing(r.params.token)));
 router.post('/reserve',limiter('demo-reserve',12),emailRateLimit({keyPrefix:'demo-reserve-email',max:8,windowMs:3600000}),handle(r=>s.reserve(r.body)));
 router.post('/recover',limiter('demo-recover',5),emailRateLimit({keyPrefix:'demo-recover-email',max:3,windowMs:3600000}),handle(r=>s.recover(r.body)));
+router.get('/feedback/:token',limiter('demo-feedback-view',60),handle(r=>s.feedbackLanding(r.params.token)));
+router.post('/feedback/:token',limiter('demo-feedback-submit',10),emailRateLimit({keyPrefix:'demo-feedback-email',max:12,windowMs:3600000}),handle(r=>s.submitFeedback(r.params.token,r.body)));
 const access=r=>String(r.headers.authorization||'').replace(/^Bearer /,'');
 router.get('/reservation',limiter('demo-manage',90),handle(r=>s.manage(access(r))));
 router.post('/reservation',limiter('demo-change',20),handle(r=>s.change(access(r),r.body)));
@@ -21,6 +23,8 @@ staffRouter.use(authRequired,requireRoles('QORI_SELLER','QORI_SUPERADMIN'));
 staffRouter.get('/workspace',handle(r=>s.workspace(r.user)));
 staffRouter.post('/invitations',handle(r=>s.invite(r.user,r.body)));
 staffRouter.post('/bookings/:id/followup',handle(r=>s.followup(r.user,r.params.id,r.body)));
+staffRouter.get('/bookings/:id/feedback',handle(r=>s.feedbackAnswers(r.user,r.params.id)));
+staffRouter.post('/sessions/:id/feedback-form',handle(r=>s.feedbackForm(r.user,r.params.id,r.body)));
 staffRouter.get('/sessions/:id/roster',handle(r=>s.hostRoster(r.user,r.params.id)));
 staffRouter.post('/visits/:id/attendance',handle(r=>s.attendance(r.user,r.params.id,r.body)));
 staffRouter.post('/admin/config',handle(r=>s.saveConfig(r.user,r.body)));

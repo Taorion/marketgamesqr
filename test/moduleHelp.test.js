@@ -8,7 +8,7 @@ function setup(view='alliances',authenticated=true){
  dom.window.eval(read('empresa/js/module-help.js'));
  return {dom,d:dom.window.document,help:dom.window.document.getElementById('portalModuleHelp')};
 }
-test('every Empresa view and sidebar module has a short description and a concrete example',async()=>{
+test('every Empresa view and sidebar module has a clear explanation, three steps and a concrete example',async()=>{
  const {dom,d,help}=setup();
  try{
   const views=[...new Set([...d.querySelectorAll('.view-section[data-view],.sidebar .nav-item[data-view]')].map(el=>el.dataset.view))];
@@ -16,8 +16,11 @@ test('every Empresa view and sidebar module has a short description and a concre
   for(const view of views){
    d.body.dataset.currentView=view;await tick();assert.equal(help.hidden,false,view);
    const description=help.querySelector('[data-module-help-description]').textContent,example=help.querySelector('[data-module-help-example]').textContent;
-   assert.ok(description.length>35&&description.length<250,view+' short explanation');
-   assert.ok(example.length>35&&example.length<250,view+' short example');
+   assert.ok(description.length>160&&description.length<650,view+' expanded explanation');
+   assert.ok(example.length>35&&example.length<400,view+' practical example');
+   const steps=help.querySelector('[data-module-help-steps]');
+   assert.equal(steps.tagName,'OL');assert.equal(steps.children.length,3,view+' three steps');
+   assert.ok([...steps.children].every(step=>step.tagName==='LI'&&step.textContent.length>30),view+' actionable steps');
    assert.match(example,/^(Una? |El equipo)/,view+' business scenario');
   }
   assert.equal(d.querySelectorAll('#portalModuleHelp').length,1);
