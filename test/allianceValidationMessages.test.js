@@ -1,7 +1,7 @@
 ﻿const {test}=require('node:test'),assert=require('node:assert/strict'),{z}=require('zod');
 const R=require('../backend/src/services/allianceRules');
 const rules={name:'Pan compartido',purpose:'Recomendar el negocio',benefit_type:'FREE_GIFT',benefit_label:'Pan adicional con tu compra',terms:'Solo con compra pagada',destination:'Calle 12',starts_at:'2026-11-01T12:00:00Z',ends_at:'2027-01-01T12:00:00Z',commission_type:'FIXED',commission_value:1000,settlement_terms:'Cada viernes'};
-const person={request_key:'f76cbe54-8747-43df-bb9a-4818c77e0070',name:'Ana Cliente',document_id:'12345678',data_use_confirmed:true};
+const person={request_key:'f76cbe54-8747-43df-bb9a-4818c77e0070',first_name:'Ana',last_name:'Cliente',phone:'3001234567',email:'ana@example.test',document_id:'12345678',data_use_confirmed:true};
 function message(schema,value,context){try{R.parse(schema,value,context);assert.fail('Expected validation failure');}catch(e){assert.equal(e.status,400);assert.doesNotMatch(e.message,/Too small|Too big|expected|Invalid|undefined|NaN|UUID/);return e.message;}}
 test('empty, short and whitespace partner identifiers explain the field and minimum',()=>{
  for(const value of ['', 'a', '   '])assert.equal(message(R.partnerSchema,value,'ally_slug'),'Escribe el identificador del negocio aliado con al menos 2 caracteres.');
@@ -24,7 +24,7 @@ test('branding validation identifies the name, invitation and logo',()=>{
  assert.match(message(R.brandingSchema,{...branding,logo_url:'http://logo.test'}),/HTTPS/);
 });
 test('public enrollment explains name, document, email and required consent without private fields',()=>{
- for(const [key,value,pattern] of [['name','a',/tu nombre completo.*3 caracteres/],['document_id','1',/documento de identidad.*4 caracteres/],['document_id','<script>',/documento usando letras/],['email','invalid',/correo válido/],['data_use_confirmed',false,/ambos negocios.*opcionales/]]){
+ for(const [key,value,pattern] of [['first_name','',/tu nombre.*1 caracteres/],['last_name',' ',/tus apellidos.*1 caracteres/],['phone','',/teléfono.*7 caracteres/],['phone','abcdefg',/teléfono válido/],['phone','-------',/7 dígitos/],['document_id','1',/documento de identidad.*4 caracteres/],['document_id','<script>',/documento usando letras/],['email','invalid',/correo válido/],['data_use_confirmed',false,/ambos negocios.*opcionales/]]){
  const text=message(R.enrollmentSchema,{...person,[key]:value});assert.match(text,pattern);assert.doesNotMatch(text,/comisión|liquidación|marketing_issuer|request_key/);
  }
  assert.match(message(R.enrollmentSchema,{...person,request_key:'bad'}),/Actualiza la página/);

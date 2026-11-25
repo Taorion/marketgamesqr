@@ -30,9 +30,11 @@ const brandingSchema=z.object({
   collect_phone:z.boolean(), collect_email:z.boolean(),
 }).strict();
 const enrollmentSchema=z.object({
-  request_key:uuid, name:z.string().trim().min(3).max(180),
+  request_key:uuid,
+  first_name:z.string().trim().min(1).max(80), last_name:z.string().trim().min(1).max(99),
   document_id:z.string().trim().min(4).max(40).regex(/^[a-zA-Z0-9 .-]+$/),
-  phone:z.string().trim().max(40).default(''), email:z.union([z.string().email().max(240),z.literal('')]).default(''),
+  phone:z.string().trim().min(7).max(30).regex(/^\+?[\d ()-]+$/).refine(v=>v.replace(/\D/g,'').length>=7,'Ingresa un teléfono válido con al menos 7 dígitos.'),
+  email:z.string().trim().email().max(240),
   data_use_confirmed:z.literal(true), marketing_issuer:z.boolean().default(false),marketing_ally:z.boolean().default(false),
 }).strict();
 const fieldLabels={
@@ -53,7 +55,7 @@ const fieldLabels={
 };
 function validationMessage(issue,schema,context){
   const field=issue.path[0]||context;
-  const label=schema===enrollmentSchema&&field==='name'?'tu nombre completo':fieldLabels[field];
+  const label=field==='first_name'?'tu nombre':field==='last_name'?'tus apellidos':fieldLabels[field];
   if(issue.code==='custom')return issue.message;
   if(field==='data_use_confirmed')return 'Autoriza el uso de tus datos por ambos negocios para recibir el ticket. Las novedades comerciales son opcionales.';
   if(field==='request_key')return 'No pudimos identificar esta solicitud. Actualiza la página y vuelve a intentarlo.';
@@ -71,6 +73,7 @@ function validationMessage(issue,schema,context){
     return `Revisa ${label}: el valor máximo es ${issue.maximum}.`;
   }
   if(field==='email')return 'Escribe un correo válido, por ejemplo: nombre@correo.com.';
+  if(field==='phone'&&issue.code==='invalid_format')return 'Escribe un teléfono válido usando números y, si lo necesitas, el prefijo del país.';
   if(field==='document_id'&&issue.code==='invalid_format')return 'Escribe el documento usando letras, números, espacios, puntos o guiones.';
   if(['starts_at','ends_at'].includes(field))return `Selecciona ${label} con una fecha y hora válidas.`;
   if(issue.code==='invalid_type'){

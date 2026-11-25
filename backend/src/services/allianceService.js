@@ -169,10 +169,8 @@ async function enroll(publicToken,input){
     if(previous){if(previous.request_hash!==requestHash)throw badRequest('Esta solicitud ya fue utilizada con otros datos.');return {token:previous.public_token,businesses:[a.issuer_id,a.ally_id]};}
     if(a.status!=='ACTIVE'||!a.branding||new Date(a.rules.starts_at)>new Date()||new Date(a.rules.ends_at)<=new Date())throw badRequest('La alianza no está disponible para nuevas inscripciones.');
     const partners=await businesses(c,a);if(!eligible(partners.issuer)||!eligible(partners.ally))throw badRequest('La alianza no está disponible.');
-    if(a.branding.collect_phone&&!/^\+?[\d ()-]{7,30}$/.test(data.phone))throw badRequest('Ingresa un teléfono válido.');
-    if(a.branding.collect_email&&!data.email)throw badRequest('Ingresa tu correo.');
-    // Do not accept hidden personal fields; never return someone else's ticket by document alone.
-    if(!a.branding.collect_phone)data.phone='';if(!a.branding.collect_email)data.email='';
+    // All alliances collect complete contact details, including older branding configurations.
+    // Never return someone else's ticket by document alone.
     const count=(await c.query('select count(*)::int n from qori_alliance_tickets where alliance_id=$1 and document_key=$2',[a.id,data.document_id])).rows[0].n;
     if(count>=a.rules.per_customer_limit)throw badRequest('Ya se alcanzó el límite de participación para este documento. Conserva el ticket recibido.');
     const batch=(await c.query(`select * from qori_alliance_batches where alliance_id=$1 and closed_at is null
@@ -182,10 +180,10 @@ async function enroll(publicToken,input){
     // Stable ordering prevents reciprocal alliances from taking contact locks in opposite order.
     for(const businessId of [a.issuer_id,a.ally_id].sort()){
       const marketing=businessId===a.issuer_id?data.marketing_issuer:data.marketing_ally;
-      const {player}=await resolveBeneficiary(c,{businessId,documentRequired:true,input:{...data,data_use_confirmed:true,marketing_consent:marketing,capture_source:'TICKET'},operationKey:`alliance:${a.id}:${data.request_key}`});
+      const {player}=await resolveBeneficiary(c,{businessId,documentRequired:true,input:{...data,name:`${data.first_name} ${data.last_name}`,data_use_confirmed:true,marketing_consent:marketing,capture_source:'TICKET'},operationKey:`alliance:${a.id}:${data.request_key}`});
       contacts[businessId]=player.id;
       await c.query(`update players set metadata=coalesce(metadata,'{}')||$2::jsonb where id=$1`,[player.id,
-        {alliance_origin:{alliance_id:a.id,issuer_id:a.issuer_id,ally_id:a.ally_id,registered_at:new Date().toISOString(),marketing_consent:marketing},source_label:'Qori Alianzas',...(marketing?{marketing_consent:true}:{})}]);
+        {first_name:data.first_name,last_name:data.last_name,alliance_origin:{alliance_id:a.id,issuer_id:a.issuer_id,ally_id:a.ally_id,registered_at:new Date().toISOString(),marketing_consent:marketing},source_label:'Qori Alianzas',...(marketing?{marketing_consent:true}:{})}]);
     }
     const ticketToken=token(),qrToken=token();
     const q=(await c.query(`insert into qr_codes(business_id,player_id,token,status,origin_type,benefit_type,benefit_value,expires_at,claim_required,claimed_at,claimed_by_player_id,metadata)

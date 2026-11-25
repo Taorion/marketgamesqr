@@ -9,9 +9,9 @@ La integración inicial no cambiaba la URL cacheada de `empresa/js/app.js` y dep
 ## Recorrido operativo
 
 1. El emisor crea un borrador, verifica el identificador (slug) del aliado, configura el beneficio y la comisión y envía la propuesta.
-2. El aliado entra en **Recibidas**, revisa las condiciones y acepta. Completa su presentación, logo HTTPS opcional, mensaje, invitación y campos de teléfono/correo. Nombre y documento son obligatorios.
+2. El aliado entra en **Recibidas**, revisa las condiciones y acepta. Completa su presentación, logo HTTPS opcional, mensaje e invitación. Nombre, apellidos, documento, teléfono y correo son obligatorios para todas las inscripciones, incluso en alianzas con una configuración anterior que ocultaba teléfono o correo.
 3. El emisor asigna un lote. Se descuenta una sola vez de `business_qr_credit_accounts` usando `consumeQrCredits`, con movimiento en el ledger existente. El aliado recibe inventario específico de esa alianza, sin crédito en su saldo general.
-4. El aliado comparte el QR de captación. El cliente acepta el uso de sus datos por los dos negocios y elige independientemente si autoriza publicidad de cada uno. Se registra un contacto `players` por negocio usando el resolvedor de identidad existente, y se asigna una unidad del lote sin otro débito.
+4. El aliado comparte el QR de captación. El cliente acepta el uso de sus datos por los dos negocios y elige independientemente si autoriza publicidad de cada uno. Se registra un contacto `players` por negocio usando el resolvedor de identidad existente; `name` conserva el nombre completo y `metadata.first_name` / `metadata.last_name` conservan las partes ingresadas, y se asigna una unidad del lote sin otro débito.
 5. El cliente guarda el enlace privado, descarga su QR o imprime/guarda el ticket en PDF mediante el navegador. No hay envío automático por WhatsApp o correo.
 6. La panadería escanea el QR único en el Validador existente. Confirma el documento, los productos, la sucursal y el pago. Una lectura o una entrega sin compra no genera comisión. Se exige compra positiva en COP y medio de pago.
 7. El Validador crea su venta canónica, canje e inventario en la transacción existente. Alianzas vincula esa venta a una única comisión. Ambos participantes pueden consultar resultados; el panel refresca cada 30 segundos mientras está visible y no hay un formulario abierto.
@@ -113,3 +113,9 @@ Para practicar: abrir **Pan compartido**, entrar por su QR de captación con dat
 `scripts/seed-alliance-demo.js` es una herramienta de operador, nunca se ejecuta al iniciar el servidor. Por defecto revierte toda la carga. `--local` fija la base QA aislada y `--apply` guarda los ejemplos. En producción exige el ID y slug de la cuenta Demo Qori existente. Crea dos negocios aliados internos sin credenciales de acceso; valida su procedencia antes de reutilizarlos. Una sola transacción y un bloqueo de aplicación protegen la carga; el script la repite antes de terminar para comprobar que no se duplican tickets, ventas, pagos ni descuentos. Reutiliza el servicio de Alianzas, el canje canónico del Validador y la anulación existente de Ventas.
 
 Las alianzas de demostración no pueden vincularse con negocios reales. Pruebas locales: 53 casos aprobados, incluidos aislamiento, excepción limitada de registro de pagos, guía de demo y regresión de los selectores globales. Estas pruebas de CSS/DOM no sustituyen una revisión visual.
+
+### Datos completos del cliente (25 de noviembre de 2026)
+
+El formulario solicita nombre y apellidos separados, documento, teléfono y correo obligatorios. La validación del servidor también los exige, aunque la personalización anterior desactivara teléfono o correo. Se conserva el nombre completo para el resolvedor de contactos y las partes en los metadatos del contacto de cada negocio. No requiere migración ni modifica registros anteriores.
+
+Verificación local: 47 pruebas aprobadas (22 de validación, formulario e integración del portal; 25 de integración con PostgreSQL local), incluyendo rechazo de datos incompletos sin consumo de tickets, persistencia de los cinco datos en ambos negocios y reintentos sin duplicados. Revisión visual pendiente: el navegador de verificación no está disponible. Cambio preparado localmente, sin publicación en producción.

@@ -66,7 +66,7 @@ test('the portal hook and view observer share one load and failed loads remain r
 });
 test('portal HTML versions both the shell integration and the self-initializing module',()=>{
  const dom=setup(read('empresa/index.html'));
- try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-clear-errors-v4-20261124'));}finally{dom.window.close();}
+ try{const sources=[...dom.window.document.scripts].map(s=>s.getAttribute('src')||'');assert.ok(sources.some(s=>s.startsWith('js/app.js?')&&new URL(s,'http://localhost').searchParams.get('alliances')==='2'));assert.ok(sources.includes('js/alliances.js?v=alliance-customer-fields-20261125'));}finally{dom.window.close();}
 });
 test('a synchronous expired-session failure does not permanently block initialization',async()=>{
  const dom=setup('<div id="alliancesWorkspace"></div>'),w=dom.window;
@@ -74,13 +74,13 @@ test('a synchronous expired-session failure does not permanently block initializ
  try{w.eval(read('empresa/js/alliances.js'));await w.QoriAlliances.open();assert.match(w.document.querySelector('[role=alert]').textContent,/Inicia sesión/);
  w.authHeaders=()=>({});await w.QoriAlliances.open();assert.ok(w.document.querySelector('[data-alliance-action=create]'));}finally{dom.window.close();}
 });
-test('public form requests only configured data, separates marketing and preserves retry key',async()=>{
+test('public form requires all five fields even with legacy branding, separates marketing and preserves retry key',async()=>{
  const token='a'.repeat(64),dom=setup('<main id="app"></main>','http://127.0.0.1:3057/alianzas/#alianza='+token),w=dom.window,calls=[];let attempts=0;
  w.fetch=async(url,options)=>{calls.push({url,options});if(options.method==='GET')return {ok:true,json:async()=>publicOffer};attempts++;return {ok:attempts>1,json:async()=>attempts===1?{error:{message:'Error transitorio'}}:{...publicOffer,status:'ACTIVE',expires_at:r.ends_at,ticket_code:'b'.repeat(64),ticket_url:'http://127.0.0.1:3057/alianzas/#ticket='+'c'.repeat(64),qr_image:'data:image/png;base64,AAAA'}};};
- try{w.eval(read('alliance-public/app.js'));await pause();const form=w.document.querySelector('form');assert.ok(form);assert.equal(form.elements.phone,undefined);assert.ok(form.elements.email);assert.equal(form.elements.marketing_issuer.checked,false);assert.equal(form.elements.marketing_ally.checked,false);assert.equal(form.elements.data_use_confirmed.required,true);
- assert.equal(calls.length,1);form.elements.name.value='Ana Cliente';form.elements.document_id.value='12345678';form.elements.email.value='ana@example.test';form.elements.data_use_confirmed.checked=true;
+ try{w.eval(read('alliance-public/app.js'));await pause();const form=w.document.querySelector('form');assert.ok(form);for(const field of ['first_name','last_name','document_id','phone','email'])assert.equal(form.elements[field].required,true);assert.equal(form.elements.name,undefined);assert.equal(form.elements.marketing_issuer.checked,false);assert.equal(form.elements.marketing_ally.checked,false);assert.equal(form.elements.data_use_confirmed.required,true);
+ assert.equal(calls.length,1);form.elements.first_name.value='Ana';form.elements.last_name.value='Cliente';form.elements.phone.value='3001234567';form.elements.document_id.value='12345678';form.elements.email.value='ana@example.test';form.elements.data_use_confirmed.checked=true;
  form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await pause();assert.match(w.document.getElementById('error').textContent,/Error transitorio/);
- form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await pause();const bodies=calls.filter(c=>c.options.method==='POST').map(c=>JSON.parse(c.options.body));assert.equal(bodies[0].request_key,bodies[1].request_key);assert.equal(bodies[1].marketing_issuer,false);
+ form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await pause();const bodies=calls.filter(c=>c.options.method==='POST').map(c=>JSON.parse(c.options.body));assert.equal(bodies[0].request_key,bodies[1].request_key);assert.equal(bodies[1].marketing_issuer,false);assert.equal(bodies[1].first_name,'Ana');assert.equal(bodies[1].last_name,'Cliente');assert.equal(bodies[1].phone,'3001234567');assert.equal(bodies[1].email,'ana@example.test');
  assert.match(w.document.body.textContent,/Tu ticket de alianza/);assert.doesNotMatch(w.document.body.textContent,/Comisión|Liquidación|1000/);assert.ok(w.location.hash.startsWith('#ticket='));
  }finally{dom.window.close();}
 });

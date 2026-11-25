@@ -12,7 +12,7 @@ let owner,ally,third,validator,a,ticket,ticket2,commission,server,base;
 const key=()=>crypto.randomUUID();
 const rules={name:'Pan de masa madre',purpose:'Recomendaciones desde la tienda naturista',benefit_type:'FREE_GIFT',benefit_label:'Compra tu pan de $12.000 y recibe otro pan de $3.000',benefit_amount:0,minimum_purchase:12000,purchase_product_id:null,terms:'Una compra pagada. Beneficio personal, no acumulable.',destination:'Panadería Origen, Calle 12 # 3-45',branch_ids:[],starts_at:new Date(Date.now()-864e5).toISOString(),ends_at:new Date(Date.now()+30*864e5).toISOString(),ticket_valid_days:20,per_customer_limit:1,commission_type:'FIXED',commission_value:1000,commission_base:'NET_PAID',settlement_terms:'Liquidación semanal.',unused_policy:'RETURN_UNUSED'};
 const branding={display_name:'Naturista Vida',presentation:'Alimentos de nuestra comunidad.',message:'Un beneficio por venir de nuestra parte.',invitation:'Completa tus datos y recibe tu ticket.',logo_url:'',collect_phone:false,collect_email:false};
-const person=(doc=key().replace(/-/g,''))=>({request_key:key(),name:'Cliente Alianza',document_id:doc,phone:'',email:'',data_use_confirmed:true,marketing_issuer:false,marketing_ally:true});
+const person=(doc=key().replace(/-/g,''))=>({request_key:key(),first_name:'Cliente',last_name:'Alianza',document_id:doc,phone:'300'+String(crypto.randomInt(1000000,10000000)),email:key()+'@example.test',data_use_confirmed:true,marketing_issuer:false,marketing_ally:true});
 async function business(name){const b=(await query("insert into businesses(name,slug,plan_code,subscription_status,settings) values($1,$2,'PRO','ACTIVE',$3) returning *",[name,'alliance-'+key(),{subscription:{lifetime_access:true,monthly_payment_required:false}}])).rows[0];
 const u=(await query("insert into app_users(business_id,email,password_hash,full_name,role) values($1,$2,$3,$4,'BUSINESS_OWNER') returning *",[b.id,key()+'@example.test',require('bcryptjs').hashSync('Alianzas-QA-2026!',4),name])).rows[0];u.business=b;return u;}
 async function fresh(){return (await S.detail(owner,a.id)).alliance;}
@@ -48,12 +48,21 @@ test('Alianzas: real PostgreSQL, canonical tickets and paid sale integration',as
   await t.test('read does not consume; public contract never contains agreement finances',async()=>{
     const d=await S.publicAgreement(a.public_token);assert.equal(d.available,3);const raw=JSON.stringify(d);assert.doesNotMatch(raw,/commission|settlement|original_amount|unused_policy/);assert.equal(await balance(owner),17);
   });
+  await t.test('incomplete enrollment cannot consume tickets or create contacts, even with legacy optional fields',async()=>{
+    const data=person();
+    for(const field of ['first_name','last_name','document_id','phone','email']){
+      const incomplete={...data};delete incomplete[field];
+      await assert.rejects(()=>S.enroll(a.public_token,incomplete),e=>e.status===400);
+    }
+    assert.equal((await S.publicAgreement(a.public_token)).available,3);
+    assert.equal((await query('select id from players where document_id=$1',[data.document_id])).rowCount,0);
+  });
   await t.test('parallel signup retries deliver one unique ticket and create scoped CRM contacts',async()=>{
     const data=person();const results=await Promise.all([1,2,3,4].map(()=>S.enroll(a.public_token,data)));assert.equal(new Set(results.map(x=>x.ticket_code)).size,1);ticket={...results[0],document_id:data.document_id};assert.equal(await balance(owner),17);assert.equal(await balance(ally),7);
-    const contacts=await query("select business_id,metadata from players where document_id=$1 and business_id=any($2::uuid[])",[data.document_id,[owner.business_id,ally.business_id]]);assert.equal(contacts.rowCount,2);assert.ok(contacts.rows.every(p=>p.metadata.alliance_origin.alliance_id===a.id));
+    const contacts=await query("select business_id,name,document_id,phone,email,metadata from players where document_id=$1 and business_id=any($2::uuid[])",[data.document_id,[owner.business_id,ally.business_id]]);assert.equal(contacts.rowCount,2);assert.ok(contacts.rows.every(p=>p.metadata.alliance_origin.alliance_id===a.id));for(const p of contacts.rows){assert.equal(p.name,'Cliente Alianza');assert.equal(p.metadata.first_name,'Cliente');assert.equal(p.metadata.last_name,'Alianza');assert.equal(p.phone,'+57'+data.phone);assert.equal(p.email,data.email);assert.equal(p.document_id,data.document_id);}
     assert.doesNotMatch(JSON.stringify(results[0]),/commission|settlement|document_key|request_hash/);
     await assert.rejects(()=>S.enroll(a.public_token,{...data,request_key:key()}),/límite/);
-    await assert.rejects(()=>S.enroll(a.public_token,{...data,name:'Impersonator'}),/otros datos/);
+    await assert.rejects(()=>S.enroll(a.public_token,{...data,first_name:'Impersonator'}),/otros datos/);
   });
   await t.test('concurrent depletion allocates exactly the available tickets',async()=>{
     const inputs=[person(),person(),person(),person()];const r=await Promise.allSettled(inputs.map(p=>S.enroll(a.public_token,p)));assert.equal(r.filter(x=>x.status==='fulfilled').length,2);
