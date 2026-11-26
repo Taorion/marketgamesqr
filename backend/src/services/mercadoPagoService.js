@@ -1460,6 +1460,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     period_key:order.id,created_by_user_id:order.created_by_user_id
   }) : {account: await ensureCreditAccount(client, order.business_id), granted:false};
   account=included.account; courtesyTicketsGranted=included.granted;
+  const commissionStart = await require('./sellerCommissionPeriod').commissionStartsAt(client, order.business_id, order.id, periodEnd);
   const updated = await client.query(
     `update qr_credit_purchase_orders
      set status = 'APPROVED',
@@ -1470,7 +1471,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
          updated_at = now()
      where id = $1
      returning *`,
-    [order.id, String(payment.id), payment, JSON.stringify({starts_at:periodEnd.toISOString(),ends_at:nextPeriodEnd?.toISOString() || null})]
+    [order.id, String(payment.id), payment, JSON.stringify({starts_at:commissionStart.toISOString(),billing_starts_at:periodEnd.toISOString(),ends_at:nextPeriodEnd?.toISOString() || null})]
   );
 
   await client.query(
