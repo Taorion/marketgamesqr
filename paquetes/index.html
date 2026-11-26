@@ -43,7 +43,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=qori-plan-matrix-v3-20260928">
+  <link rel="stylesheet" href="css/styles.css?v=qori-plan-matrix-v3-20260928&amp;cardrenewal=20261126">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -225,11 +225,19 @@
           <input id="privacyAccepted" type="checkbox" required>
           <span>Acepto la <a href="/privacidad/" target="_blank" rel="noopener">Política de Datos y Privacidad</a> y autorizo el tratamiento necesario para operar Qori.</span>
         </label>
+        <label class="full" id="subscriptionPaymentModeField">
+          <span>Forma de pago del plan</span>
+          <select id="subscriptionPaymentMode">
+            <option value="recurring_card" selected>Tarjeta con renovación automática</option>
+            <option value="one_time">PSE o saldo Mercado Pago · pago único</option>
+          </select>
+        </label>
+        <div class="selected-box full" id="subscriptionRenewalNotice" role="note" aria-live="polite"></div>
         <div class="signup-card-security full">
           <article>
             <span>Pago seguro</span>
             <strong>Tarjetas, saldo Mercado Pago y PSE.</strong>
-            <p>Mercado Pago procesa el cobro. Con PSE pagas el periodo actual; luego puedes renovar o activar el cobro automático con tarjeta.</p>
+            <p>En los planes mensuales, la tarjeta queda inscrita para renovación automática al confirmar en Mercado Pago. PSE y saldo son pagos únicos. Despega es prepago.</p>
           </article>
           <article>
             <span>Importante</span>
@@ -347,7 +355,7 @@
   </main>
 
   <script src="/js/seller-referral.js?v=20261112-crm1" defer></script>
-  <script src="js/signup-recovery.js?v=ecosystem-20261112" defer></script>
-  <script src="js/app.js?referral=20261112-crm1&v=qori-plan-matrix-v1-20260928&prices=20261009&limits=despega-prepaid-20261119&amp;descubre=v2-20261016" defer></script>
+  <script src="js/signup-recovery.js?v=cardrenewal-20261126" defer></script>
+  <script src="js/app.js?cardrenewal=20261126&referral=20261112-crm1&v=qori-plan-matrix-v1-20260928&prices=20261009&limits=despega-prepaid-20261119&amp;descubre=v2-20261016" defer></script>
 </body>
 </html>

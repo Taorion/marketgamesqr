@@ -80,6 +80,10 @@ test('expired trial enters the real portal at billing without requesting locked 
     await new Promise(resolve => setTimeout(resolve, 100));
     assert.equal(checkouts.length, 1);
     assert.equal(checkouts[0].body.plan_code, 'STARTER');
+    assert.equal(checkouts[0].body.payment_mode, 'recurring_card');
+    assert.equal(checkouts[0].body.auto_renewal_consent, true);
+    assert.match(w.document.querySelector('#subscriptionRenewalNotice').textContent, /cada mes/);
+    assert.match(w.document.querySelector('#subscriptionRenewalNotice').textContent, /Mi cuenta/);
     assert.equal(checkouts[0].headers.Authorization, 'Bearer local-test');
     assert.equal(w.location.hash, '#qa-checkout');
     assert.equal(JSON.parse(w.localStorage.getItem('qr_business_portal_session_v1')).user.subscription.plan.code, 'DESCUBRE', 'opening checkout does not activate a plan');
@@ -89,6 +93,8 @@ test('expired trial enters the real portal at billing without requesting locked 
     await w.loadLockedSubscriptionWorkspace();
     assert.equal(resumed, 1, 'a fresh approved subscription resumes the normal workspace');
     assert.equal(JSON.parse(w.localStorage.getItem('qr_business_portal_session_v1')).user.subscription.plan.code, 'STARTER');
+    w.showPlanGateFromApiError({ planGate: { feature: 'communications' }, message: 'Tu plan no incluye communications.' });
+    assert.equal(w.document.querySelector('#featureUpgradeModal').classList.contains('hidden'), true, 'late module errors cannot cover card enrollment for an active paid plan');
     assert.deepEqual(errors, []);
   } finally { observers.forEach(observer => observer.disconnect()); w.close(); }
 });

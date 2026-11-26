@@ -20,6 +20,8 @@ const creditCheckoutSchema = z.object({
 const subscriptionRenewalSchema = z.object({
   plan_code: z.string().trim().min(2).max(40),
   idempotency_key: z.string().uuid().optional(),
+  payment_mode: z.enum(['recurring_card', 'one_time']).optional(),
+  auto_renewal_consent: z.boolean().optional(),
 });
 const storageAddonSchema = z.object({ addon_code: z.string().trim().min(2).max(40) });
 

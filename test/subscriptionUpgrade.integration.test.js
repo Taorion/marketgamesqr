@@ -52,7 +52,7 @@ test('expired and free accounts pay in place; paid additions enforce authorizati
   assert.equal((await api(addonPath(business.id),admin,await addonBody(),'PATCH')).status,400);
  });
  await t.test('checkout reuses the same account, preserves unpaid state and is idempotent',async()=>{
-  const body={plan_code:'STARTER',idempotency_key:uuid()};
+  const body={plan_code:'STARTER',payment_mode:'one_time',idempotency_key:uuid()};
   let result=await api('/api/payments/subscriptions/checkout',owner,body);assert.equal(result.status,201,JSON.stringify(result));order=result.data.order;
   const repeated=await api('/api/payments/subscriptions/checkout',owner,body);assert.equal(repeated.data.order.id,order.id);
   assert.equal(order.business_id,business.id);assert.equal((await businessRow()).plan_code,'DESCUBRE');
@@ -98,6 +98,6 @@ test('expired and free accounts pay in place; paid additions enforce authorizati
  });
  for(const code of ['PENSE_EN_TI','SELLOS_GRATIS','ACTIVACIONES_GRATIS','UN_REGALO_PERSONAL'])await t.test(code+' can purchase a paid plan without signup',async()=>{
   await query('update businesses set plan_code=$2,subscription_current_period_ends_at=null where id=$1',[business.id,code]);
-  const result=await api('/api/payments/subscriptions/checkout',owner,{plan_code:'STARTER',idempotency_key:uuid()});assert.equal(result.status,201,JSON.stringify(result));assert.equal(result.data.order.business_id,business.id);
+  const result=await api('/api/payments/subscriptions/checkout',owner,{plan_code:'STARTER',payment_mode:'one_time',idempotency_key:uuid()});assert.equal(result.status,201,JSON.stringify(result));assert.equal(result.data.order.business_id,business.id);
  });
 });

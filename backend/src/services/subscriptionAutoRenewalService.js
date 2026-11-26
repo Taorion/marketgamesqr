@@ -49,11 +49,14 @@ async function create(user, body) {
         const existingPlan = b.settings?.subscription?.auto_renew_plan_code;
         if (existingPlan && existingPlan !== body.plan_code) throw badRequest('Cancela la autorización anterior antes de cambiar el plan del cobro automático.');
         if (b.subscription_auto_renew_status === 'PAUSED') throw badRequest('La autorización está pausada. Cancélala antes de inscribir nuevamente la tarjeta.');
-        if (!b.subscription_auto_renew_enabled && new Date(b.subscription_current_period_ends_at) <= new Date()) throw badRequest('La autorización pendiente corresponde a un periodo vencido. Cancélala y renueva el plan antes de inscribir la tarjeta.');
+        const pendingOrder = (await query("select metadata from qr_credit_purchase_orders where business_id=$1 and mercado_pago_preference_id=$2 limit 1", [b.id,b.mercado_pago_preapproval_id])).rows[0];
+        if (!b.subscription_auto_renew_enabled && !pendingOrder?.metadata?.signup?.initial_checkout && new Date(b.subscription_current_period_ends_at) <= new Date()) throw badRequest('La autorización pendiente corresponde a un periodo vencido. Cancélala y renueva el plan antes de inscribir la tarjeta.');
         return { reused: true, auto_renewal: {
           enabled: b.subscription_auto_renew_enabled, status: b.subscription_auto_renew_status,
           checkout_url: b.subscription_auto_renew_enabled ? null : b.subscription_auto_renew_checkout_url,
-          first_charge_at: b.settings?.subscription?.auto_renew_next_payment_at || b.subscription_current_period_ends_at,
+          initial_checkout: Boolean(pendingOrder?.metadata?.signup?.initial_checkout),
+          first_charge_at: b.settings?.subscription?.auto_renew_next_payment_at || (pendingOrder?.metadata?.signup?.initial_checkout
+            ? pendingOrder.metadata.signup.first_charge_at || null : b.subscription_current_period_ends_at),
         } };
       }
     }

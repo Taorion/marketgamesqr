@@ -36,9 +36,9 @@ test("public checkout distinguishes prepaid from monthly plans", () => {
   assert.doesNotMatch(page, /annual_price_cop/);
   assert.match(payments, /payload\.billing_cycle && payload\.billing_cycle !== "monthly"/);
   assert.match(payments, /const billingCycle = plan\.billing_period === "prepaid" \? "prepaid" : "monthly"/);
-  assert.match(payments, /const subscriptionType = "portal_monthly_subscription"/);
-  assert.match(payments, /activation_flow:\s*"checkout_preference"/);
-  assert.match(payments, /requires_card_enrollment:\s*false/);
+  assert.match(payments, /const mode = checkoutPolicy.paymentMode\(plan, payload\)/);
+  assert.match(payments, /activation_flow: recurring \? 'subscription_preapproval' : 'checkout_preference'/);
+  assert.match(payments, /requires_card_enrollment: recurring/);
 });
 
 test("public plan checkout uses Checkout Pro without excluding PSE", () => {
@@ -118,6 +118,7 @@ test(`${planCode} sends the canonical COP price to Checkout Pro with PSE availab
       full_name: "Buyer",
       plan_code: planCode,
       billing_cycle: "monthly",
+      payment_mode: 'one_time',
     });
 
     assert.equal(requests.length, 1);
@@ -130,7 +131,8 @@ test(`${planCode} sends the canonical COP price to Checkout Pro with PSE availab
     assert.equal(result.price_cop, priceCop);
     assert.equal(requests[0].body.external_reference, "signup-1");
     assert.deepEqual(requests[0].body.payment_methods.excluded_payment_methods, [{ id: "efecty" }]);
-    assert.deepEqual(requests[0].body.payment_methods.excluded_payment_types, [{ id: "ticket" }, { id: "atm" }]);
+    assert.deepEqual(requests[0].body.payment_methods.excluded_payment_types, [{ id: "ticket" }, { id: "atm" },
+      ...(planCode === 'DESPEGA' ? [] : [{id:'credit_card'},{id:'debit_card'},{id:'prepaid_card'}])]);
     assert.equal(result.checkout_url, "https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=preference-1");
   } finally {
     global.fetch = originalFetch;

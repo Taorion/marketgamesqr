@@ -18,7 +18,7 @@ async function prospect(user=seller,email=uid()+'@example.test') {
 }
 const path=id=>'/api/admin/commercial/prospects/'+id;
 async function link(p,user=seller) {const r=await api(path(p.id)+'/referral',user);assert.equal(r.status,200,JSON.stringify(r));return new URL(r.data.plan_referral_url).searchParams.get('prospect_ref');}
-function signup(p,token) {return {company_name:p?.business_name||'Enlace personal '+uid(),contact_name:'Contacto QA',email:p?.email||uid()+'@example.test',phone:'3100000000',nit:uid(),password:'LocalPrueba!2026',password_confirm:'LocalPrueba!2026',terms_accepted:true,privacy_accepted:true,plan_code:'STARTER',commercial_advisor_id:seller.id,...(token?{commercial_prospect_token:token}:{})};}
+function signup(p,token) {return {company_name:p?.business_name||'Enlace personal '+uid(),contact_name:'Contacto QA',email:p?.email||uid()+'@example.test',phone:'3100000000',nit:uid(),password:'LocalPrueba!2026',password_confirm:'LocalPrueba!2026',terms_accepted:true,privacy_accepted:true,auto_renewal_consent:true,plan_code:'STARTER',commercial_advisor_id:seller.id,...(token?{commercial_prospect_token:token}:{})};}
 const current=async id=>(await query('select * from qori_sales_prospects where id=$1',[id])).rows[0];
 async function approve(id) {return withTransaction(async db=>{const order=(await db.query('select * from qr_credit_purchase_orders where id=$1 for update',[id])).rows[0];return payments.__testing.finalizeApprovedCreditPurchase(db,order,{id:uid(),status:'approved',transaction_amount:Number(order.price_cop),currency_id:'COP'});});}
 after(async()=>{global.fetch=actualFetch;if(server)await new Promise(r=>server.close(r));await pool.end();});
@@ -26,7 +26,7 @@ test('Prospect links cover signup, verified closure, isolation, rollback and rev
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
  server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  env.mercadoPagoAccessToken='TEST-local-only';env.mercadoPagoWebhookSecret='local-only';
- global.fetch=async(input,options)=>{if(String(input).startsWith('https://api.mercadopago.com/')){assert.ok(String(input).endsWith('/checkout/preferences'));return new Response(JSON.stringify(failProvider?{message:'QA provider failure'}:{id:uid(),init_point:'https://example.test/checkout'}),{status:failProvider?500:201});}assert.ok(String(input).startsWith(base),'No external requests in QA');return actualFetch(input,options);};
+ global.fetch=async(input,options)=>{if(String(input).startsWith('https://api.mercadopago.com/')){assert.ok(['/checkout/preferences','/preapproval'].some(endpoint=>String(input).endsWith(endpoint)));return new Response(JSON.stringify(failProvider?{message:'QA provider failure'}:{id:uid(),init_point:'https://example.test/checkout'}),{status:failProvider?500:201});}assert.ok(String(input).startsWith(base),'No external requests in QA');return actualFetch(input,options);};
  admin=await person('QORI_SUPERADMIN');seller=await person('QORI_SELLER');other=await person('QORI_SELLER');
  await t.test('dashboard and CRM expose every public plan; checkout preserves plan, seller and exact prospect',async()=>{
   const dashboard=await api('/api/seller/dashboard',seller);assert.equal(dashboard.status,200);

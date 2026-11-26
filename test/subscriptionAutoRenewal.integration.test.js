@@ -135,6 +135,69 @@ test('Monthly card renewal: authorization, provider verification, recovery and c
   await t.test('monthly calendar arithmetic does not skip February for January 31',()=>{
     assert.equal(mp.__testing.addPlanBillingPeriod(new Date('2027-01-31T15:00:00Z'),{billing_frequency:1}).toISOString(),'2027-02-28T15:00:00.000Z');
   });
+  await t.test('default card checkout requires the displayed renewal notice and defers a paid account until expiry',async()=>{
+    const fresh=await fixture(),n=creates;
+    await assert.rejects(mp.createSubscriptionRenewalCheckout(fresh.u,{plan_code:'STARTER'}),/aviso de renovación/);
+    assert.equal(creates,n);
+    const o=await renewal.withBusinessLock(fresh.b.id,()=>mp.createSubscriptionRenewalCheckout(fresh.u,{plan_code:'STARTER',auto_renewal_consent:true}));
+    const mandate=mandates.get(o.mercado_pago_preference_id);
+    assert.equal(mandate.auto_recurring.start_date,fresh.b.subscription_current_period_ends_at.toISOString());
+    const row=await order(o.id);assert.equal(row.metadata.signup.payment_mode,'recurring_card');
+    assert.equal(row.metadata.signup.renewal_consent.amount_cop,229000);
+    assert.equal(row.metadata.signup.renewal_consent.user_id,fresh.u.id);
+    assert.equal((await business(fresh.b.id)).subscription_auto_renew_enabled,false);
+    mandate.status='authorized';await mp.processPreapprovalWebhook(mandate.id);
+    assert.equal((await business(fresh.b.id)).subscription_auto_renew_enabled,true);
+    assert.equal((await order(o.id)).credited_at,null);
+    await renewal.cancel(fresh.u);
+    assert.equal(+(await business(fresh.b.id)).subscription_current_period_ends_at,+fresh.b.subscription_current_period_ends_at);
+  });
+  await t.test('public signup enrolls once; authorization alone gives no access and the first verified invoice activates the plan',async()=>{
+    const fresh=await fixture();
+    await query("update businesses set is_active=false,subscription_status='PENDING_PAYMENT',subscription_current_period_ends_at=null,settings=coalesce(settings,'{}') || '{\"signup_type\":\"portal_subscription\"}'::jsonb where id=$1",[fresh.b.id]);
+    const recoveryPassword='LocalRenewal!2026';
+    await query('update app_users set is_active=false,password_hash=$2 where id=$1',[fresh.u.id,await require('bcryptjs').hash(recoveryPassword,4)]);
+    const o=await require('../backend/src/config/db').withTransaction(db=>mp.createPortalSignupCheckout(db,{business_id:fresh.b.id,user_id:fresh.u.id,email:fresh.u.email,plan_code:'STARTER',auto_renewal_consent:true}));
+    const mandate=mandates.get(o.mercado_pago_preference_id);
+    assert.ok(mandate);assert.equal(mandate.auto_recurring.start_date,undefined);assert.equal(mandate.auto_recurring.transaction_amount,229000);
+    mandate.status='authorized';await mp.processPreapprovalWebhook(mandate.id);
+    assert.equal((await business(fresh.b.id)).is_active,false);
+    assert.equal((await business(fresh.b.id)).subscription_auto_renew_enabled,true);
+    const recovery=await require('../backend/src/services/signupRecoveryService').recover({email:fresh.u.email,password:recoveryPassword});
+    assert.equal(recovery.state,'AWAITING_FIRST_PAYMENT');assert.equal(recovery.order,undefined);
+    const invoice=addInvoice(mandate,'pending');await mp.processMercadoPagoResource('subscription_authorized_payment',invoice.invoice.id);
+    assert.equal((await business(fresh.b.id)).is_active,false);
+    invoice.p.status='approved';invoice.invoice.payment.status='approved';
+    await mp.processMercadoPagoResource('subscription_authorized_payment',invoice.invoice.id);
+    const paid=await business(fresh.b.id);assert.equal(paid.is_active,true);assert.equal(paid.subscription_status,'ACTIVE');assert.equal(paid.subscription_auto_renew_enabled,true);
+    assert.equal((await query('select is_active from app_users where id=$1',[fresh.u.id])).rows[0].is_active,true);
+    await mp.processMercadoPagoResource('payment',invoice.p.id);
+    assert.equal(+(await business(fresh.b.id)).subscription_current_period_ends_at,+paid.subscription_current_period_ends_at);
+    await renewal.cancel(fresh.u);assert.equal((await business(fresh.b.id)).is_active,true);
+  });
+  await t.test('free-account upgrade preserves the old plan until payment and supports completing a pending mandate',async()=>{
+    const fresh=await fixture('PENSE_EN_TI');
+    await query('update businesses set subscription_current_period_ends_at=null where id=$1',[fresh.b.id]);
+    const o=await renewal.withBusinessLock(fresh.b.id,()=>mp.createSubscriptionRenewalCheckout(fresh.u,{plan_code:'STARTER',auto_renewal_consent:true}));
+    const mandate=mandates.get(o.mercado_pago_preference_id);
+    assert.equal(mandate.auto_recurring.start_date,undefined);
+    const pending=await renewal.create(fresh.u,{plan_code:'STARTER'});assert.equal(pending.reused,true);
+    mandate.status='authorized';await mp.processPreapprovalWebhook(mandate.id);
+    assert.equal((await business(fresh.b.id)).plan_code,'PENSE_EN_TI');
+    const invoice=addInvoice(mandate);await mp.processMercadoPagoResource('subscription_authorized_payment',invoice.invoice.id);
+    assert.equal((await business(fresh.b.id)).plan_code,'STARTER');
+    await query('update businesses set mercado_pago_preapproval_id=$2 where id=$1',[fresh.b.id,'replacement']);
+    const stale=addInvoice(mandate);await assert.rejects(mp.processMercadoPagoResource('subscription_authorized_payment',stale.invoice.id),/reemplazada/);
+    assert.equal((await query('select id from qr_credit_purchase_orders where mercado_pago_payment_id=$1',[stale.p.id])).rowCount,0);
+  });
+  await t.test('default checkout recovers a lost provider response even with a different browser request key',async()=>{
+    const fresh=await fixture(),n=creates;loseCreateResponse=true;
+    const body={plan_code:'STARTER',auto_renewal_consent:true,idempotency_key:uuid()};
+    await assert.rejects(mp.createSubscriptionRenewalCheckout(fresh.u,body),/Response lost/);
+    const o=await mp.createSubscriptionRenewalCheckout(fresh.u,{...body,idempotency_key:uuid()});
+    assert.ok(o.checkout_url);assert.equal(creates,n+1);
+    assert.equal((await business(fresh.b.id)).mercado_pago_preapproval_id,o.mercado_pago_preference_id);
+  });
   await t.test('management routes require an authenticated billing administrator',async()=>{
     server=require('../backend/src/app').app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
     const base='http://127.0.0.1:'+server.address().port;

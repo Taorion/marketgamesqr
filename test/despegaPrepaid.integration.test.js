@@ -76,6 +76,6 @@ test('monthly plans retain their deadline and cannot request prepaid billing',as
   const expired=planFromBusiness({plan_code:code,subscription_status:'ACTIVE',subscription_current_period_ends_at:'2020-01-01',qr_balance:500});assert.equal(expired.portal_access_allowed,false);assert.equal(expired.monthly_payment_required,true);
   const r=await api('/api/public/signup/portal',null,registration(code));assert.equal(r.status,400);assert.match(r.data.error.message,/mensual/);
  }
- const r=await api('/api/public/signup/portal',null,registration('STARTER','monthly'));assert.equal(r.status,201,JSON.stringify(r));
+ const r=await api('/api/public/signup/portal',null,{...registration('STARTER','monthly'),payment_mode:'one_time'});assert.equal(r.status,201,JSON.stringify(r));
  const paid=await approve(r.data.order.id,229000);assert.equal(paid.subscription.billing_cycle,'monthly');assert.ok(new Date(paid.subscription.current_period_ends_at)>new Date());
 });

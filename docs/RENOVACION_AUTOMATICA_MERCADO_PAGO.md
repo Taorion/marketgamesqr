@@ -1,17 +1,45 @@
 # Renovación mensual con tarjeta
 
-El pago inicial por Checkout Pro y la autorización de tarjeta son pasos distintos.
-Después de activar un plan mensual, su propietario entra a Mi cuenta, abre la
-sección de pagos y elige **Inscribir tarjeta para cobro automático**. Mercado Pago
-recibe los datos de tarjeta. Qori no los almacena. Despega conserva su modalidad
-prepago y no permite inscripción al débito mensual.
+En las inscripciones públicas y al formalizar, renovar o cambiar un plan mensual
+desde Empresa, la opción predeterminada es **Tarjeta con renovación automática**.
+Antes de continuar se muestran el valor mensual y el aviso de que los próximos
+cobros se pueden desactivar desde **Mi cuenta → Renovación mensual automática**.
+El botón continúa al checkout de Suscripciones (`/preapproval`) de Mercado Pago;
+la autorización del titular incluye las renovaciones mensuales. No hay un paso
+posterior de inscripción voluntaria para esta modalidad.
 
-La primera fecha de cobro es el vencimiento del periodo vigente. Autorizar la
-tarjeta no acredita una mensualidad, tickets ni comisiones. La UI muestra el
+La API exige `auto_renewal_consent: true` en el checkout mensual predeterminado y
+conserva en la orden la versión del aviso, fecha, usuario, plan, importe y frecuencia.
+El consentimiento al aviso no sustituye la confirmación del proveedor: Qori solo
+muestra la renovación activa al verificar `authorized` en Mercado Pago. Qori no
+almacena datos de tarjeta.
+
+La alternativa explícita **PSE o saldo Mercado Pago · pago único** usa Checkout Pro
+y excluye tarjetas de crédito, débito y prepago en los planes mensuales. Despega
+conserva su pago prepago, con los medios digitales habituales y sin débito mensual.
+Las recargas de tickets, almacenamiento y regalos no cambian.
+
+Un pago único anterior no autoriza retroactivamente una tarjeta. Los propietarios
+de cuentas existentes también pueden inscribirla desde Mi cuenta. Los descuentos
+comerciales temporales que ya impedían el débito automático conservan esa regla;
+la pantalla de error indica usar pago único mientras termina el beneficio.
+
+Si el mismo plan tiene un periodo pagado vigente, el primer cobro se programa al
+vencimiento. Para una inscripción nueva, plan vencido o cambio de plan, Mercado
+Pago procesa el primer pago tras la inscripción; solo su aprobación activa el
+plan elegido. Autorizar la tarjeta no acredita una mensualidad, tickets ni
+comisiones. La recuperación de una inscripción autorizada sin primer pago pide
+esperar la confirmación, sin invitar a repetir el cobro. La UI muestra el
 estado, el importe autorizado y la siguiente fecha que devuelve el proveedor.
 No se promete un importe ni un plazo fijo para las validaciones temporales de tarjeta.
 
 ## Operación
+
+- `POST /api/public/signup/portal` y `POST /api/payments/subscriptions/checkout`:
+  `payment_mode` es `recurring_card` por defecto para los planes mensuales, o
+  `one_time` para la opción explícita PSE/saldo. Despega siempre es `one_time`.
+  El cambio de plan conserva el plan anterior hasta el pago aprobado. Cada cobro
+  recurrente debe pertenecer a la autorización actual del negocio y a su factura.
 
 - `POST /api/payments/subscriptions/auto-renewal`: crea o recupera una autorización
   para el plan mensual actual. Un bloqueo por negocio y una clave persistente de

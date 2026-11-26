@@ -23,6 +23,8 @@ const {publicSignupBaseSchema,assertUniqueSignupIdentity,uniqueBusinessSlug,sign
 const portalSignupSchema = publicSignupBaseSchema.extend({
   plan_code: z.string().trim().min(2).max(40),
   billing_cycle: z.enum(["monthly", "prepaid"]).default("monthly"),
+  payment_mode: z.enum(['recurring_card', 'one_time']).optional(),
+  auto_renewal_consent: z.boolean().optional(),
 });
 
 function requireMarketAdmin(user) {
@@ -128,6 +130,7 @@ async function createPortalSignup(req, res, next) {
       throw badRequest("Este plan tiene vigencia mensual.");
     }
     body.billing_cycle = plan.billing_period === "prepaid" ? "prepaid" : "monthly";
+    require('../services/subscriptionCheckoutPolicy').paymentMode(plan, body);
 
     const result = await withTransaction(async (client) => {
       const commercialAdvisor = body.commercial_advisor_id ? await advisorById(body.commercial_advisor_id, client) : null;
@@ -163,6 +166,8 @@ async function createPortalSignup(req, res, next) {
         full_name: user.full_name,
         plan_code: plan.code,
         billing_cycle: body.billing_cycle,
+        payment_mode: body.payment_mode,
+        auto_renewal_consent: body.auto_renewal_consent,
         sales_advisor_code: body.sales_advisor_code || null,
       });
 

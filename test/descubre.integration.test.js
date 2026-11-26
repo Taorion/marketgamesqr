@@ -137,7 +137,7 @@ test('Descubre: seller onboarding, enforced quotas, expiry and paid conversion',
   });
   await t.test('existing sample can pay through the normal checkout; approved payment preserves data',async()=>{
     const paymentService=require('../backend/src/services/mercadoPagoService');
-    const checkout=await paymentService.createSubscriptionRenewalCheckout(owner.user,{plan_code:'STARTER',idempotency_key:randomUUID()});
+    const checkout=await paymentService.createSubscriptionRenewalCheckout(owner.user,{plan_code:'STARTER',payment_mode:'one_time',idempotency_key:randomUUID()});
     assert.equal(mpRequests.at(-1).items[0].unit_price,229000);
     assert.equal((await getBusinessSubscription(enrolled.business_id)).plan.code,'DESCUBRE','Creating checkout is not proof of payment');
     await withTransaction(async client=>{

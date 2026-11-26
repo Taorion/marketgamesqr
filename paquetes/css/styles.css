@@ -1023,6 +1023,13 @@ input:focus {
 .sales-advisor-results small { color: #687e88; }
 .sales-advisor-status { min-height: 19px; margin: 0; color: #5d747f; font-size: .72rem; }
 
+#subscriptionPaymentMode {
+  width: 100%; min-width: 0; min-height: 48px; box-sizing: border-box;
+  padding: 10px 12px; border: 1px solid #b7cfe9; border-radius: 12px;
+  background: #fff; color: #12365d; font: inherit; font-size: 14px;
+}
+#subscriptionRenewalNotice { line-height: 1.6; overflow-wrap: anywhere; }
+
 @media (max-width: 640px) {
   .sales-advisor-field { grid-template-columns: 1fr; padding: 14px; }
   .sales-advisor-combobox { grid-column: 1; }

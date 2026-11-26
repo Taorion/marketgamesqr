@@ -8,7 +8,7 @@ function setup(plan,canBill=true){
  const w=new JSDOM(`<select id="subscriptionRenewalPlanSelect"><option value="STARTER" selected>Crece</option></select><button id="subscriptionRenewalButton"></button><button id="subscriptionAutoRenewButton"></button><button id="subscriptionAutoRenewRefreshButton"></button><button id="subscriptionAutoRenewCancelButton"></button><div id="subscriptionAutoRenewClarity"></div><span id="subscriptionAutoRenewStatus"></span><p id="subscriptionRenewalMessage"></p><span id="accountBillingStatus"></span>`,{runScripts:'outside-only'}).window;
  w.state={subscription:{plan},subscriptionPlans:listPlans()};w.subscriptionAutoRenewBusy=false;
  Object.assign(w,{renderAccountAutoRenewal(){},canManageBusinessBilling:()=>canBill,escapeHtml:String,planMonthlyLabel:p=>p.name,autoRenewFirstChargeDate:()=>null,copMoney:String,formatDateOnly:String,subscriptionAccessLabel:()=>plan.access_status,subscriptionTimingText:()=>'',setInlineMessage:(el,text)=>{el.textContent=text;}});
- w.eval(source.slice(source.indexOf('function renderSubscriptionRenewal()'),source.indexOf('function accountValue(')));
+ w.eval(source.slice(source.indexOf('function renewalPaymentMode()'),source.indexOf('function accountValue(')));
  return w;
 }
 test('expired Descubre and each free program can pay a chosen plan without misleading card enrollment',()=>{

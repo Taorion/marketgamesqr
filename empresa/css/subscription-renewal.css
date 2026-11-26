@@ -55,6 +55,16 @@
     white-space: normal !important;
   }
   #accountAutoRenewCard button:disabled { opacity: .55 !important; cursor: not-allowed !important; }
+  #subscriptionRenewalNotice {
+    padding: 14px !important;
+    border-left: 4px solid #b58328 !important;
+    border-radius: 8px !important;
+    background: #fff8e9 !important;
+    color: #4b3510 !important;
+    line-height: 1.55 !important;
+    overflow-wrap: anywhere !important;
+  }
+  #subscriptionPaymentMode { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
   @media (max-width: 480px) {
     #accountAutoRenewCard .account-renewal-details { grid-template-columns: minmax(0, 1fr) !important; }
   }

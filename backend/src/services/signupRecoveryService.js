@@ -21,6 +21,10 @@ async function recover(payload) {
   if(!b)throw unauthorized('La cuenta cambió. Vuelve a verificar tus datos.');
   if(b.is_active&&b.owner_active&&b.subscription_status==='ACTIVE')return {state:'ACTIVE',portal_url:'/empresa/',message:'Tu cuenta ya está activa. Entra a Qori Empresa; no necesitas repetir el pago de inscripción.'};
   if(b.settings?.signup_type!=='portal_subscription'||b.subscription_status!=='PENDING_PAYMENT'||b.is_active||b.owner_active||b.portal_status==='SUSPENDED')throw badRequest('La cuenta requiere revisión de Qori. No crees otra cuenta ni repitas un pago.');
+  if(b.subscription_auto_renew_enabled && b.mercado_pago_preapproval_id) return {
+    state:'AWAITING_FIRST_PAYMENT',
+    message:'Tu tarjeta está autorizada para renovación automática mensual. Mercado Pago aún debe confirmar el primer pago para activar la cuenta. Consulta de nuevo en unos minutos; no repitas la inscripción. Podrás desactivar futuros cobros desde Mi cuenta → Renovación mensual automática.',
+  };
   const order=(await query(`select id,status,credited_at,checkout_url,sandbox_checkout_url,checkout_expires_at,price_cop,currency,package_title
     from qr_credit_purchase_orders where business_id=$1 and created_by_user_id=$2
       and metadata->>'source'='public_portal_signup' and metadata->'signup'->>'user_id'=$2::text

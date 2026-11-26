@@ -1899,6 +1899,7 @@ function openAccountSection(screen = "") {
   }
   state.accountScreen = normalized;
   state.accountHashApplied = true;
+  if (['billing', 'profile', 'admin'].includes(normalized)) closeFeatureUpgradeInterstitial();
   const sectionId = ACCOUNT_SCREEN_SECTION[normalized];
   if (sectionId && window.location.hash !== `#${sectionId}`) {
     window.history.replaceState(window.history.state, "", `#${sectionId}`);
@@ -6355,7 +6356,7 @@ function showPlanGateFromApiError(error = {}) {
   const gate = error.planGate || error.details?.plan_gate;
   if (!gate) return false;
   // Late responses from a restricted module must never cover the payment form.
-  if (needsSubscriptionPayment() && state.currentView === "account") return true;
+  if (state.currentView === "account" && (needsSubscriptionPayment() || ['billing', 'profile', 'admin'].includes(state.accountScreen))) return true;
   const gateKey = gate.feature || gate.limit_key || "portal_access";
   const title = gate.reason === "limit_reached" || gate.reason === "monthly_limit_reached"
     ? "Capacidad del plan alcanzada"
@@ -6478,11 +6479,11 @@ function renderAccountAutoRenewal() {
   const status = String(auto.status || "DISABLED").toUpperCase();
   const hasMandate = Boolean(auto.mercado_pago_preapproval_id);
   const open = hasMandate && !["CANCELLED", "EXPIRED"].includes(status);
-  const monthly = plan.billing_period === "monthly" && !plan.lifetime_access;
+  const monthly = (plan.billing_period === "monthly" || open) && !plan.lifetime_access;
   const prepaid = plan.billing_period === "prepaid";
   const canBill = canManageBusinessBilling();
   const due = plan.official_payment_due_at || plan.current_period_ends_at;
-  const eligible = monthly && plan.raw_status === "ACTIVE" && plan.portal_access_allowed && new Date(due) > new Date();
+  const eligible = open || (monthly && plan.raw_status === "ACTIVE" && plan.portal_access_allowed && new Date(due) > new Date());
   const label = auto.enabled ? "Activado" : status === "PAUSED" ? "Pausado" : open ? "Pendiente de autorización" : monthly ? "Desactivado" : "No aplica";
   const chip = document.getElementById("accountAutoRenewState");
   chip.textContent = label;
@@ -6493,8 +6494,8 @@ function renderAccountAutoRenewal() {
     ? formatDateOnly(auto.next_payment_at) : prepaid ? "Hasta consumir los tickets" : due ? formatDateOnly(due) : "Sin fecha programada";
   const amount = auto.amount_cop || plan.monthly_price_cop;
   document.getElementById("accountAutoRenewDescription").textContent = auto.enabled
-    ? `Mercado Pago cobrará ${amount ? copMoney(amount) : "el valor de tu plan"} cada mes a la tarjeta autorizada.`
-    : prepaid ? "Despega es prepago: no tiene mensualidad ni pago automático de renovación."
+    ? `Tu tarjeta quedó inscrita con renovación automática. Mercado Pago cobrará ${amount ? copMoney(amount) : "el valor de tu plan"} cada mes. Si deseas desactivarla, usa el botón de esta sección.`
+    : prepaid && !open ? "Despega es prepago: no tiene mensualidad ni pago automático de renovación."
     : !monthly ? "Este plan no tiene una renovación mensual automática disponible."
     : open ? "La renovación aún no está activada. Completa la autorización de tu tarjeta en Mercado Pago."
     : "Activa el pago de tu plan cada mes con una tarjeta autorizada en Mercado Pago.";
@@ -6520,6 +6521,28 @@ function renderAccountAutoRenewal() {
 function setAutoRenewalMessage(message, type) {
   setInlineMessage(subscriptionRenewalMessage, message, type);
   setInlineMessage(accountAutoRenewMessage, message, type);
+}
+
+function renewalPaymentMode() {
+  const plan = (state.subscriptionPlans || []).find(p => p.code === subscriptionRenewalPlanSelect?.value);
+  return plan?.billing_period === 'prepaid' ? 'one_time' : document.getElementById('subscriptionPaymentMode')?.value || 'recurring_card';
+}
+
+function renderRenewalPaymentNotice() {
+  const plan = (state.subscriptionPlans || []).find(p => p.code === subscriptionRenewalPlanSelect?.value);
+  const current = state.subscription?.plan || {};
+  const prepaid = plan?.billing_period === 'prepaid';
+  const field = document.getElementById('subscriptionPaymentModeField');
+  if (field) field.hidden = prepaid;
+  const notice = document.getElementById('subscriptionRenewalNotice');
+  if (!notice || !plan) return;
+  const due = current.official_payment_due_at || current.current_period_ends_at;
+  const future = current.code === plan.code && new Date(due) > new Date();
+  notice.textContent = prepaid ? 'Despega es prepago y no tiene renovación automática.'
+    : renewalPaymentMode() === 'recurring_card'
+      ? 'Renovación automática incluida: al confirmar tu tarjeta en Mercado Pago, autorizas ' + copMoney(plan.monthly_price_cop) + ' cada mes. ' + (future ? 'El primer cobro será el ' + formatDateOnly(due) + '; no se cobra de nuevo el periodo vigente. ' : 'El plan se activa cuando se apruebe el primer pago. ') + 'Si deseas desactivarla, hazlo desde Mi cuenta → Renovación mensual automática. Conservarás el periodo ya pagado.'
+      : 'Pago único con PSE o saldo de Mercado Pago, sin tarjeta ni cobro automático. Deberás renovar al finalizar el periodo.';
+  if (!subscriptionRenewalButton.disabled && !subscriptionRenewalButton.classList.contains('button-loading')) subscriptionRenewalButton.textContent = prepaid ? 'Continuar al pago prepago' : renewalPaymentMode() === 'recurring_card' ? 'Continuar con renovación automática' : 'Continuar al pago único';
 }
 
 function renderSubscriptionRenewal() {
@@ -6562,9 +6585,10 @@ function renderSubscriptionRenewal() {
   const isPlanChange = Boolean(selectedRenewalPlan?.code && selectedRenewalPlan.code !== plan.code);
 
   const prepaidSelection = selectedRenewalPlan?.billing_period === "prepaid";
+  renderRenewalPaymentNotice();
   const canEnrollAutoRenewal = !prepaidSelection && !isPlanChange && plan.billing_period === "monthly" && hasFutureRenewalDate;
   if (subscriptionAutoRenewClarity) subscriptionAutoRenewClarity.hidden = !canEnrollAutoRenewal;
-  if (subscriptionAutoRenewButton) subscriptionAutoRenewButton.hidden = !canEnrollAutoRenewal && !openMandate;
+  if (subscriptionAutoRenewButton) subscriptionAutoRenewButton.hidden = (!canEnrollAutoRenewal && !openMandate) || (!openMandate && renewalPaymentMode() === 'recurring_card');
   if (subscriptionAutoRenewStatus) subscriptionAutoRenewStatus.hidden = !canEnrollAutoRenewal && !openMandate;
   if (prepaidSelection) {
     subscriptionRenewalButton.disabled = !canManageBusinessBilling() || subscriptionAutoRenewBusy || !isPlanChange || openMandate;
@@ -6589,6 +6613,7 @@ function renderSubscriptionRenewal() {
     subscriptionRenewalButton.textContent = isPlanChange
       ? `Cambiar a ${selectedRenewalPlan.name}`
       : "Renovar mensualidad";
+    renderRenewalPaymentNotice();
   }
   if (subscriptionAutoRenewButton) {
     subscriptionAutoRenewButton.disabled = !canManageBusinessBilling() || subscriptionAutoRenewBusy || !plans.length || autoRenew.enabled || isPlanChange || plan.billing_period !== "monthly" || (!isTestingRenewalPlan && (plan.category !== "subscription" || !hasFutureRenewalDate));
@@ -6627,7 +6652,7 @@ function renderSubscriptionRenewal() {
           ? `Plan demo: Mercado Pago puede hacer una validación temporal de $1.600; el cobro real sera ${selectedPlanChargeLabel} ${selectedRenewalPlan?.billing_label || "mensual"}.`
         : plan.category === "subscription" && !hasFutureRenewalDate
           ? "Define una fecha de renovación futura antes de inscribir la tarjeta."
-        : "Cobro automatico no configurado. Puedes inscribir tarjeta sin recobrar la mensualidad vigente.";
+        : "La renovación automática se activará al confirmar tu tarjeta en Mercado Pago. Podrás desactivarla desde Mi cuenta.";
     subscriptionAutoRenewStatus.textContent = autoRenewLabel + (autoRenew.enabled && autoRenew.next_payment_at ? ` Próximo cobro: ${formatDateOnly(autoRenew.next_payment_at)}.` : "") + (autoRenew.sync_error ? ` ${autoRenew.sync_error}` : "");
   }
   if (accountBillingStatus) {
@@ -25948,9 +25973,10 @@ async function submitSubscriptionRenewal(event) {
   const selectedPlan = (state.subscriptionPlans || []).find((plan) => plan.code === planCode);
   const isPlanChange = Boolean(currentPlan.code && selectedPlan?.code && currentPlan.code !== selectedPlan.code);
   const actionLabel = isPlanChange ? `cambio a ${selectedPlan.name}` : "renovación mensual";
+  const paymentMode = renewalPaymentMode();
 
   setButtonLoading(subscriptionRenewalButton, true, "Abriendo pago...");
-  setInlineMessage(subscriptionRenewalMessage, `Creando checkout digital para el ${actionLabel}: tarjetas, saldo y PSE cuando esté disponible. Sin efectivo ni Efecty.`, "info");
+  setInlineMessage(subscriptionRenewalMessage, paymentMode === 'recurring_card' ? 'Preparando tarjeta con renovación automática mensual. Podrás desactivarla desde Mi cuenta.' : 'Preparando pago único en Mercado Pago.', "info");
   showFeedback(`Preparando el ${actionLabel} en Mercado Pago.`, "loading", { title: isPlanChange ? "Cambiando plan" : "Renovando plan", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/checkout", {
@@ -25958,7 +25984,9 @@ async function submitSubscriptionRenewal(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         plan_code: planCode,
-        idempotency_key: paymentCheckoutIdempotencyKey("renewal", planCode),
+        payment_mode: paymentMode,
+        auto_renewal_consent: paymentMode === 'recurring_card',
+        idempotency_key: paymentCheckoutIdempotencyKey('renewal-' + paymentMode, planCode),
       }),
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
@@ -25968,7 +25996,7 @@ async function submitSubscriptionRenewal(event) {
     setInlineMessage(subscriptionRenewalMessage, "Checkout creado. Redirigiendo a Mercado Pago...", "success");
     showFeedback(isPlanChange
       ? `Al aprobarse el pago, tu cuenta cambiará al plan ${selectedPlan.name}.`
-      : "Al aprobarse el pago, la mensualidad se renovará automáticamente.", "success", { title: "Pago listo" });
+      : paymentMode === 'recurring_card' ? 'Confirma tu tarjeta para autorizar los cobros mensuales. Podrás desactivarlos desde Mi cuenta.' : 'El pago aprobado cubrirá una mensualidad, sin cobro automático.', "success", { title: "Pago listo" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
@@ -25990,7 +26018,7 @@ async function submitSubscriptionAutoRenewal(options = {}) {
   setAutoRenewalMessage("Abriendo Mercado Pago para autorizar la tarjeta…", "info");
   setButtonLoading(subscriptionAutoRenewButton, true, "Abriendo autorización...");
   setInlineMessage(subscriptionRenewalMessage, "Te llevaremos a Mercado Pago para inscribir la tarjeta. Puede aparecer una validación temporal; el plan se cobra desde la fecha programada.", "info");
-  showFeedback("Preparando inscripcion de tarjeta para cobros futuros. El plan no se cobra hoy.", "loading", { title: "Cobro automatico", timeout: 0 });
+  showFeedback("Preparando la inscripción con renovación automática mensual. Podrás desactivarla desde Mi cuenta.", "loading", { title: "Cobro automatico", timeout: 0 });
   let activationError;
   try {
     const data = await api("/api/payments/subscriptions/auto-renewal", {
@@ -26014,7 +26042,7 @@ async function submitSubscriptionAutoRenewal(options = {}) {
     if (!checkoutUrl) {
       throw new Error("Mercado Pago no devolvió un link para autorizar el cobro automatico.");
     }
-    const firstCharge = data.auto_renewal?.first_charge_at ? formatDateOnly(data.auto_renewal.first_charge_at) : "la próxima renovación";
+    const firstCharge = data.auto_renewal?.first_charge_at ? formatDateOnly(data.auto_renewal.first_charge_at) : data.auto_renewal?.initial_checkout ? "al confirmar tu tarjeta" : "la próxima renovación";
     setInlineMessage(subscriptionRenewalMessage, `Autorización creada. Mercado Pago puede validar la tarjeta temporalmente. Primer cobro real programado para ${firstCharge}.`, "success");
     showFeedback(`Inscribe la tarjeta en Mercado Pago. Primer cobro real: ${firstCharge}.`, "success", { title: "Autorización lista" });
     window.location.href = checkoutUrl;
@@ -64903,10 +64931,15 @@ subscriptionPlansGrid?.addEventListener("click", (event) => {
 document.getElementById("subscriptionFormalizeButton")?.addEventListener("click", () => openAccountSection("billing"));
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
+document.getElementById('subscriptionPaymentMode')?.addEventListener('change', renderSubscriptionRenewal);
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
 subscriptionAutoRenewRefreshButton?.addEventListener("click", () => refreshSubscriptionAutoRenewal());
 subscriptionAutoRenewCancelButton?.addEventListener("click", () => refreshSubscriptionAutoRenewal("cancel"));
-accountAutoRenewActivate?.addEventListener("click", () => submitSubscriptionAutoRenewal({ planCode: state.subscription?.plan?.code }));
+accountAutoRenewActivate?.addEventListener("click", () => {
+  const plan = state.subscription?.plan || {}, auto = plan.auto_renew || {};
+  const open = auto.mercado_pago_preapproval_id && !['CANCELLED', 'EXPIRED'].includes(auto.status);
+  submitSubscriptionAutoRenewal({ planCode: open ? auto.plan_code || plan.code : plan.code });
+});
 accountAutoRenewDeactivate?.addEventListener("click", () => refreshSubscriptionAutoRenewal("cancel"));
 accountAutoRenewRefresh?.addEventListener("click", () => refreshSubscriptionAutoRenewal());
 featureUpgradeCloseButton?.addEventListener("click", closeFeatureUpgradeInterstitial);

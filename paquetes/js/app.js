@@ -216,6 +216,23 @@ function renderPlans() {
   });
 }
 
+function signupPaymentMode() {
+  return selectedPlan?.billing_period === 'prepaid' ? 'one_time' : document.getElementById('subscriptionPaymentMode')?.value || 'recurring_card';
+}
+
+function renderSignupRenewalNotice() {
+  const prepaid = selectedPlan?.billing_period === 'prepaid';
+  const field = document.getElementById('subscriptionPaymentModeField');
+  if (field) field.hidden = prepaid;
+  const notice = document.getElementById('subscriptionRenewalNotice');
+  if (!notice || !selectedPlan) return;
+  notice.textContent = prepaid ? 'Despega es prepago: un solo pago de ' + copMoney(selectedPlan.monthly_price_cop) + ', sin renovación automática.'
+    : signupPaymentMode() === 'recurring_card'
+      ? 'Renovación automática incluida: al confirmar la inscripción de tu tarjeta en Mercado Pago, autorizas ' + copMoney(selectedPlan.monthly_price_cop) + ' cada mes. El primer pago activa tu plan. Si deseas desactivar los próximos cobros, hazlo desde Mi cuenta → Renovación mensual automática. Conservarás el periodo ya pagado.'
+      : 'Pago único de ' + copMoney(selectedPlan.monthly_price_cop) + ' con PSE o saldo de Mercado Pago, sin tarjeta ni cobro automático. Deberás renovar al finalizar el periodo.';
+  if (submitButton) submitButton.textContent = !prepaid && signupPaymentMode() === 'recurring_card' ? 'Continuar con renovación automática' : 'Continuar al pago único';
+}
+
 function renderSelection() {
   if (!selectedPlan) return;
   const title = `${selectedPlan.name} - ${monthlyPlanLabel(selectedPlan)}`;
@@ -241,6 +258,8 @@ function renderSelection() {
   }
 }
 
+document.getElementById('subscriptionPaymentMode')?.addEventListener('change', renderSignupRenewalNotice);
+
 function selectPlan(code) {
   selectedPlan = plans.find((plan) => plan.code === code) || null;
   renderPlans();
@@ -249,6 +268,7 @@ function selectPlan(code) {
     signupSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   renderSelection();
+  renderSignupRenewalNotice();
   setMessage("", "");
 }
 
@@ -369,6 +389,7 @@ async function submitSignup(event) {
   }
 
   const payload = signupPayload();
+  const paymentMode = signupPaymentMode();
   if (salesAdvisorSeller?.checked && !payload.sales_advisor_code && !payload.commercial_advisor_id) {
     setMessage("Selecciona una coincidencia válida de asesor o elige Llegué por mi cuenta.", "error");
     salesAdvisorSearch?.focus();
@@ -376,7 +397,7 @@ async function submitSignup(event) {
   }
   submitButton.disabled = true;
   submitButton.textContent = "Preparando pago...";
-  setMessage("Registrando cuenta y preparando pago seguro con tarjeta, saldo Mercado Pago o PSE.", "info");
+  setMessage(paymentMode === 'recurring_card' ? 'Preparando la inscripción de tarjeta con renovación automática mensual.' : 'Preparando tu pago único en Mercado Pago.', 'info');
   try {
     const data = await fetchJson("/api/public/signup/portal", {
       method: "POST",
@@ -384,6 +405,8 @@ async function submitSignup(event) {
       body: JSON.stringify({
         ...payload,
         plan_code: selectedPlan.code,
+        payment_mode: paymentMode,
+        auto_renewal_consent: paymentMode === 'recurring_card',
         billing_cycle: selectedPlan.billing_period === "prepaid" ? "prepaid" : "monthly",
       }),
     });
@@ -392,12 +415,12 @@ async function submitSignup(event) {
       throw new Error("El plan fue registrado, pero no se recibió enlace de Mercado Pago.");
     }
     window.QoriReferral?.clear();
-    setMessage("Plan registrado. Elige tarjeta, saldo Mercado Pago o PSE para completar el pago.", "success");
+    setMessage(paymentMode === 'recurring_card' ? 'Confirma tu tarjeta en Mercado Pago para autorizar el cobro mensual automático.' : 'Completa el pago único en Mercado Pago.', 'success');
     window.location.href = checkoutUrl;
   } catch (error) {
     setMessage(error.message || "No se pudo completar la suscripción.", "error");
     submitButton.disabled = false;
-    submitButton.textContent = selectedPlan ? (CTA_LABELS[selectedPlan.code] || "Activar suscripción") : "Activar suscripción";
+    renderSignupRenewalNotice();
   }
 }
 

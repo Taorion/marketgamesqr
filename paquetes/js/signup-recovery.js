@@ -13,9 +13,11 @@
   });
   if(location.hash==='#retomar')details.open=true;
   const returned=new URLSearchParams(location.search).get('signup');
-  if(['success','pending','failure'].includes(returned)){
+  if(['success','pending','failure','automatic'].includes(returned)){
     details.open=true;
-    document.getElementById('signupReturnNotice').textContent='Regresaste del proceso de pago. El regreso a esta página no confirma el cobro: consulta aquí el estado de tu cuenta.';
+    document.getElementById('signupReturnNotice').textContent=returned==='automatic'
+      ? 'Tu inscripción con tarjeta incluye renovación automática mensual. El plan se activa cuando Mercado Pago confirma el primer pago; el regreso a esta página no confirma el cobro ni la autorización. Consulta el estado de tu cuenta aquí. Cuando esté activa, puedes desactivar futuros cobros desde Mi cuenta → Renovación mensual automática.'
+      : 'Regresaste del proceso de pago. El regreso a esta página no confirma el cobro: consulta aquí el estado de tu cuenta.';
     details.scrollIntoView({block:'start'});
   }
   let revision=0;
@@ -28,6 +30,7 @@
       const response=await fetch('/api/public/signup/portal/recover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});
       const data=await response.json();if(mine!==revision)return;if(!response.ok)throw Error(data.error?.message||'No pudimos consultar la inscripción.');
       status.textContent=data.message;
+      if(data.state==='AWAITING_FIRST_PAYMENT')return;
       const a=document.createElement('a');a.className='primary-button';
       if(data.state==='ACTIVE'){a.href='/empresa/';a.textContent='Entrar a Qori Empresa';}
       else if(data.state==='PENDING_PAYMENT'&&data.order?.checkout_url){

@@ -21,6 +21,8 @@ const {
 const { approveSignupAttribution, syncSignupAttributionStatus } = require("./sellerService");
 const { storageAddonOffer, approveStorageAddonOrder } = require("./storageQuotaService");
 
+const checkoutPolicy = require('./subscriptionCheckoutPolicy');
+
 const MP_API_BASE = "https://api.mercadopago.com";
 
 function requireMercadoPagoConfig() {
@@ -213,6 +215,7 @@ async function createPortalCheckoutIntent(user, details, body = {}) {
   );
   const existing = existingResult.rows[0];
   if (!existing) throw badRequest("No se pudo recuperar el intento de pago. Intenta nuevamente.");
+  if ((existing.metadata?.signup?.payment_mode || 'one_time') !== (details.metadata?.signup?.payment_mode || 'one_time')) throw badRequest('Este intento corresponde a otra forma de pago. Inicia un nuevo intento.');
   if(existing.package_code!==details.package_code||Number(existing.package_size)!==Number(details.package_size)||Number(existing.price_cop)!==Number(details.price_cop))throw badRequest('Este intento de pago corresponde a otro paquete. Inicia una nueva compra.');
   if (existing.checkout_url || existing.sandbox_checkout_url) return { order: existing, reused: true };
 
@@ -377,7 +380,7 @@ async function createPublicPlanPaymentPreference(payload, plan, purchaseOrder, p
         signup_type: "portal_monthly_subscription",
         checkout_mode: "public_plan_initial_payment",
       },
-      payment_methods: digitalOnlyPaymentMethods(),
+      payment_methods: checkoutPolicy.manualMethods(digitalOnlyPaymentMethods(), plan),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
     }),
   });
@@ -561,12 +564,18 @@ async function createSubscriptionRenewalCheckout(user, body) {
   const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
   const mandate = currentBusiness.rows[0];
   if (mandate?.mercado_pago_preapproval_id && !["CANCELLED", "EXPIRED"].includes(mandate.subscription_auto_renew_status)) throw badRequest("Cancela el cobro automático antes de pagar manualmente o cambiar de plan para evitar dos cobros.");
+  const mode = checkoutPolicy.paymentMode(plan, body);
   if (plan.billing_period === "prepaid") {
     if (currentPlan?.code === PLAN_CODES.DESPEGA) throw badRequest("Despega no requiere renovar mensualidad. Recarga tickets desde tu cuenta.");
     if (currentBusiness.rows[0]?.subscription_auto_renew_enabled) throw badRequest("Cancela el cobro automatico vigente antes de cambiar a Despega prepago.");
   }
   if (!currentPlan || (!require('./freeProgramPolicy').isFreeProgram(currentPlan.code) && !["subscription", "ticket_base", "growth_temporal", "prepaid"].includes(currentPlan.category))) {
     throw badRequest("Este negocio no puede activar una mensualidad del portal.");
+  }
+
+  if (mode === 'recurring_card') {
+    const result = await createSubscriptionAutoRenewal(user, body, { initialCheckout: true });
+    return result.order;
   }
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
@@ -600,6 +609,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
           billing_frequency: plan.billing_frequency || 1,
           billing_frequency_type: plan.billing_frequency_type || "months",
           renewal: true,
+          payment_mode: mode,
         },
       },
   }, body);
@@ -641,7 +651,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
         signup_type: "portal_monthly_subscription",
         renewal: true,
       },
-      payment_methods: digitalOnlyPaymentMethods(),
+      payment_methods: checkoutPolicy.manualMethods(digitalOnlyPaymentMethods(), plan),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
       }),
     });
@@ -653,7 +663,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
   return mapPurchaseOrder(await saveCheckoutReady(purchaseOrder.id, preference));
 }
 
-async function createSubscriptionAutoRenewal(user, body) {
+async function createSubscriptionAutoRenewal(user, body, options = {}) {
   if (body.plan_code === PLAN_CODES.DESPEGA) {
     throw badRequest("Despega es prepago y no admite cobro mensual automatico.");
   }
@@ -675,25 +685,32 @@ async function createSubscriptionAutoRenewal(user, body) {
   }
 
   const currentBusiness = await query(
-    `select plan_code, settings, subscription_current_period_ends_at
+    `select plan_code, settings, subscription_current_period_ends_at, subscription_auto_renew_cancelled_at
      from businesses
      where id = $1 and is_active = true`,
     [user.business_id]
   );
   const currentPlan = listPlans().find((item) => item.code === currentBusiness.rows[0]?.plan_code);
-  if (currentPlan?.category !== "subscription" && !plan.testing_plan) {
+  if (!options.initialCheckout && currentPlan?.category !== "subscription" && !plan.testing_plan) {
     throw badRequest("Este negocio no tiene una mensualidad del portal para activar cobro automatico.");
   }
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
-  const chargeStartDate = firstAutoRenewalChargeDate(plan, currentBusiness.rows[0]?.subscription_current_period_ends_at);
+  const current = currentBusiness.rows[0];
+  if (!current) throw badRequest('El negocio no está activo.');
+  const currentEnd = optionsDate(current.subscription_current_period_ends_at);
+  const chargeStartDate = options.initialCheckout
+    ? (current.plan_code === plan.code && currentEnd > new Date() ? currentEnd : null)
+    : firstAutoRenewalChargeDate(plan, current.subscription_current_period_ends_at);
   const commercial = currentBusiness.rows[0]?.settings?.qori_commercial;
   if (commercial?.status === "ACTIVE" && commercial.plan_code === plan.code && commercial.discount_percent > 0 && new Date(commercial.discount_ends_at) > new Date()) {
-    throw badRequest("Tu descuento comercial se aplica en Renovar suscripción. Podrás activar el débito automático al terminar el beneficio.");
+    throw badRequest("Mientras esté vigente tu descuento comercial, elige PSE o saldo Mercado Pago · pago único. Podrás inscribir la tarjeta con cobro automático al terminar el beneficio.");
   }
-  const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
+  const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate || new Date());
   const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan);
   const periodLabel = billingPeriodLabel(plan);
+  const stableKey = crypto.createHash('sha256').update(JSON.stringify([user.business_id, plan.code, current.subscription_current_period_ends_at, current.subscription_auto_renew_cancelled_at, 'card-enrollment'])).digest('hex');
+  const intentBody = { ...body, idempotency_key: [stableKey.slice(0,8),stableKey.slice(8,12),'4'+stableKey.slice(13,16),'a'+stableKey.slice(17,20),stableKey.slice(20,32)].join('-') };
   const intent = await createPortalCheckoutIntent(user, {
     package_code: plan.code,
     package_size: monthlyQrIncluded,
@@ -720,24 +737,15 @@ async function createSubscriptionAutoRenewal(user, body) {
           billing_frequency: frequency,
           billing_frequency_type: frequencyType,
           auto_renew: true,
-          first_charge_at: chargeStartDate.toISOString(),
+          payment_mode: 'recurring_card',
+          initial_checkout: Boolean(options.initialCheckout),
+          previous_plan_code: current.plan_code,
+          renewal_consent: checkoutPolicy.consentRecord(user, plan, charge.price_cop),
+          first_charge_at: chargeStartDate?.toISOString() || null,
         },
       },
-  }, body);
+  }, intentBody);
   const purchaseOrder = intent.order;
-  if (intent.reused) {
-    return {
-      order: mapPurchaseOrder(purchaseOrder),
-      auto_renewal: {
-        status: purchaseOrder.status,
-        mercado_pago_preapproval_id: purchaseOrder.mercado_pago_preference_id,
-        checkout_url: purchaseOrder.checkout_url,
-        sandbox_checkout_url: purchaseOrder.sandbox_checkout_url,
-        first_charge_at: chargeStartDate.toISOString(),
-      },
-    };
-  }
-
   let preapproval;
   try {
     const recovered = await mpRequest("/preapproval/search?" + new URLSearchParams({ external_reference: purchaseOrder.external_reference }));
@@ -756,7 +764,7 @@ async function createSubscriptionAutoRenewal(user, body) {
         frequency_type: frequencyType,
         transaction_amount: Number(charge.price_cop),
         currency_id: "COP",
-        start_date: chargeStartDate.toISOString(),
+        ...(chargeStartDate ? { start_date: chargeStartDate.toISOString() } : {}),
         ...(charge.special_pricing_applied && charge.special_pricing_ends_at ? { end_date: charge.special_pricing_ends_at } : {}),
       },
       }),
@@ -775,8 +783,9 @@ async function createSubscriptionAutoRenewal(user, body) {
          mercado_pago_preapproval_id = $3,
          subscription_auto_renew_checkout_url = $4,
          subscription_auto_renew_cancelled_at = null,
+         subscription_auto_renew_authorized_at = null,
          settings = jsonb_set(coalesce(settings, '{}'::jsonb), '{subscription}',
-           coalesce(settings->'subscription', '{}'::jsonb) || jsonb_build_object('auto_renew_status',$2::text,'auto_renew_plan_code',$5::text),true),
+           coalesce(settings->'subscription', '{}'::jsonb) || jsonb_build_object('auto_renew_status',$2::text,'auto_renew_plan_code',$5::text,'auto_renew_provider_updated_at',null,'auto_renew_next_payment_at',null,'auto_renew_amount_cop',null),true),
          updated_at = now()
      where id = $1`,
     [
@@ -795,7 +804,7 @@ async function createSubscriptionAutoRenewal(user, body) {
       mercado_pago_preapproval_id: preapproval.id || null,
       checkout_url: preapproval.init_point || null,
       sandbox_checkout_url: preapproval.sandbox_init_point || null,
-      first_charge_at: chargeStartDate.toISOString(),
+      first_charge_at: chargeStartDate?.toISOString() || null,
     },
   };
 }
@@ -906,7 +915,9 @@ async function createPortalSignupCheckout(client, payload) {
 
   const billingCycle = plan.billing_period === "prepaid" ? "prepaid" : "monthly";
   const planPriceCop = Number(plan.monthly_price_cop);
-  const subscriptionType = "portal_monthly_subscription";
+  const mode = checkoutPolicy.paymentMode(plan, payload);
+  const recurring = mode === 'recurring_card';
+  const subscriptionType = recurring ? 'portal_monthly_subscription_auto_renewal' : 'portal_monthly_subscription';
   const billingLabel = plan.billing_period === "prepaid" ? "prepago" : "mensualidad";
   const order = await client.query(
     `insert into qr_credit_purchase_orders
@@ -924,8 +935,13 @@ async function createPortalSignupCheckout(client, payload) {
         source: "public_portal_signup",
         signup: {
           type: subscriptionType,
-          activation_flow: "checkout_preference",
-          requires_card_enrollment: false,
+          activation_flow: recurring ? 'subscription_preapproval' : 'checkout_preference',
+          requires_card_enrollment: recurring,
+          payment_mode: mode,
+          auto_renew: recurring,
+          initial_checkout: recurring,
+          previous_plan_code: plan.code,
+          renewal_consent: recurring ? checkoutPolicy.consentRecord(payload, plan, planPriceCop) : null,
           business_id: payload.business_id,
           user_id: payload.user_id,
           email: payload.email,
@@ -940,7 +956,14 @@ async function createPortalSignupCheckout(client, payload) {
   );
   const purchaseOrder = order.rows[0];
 
-  const checkout = await createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel);
+  const checkout = recurring ? await mpRequest('/preapproval', {
+    method: 'POST',
+    body: JSON.stringify({ reason: plan.name + ' - suscripción mensual Qori', external_reference: purchaseOrder.external_reference,
+      payer_email: payload.email, back_url: appUrl('/paquetes/?signup=automatic'), status: 'pending',
+      auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: planPriceCop, currency_id: 'COP' } }),
+  }) : await createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel);
+  if (recurring) await client.query(    "update businesses set mercado_pago_preapproval_id=$2,subscription_auto_renew_status='PENDING',subscription_auto_renew_enabled=false,subscription_auto_renew_checkout_url=$3,settings=jsonb_set(coalesce(settings,'{}'),'{subscription}',coalesce(settings->'subscription','{}') || jsonb_build_object('auto_renew_plan_code',$4::text),true) where id=$1",
+    [payload.business_id, checkout.id, checkout.init_point, plan.code]);
 
   const updated = await client.query(
     `update qr_credit_purchase_orders
@@ -1015,7 +1038,7 @@ async function processPreapprovalWebhook(preapprovalId) {
     if (locked.mercado_pago_preapproval_id && locked.mercado_pago_preapproval_id !== preapproval.id) {
       return { ignored: true, reason: 'superseded_preapproval' };
     }
-    if (status === 'AUTHORIZED' && (order.package_code === PLAN_CODES.DESPEGA || locked.plan_code !== order.package_code)) {
+    if (status === 'AUTHORIZED' && (order.package_code === PLAN_CODES.DESPEGA || (locked.plan_code !== order.package_code && !(order.metadata?.signup?.initial_checkout && !order.credited_at && locked.plan_code === order.metadata.signup.previous_plan_code)))) {
       throw badRequest('La autorización corresponde a otro plan o a Despega prepago. Cancélala antes de continuar.');
     }
     const previousVersion = optionsDate(locked.settings?.subscription?.auto_renew_provider_updated_at);
@@ -1187,6 +1210,11 @@ async function processMercadoPagoResource(topic, resourceId) {
     const status = mapPaymentStatus(payment.status);
     const isRecurringSubscription = (signup?.type === "portal_monthly_subscription_auto_renewal"
       || signup?.auto_renew === true) && signup?.plan_code !== PLAN_CODES.DESPEGA;
+    if (isRecurringSubscription) {
+      if (!authorizedInvoice) throw badRequest('El pago recurrente requiere una factura verificada.');
+      const current = (await client.query('select mercado_pago_preapproval_id from businesses where id=$1 for update', [order.business_id])).rows[0];
+      if (String(current?.mercado_pago_preapproval_id) !== String(order.mercado_pago_preference_id)) throw badRequest('El cobro pertenece a una autorización reemplazada. Requiere revisión.');
+    }
     if (authorizedInvoice && (String(authorizedInvoice.preapproval_id) !== String(order.mercado_pago_preference_id)
       || (authorizedInvoice.external_reference && authorizedInvoice.external_reference !== order.external_reference))) {
       throw badRequest("La factura no corresponde a la autorización de esta orden.");
@@ -1404,7 +1432,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     throw badRequest("La orden aprobada no coincide con un plan canonico activable.");
   }
   const currentPeriod = await client.query(
-    `select plan_code, subscription_current_period_ends_at
+    `select plan_code, subscription_current_period_ends_at, mercado_pago_preapproval_id
      from businesses
      where id = $1
      for update`,
@@ -1414,7 +1442,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     ? new Date(currentPeriod.rows[0].subscription_current_period_ends_at)
     : null;
   const now = new Date();
-  if (signup.type === 'portal_monthly_subscription_auto_renewal' && currentPeriod.rows[0]?.plan_code !== planCode) {
+  const initialPlanChange = signup.initial_checkout && !order.metadata?.parent_order_id && currentPeriod.rows[0]?.plan_code === signup.previous_plan_code;
+  if (signup.type === 'portal_monthly_subscription_auto_renewal' && currentPeriod.rows[0]?.plan_code !== planCode && !initialPlanChange) {
     throw badRequest('El plan del negocio cambió. El cobro de la autorización anterior requiere revisión administrativa.');
   }
   const previousPlan = listPlans().find(item => item.code === currentPeriod.rows[0]?.plan_code);

@@ -1047,6 +1047,7 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
   const graceEndsAt = periodEnd ? addDays(periodEnd, graceDays) : null;
   const autoRenew = {
     enabled: Boolean(row.subscription_auto_renew_enabled),
+    plan_code: row.settings?.subscription?.auto_renew_plan_code || row.plan_code,
     status: row.subscription_auto_renew_status || row.settings?.subscription?.auto_renew_status || "DISABLED",
     mercado_pago_preapproval_id: row.mercado_pago_preapproval_id || null,
     checkout_url: row.subscription_auto_renew_checkout_url || null,
@@ -1087,7 +1088,8 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
       access_allowed: allowed, portal_access_allowed: allowed, is_subscription: false,
       official_payment_due_at: null, grace_period_days: 0, grace_period_ends_at: null,
       days_until_due: null, days_overdue: 0, days_until_lock: null,
-      auto_renew: { ...autoRenew, enabled: false, status: "NOT_APPLICABLE", checkout_url: null },
+      auto_renew: autoRenew.mercado_pago_preapproval_id && autoRenew.plan_code !== PLAN_CODES.DESPEGA
+        ? autoRenew : { ...autoRenew, enabled: false, status: "NOT_APPLICABLE", checkout_url: null },
     };
   }
 
