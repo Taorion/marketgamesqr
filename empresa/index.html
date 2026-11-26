@@ -14,7 +14,7 @@
   <link rel="manifest" href="/empresa/agenda.webmanifest?v=agenda-push-v1-20260929">
   <link rel="preload" as="script" href="js/evaluation-station-core.js?v=evaluation-core-v1-20260830">
   <link rel="preload" as="script" href="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830">
-  <link rel="preload" as="script" href="js/app.js?v=despega-prepaid-20261119b&amp;cumbre=2&amp;activations=1&amp;catalogcss=2&amp;autorenew=2&amp;stampsales=1">
+  <link rel="preload" as="script" href="js/app.js?v=despega-prepaid-20261119b&amp;cumbre=2&amp;activations=1&amp;catalogcss=2&amp;autorenew=2&amp;stampsales=1&amp;subscription=20261126">
   <link rel="stylesheet" href="css/catalog-orders.css?v=catalog-orders-v2-20261113">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -446,6 +446,7 @@
               </div>
             </div>
             <div class="subscription-limits" id="subscriptionLimits"></div>
+            <button class="solid-button" id="subscriptionFormalizeButton" type="button" hidden>Formalizar mi suscripción</button>
           </section>
           <div class="busy-overlay hidden" id="busyOverlay" aria-hidden="true" role="status" aria-live="polite" aria-busy="false">
             <div class="busy-card">
@@ -1806,7 +1807,8 @@
                     <button class="solid-button" id="accountOpenQrShopButton" type="button">Comprar paquetes de tickets</button>
                   </div>
                   <div class="account-billing-panel" id="giftcardBillingPanel" hidden><strong>Emisiones de Gift Cards</strong><p class="table-secondary">Compra 10, 25, 50 o 100 emisiones a $2.500 COP cada una. Este saldo es independiente de los tickets y del valor del regalo.</p><button class="solid-button" type="button" data-giftcard-store>Comprar Gift Cards</button></div><form class="account-billing-panel" id="subscriptionRenewalForm">
-                    <strong>Renovar o cambiar plan</strong>
+                    <strong>Formalizar, renovar o cambiar plan</strong>
+                    <p>El pago activa el plan elegido en esta misma cuenta. Conservas tus usuarios, datos e historial.</p>
                     <label>
                       <span>Plan seleccionado</span>
                       <select id="subscriptionRenewalPlanSelect" required></select>
@@ -8705,7 +8707,7 @@
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
   <script src="js/inventory-photos.js?v=inventory-photo-v1-20260930" defer></script>
   <script src="js/catalog-orders.js?v=catalog-orders-v2-20261113" defer></script>
-  <script src="js/app.js?v=despega-prepaid-20261119b&amp;cumbre=2&amp;activations=1&amp;catalogcss=2&amp;autorenew=2&amp;stampsales=1&amp;alliances=2" defer></script>
+  <script src="js/app.js?v=despega-prepaid-20261119b&amp;cumbre=2&amp;activations=1&amp;catalogcss=2&amp;autorenew=2&amp;stampsales=1&amp;subscription=20261126&amp;alliances=2" defer></script>
   <link rel="stylesheet" href="/smart-catalog/showcases.css?v=stamp-showcase-20261119">
   <link rel="stylesheet" href="css/smart-catalog-workspace.css?v=20261119-2">
   <link rel="stylesheet" href="css/subscription-renewal.css?v=20261119-2">

@@ -33,6 +33,10 @@
 .commercial-dialog-head button { flex-shrink:0; }
 .commercial-dialog .grid-form { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .commercial-dialog label { min-width:0; }
+.accounts-dialog .checkbox-row small { display:block;font-size:.75rem;font-weight:400;line-height:1.4;margin-top:4px; }
+.accounts-dialog .accounts-dialog-head { display:flex;align-items:start;justify-content:space-between;gap:12px; }
+.accounts-dialog h2,.accounts-dialog h3 { overflow-wrap:anywhere; }
+.accounts-dialog input { max-width:100%;box-sizing:border-box; }
 .commercial-options { border:1px solid var(--border);border-radius:12px;padding:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px; }
 .commercial-options legend { font-weight:700;font-size:.85rem;padding:0 6px; }
 .commercial-dialog [hidden] { display:none; }

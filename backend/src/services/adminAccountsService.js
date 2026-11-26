@@ -28,6 +28,7 @@ async function detail(user,kind,id){
  if(kind==='customers')record=(await query(`select ${customerFields},(select count(*)::int from customer_sessions s where s.customer_id=c.id and s.expires_at>now()) sessions from customer_accounts c where id=$1`,[id])).rows[0];
  if(kind==='businesses'){
   const row=(await query('select * from businesses where id=$1 and archived_at is null',[id])).rows[0];if(row){record={id:row.id,name:row.name,slug:row.slug,is_active:row.is_active,plan_code:row.plan_code,subscription_status:row.subscription_status,subscription_current_period_ends_at:row.subscription_current_period_ends_at,updated_at:row.updated_at,plan:subscriptions.planFromBusiness(row)};
+   record.subscription_addons=await require('./adminSubscriptionAddons').context(row);
    record.users=(await query('select id,full_name,email,role,is_active from app_users where business_id=$1 order by created_at,id',[id])).rows;
    record.credits=(await query('select qr_balance,included_balance,qr_used_total from business_qr_credit_accounts where business_id=$1',[id])).rows[0]||null;
    record.balances=(await businessBalances([id])).get(id);

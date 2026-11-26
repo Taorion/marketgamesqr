@@ -12,6 +12,15 @@ function setup(role='QORI_SUPERADMIN'){
   return {total:1,has_more:false,rows:[{id:'c1',name:'Ana <img src=x>',email:'qa@example.test',version:path.includes('/customers')?'CUSTOMER_FREE':'PENSE_EN_TI',is_active:true,created_at:'2026-11-07',balances}]};
  }};w.eval(fs.readFileSync('admin/js/accounts.js','utf8'));return {w,calls,ctx};
 }
+
+test('paid business additions open from the account and submit exact quantities with revision and reason',async()=>{
+ const {w,calls,ctx}=setup();const original=ctx.api;
+ ctx.api=async(path,opts={})=>{const r=await original(path,opts);if(!opts.body&&path.includes('/businesses/c1'))Object.assign(r.record,{plan_code:'STARTER',updated_at:'2026-11-26T12:00:00.000Z',plan:{name:'Crece',features:{showcase:true},limits:{showcases:1},monthly_price_cop:229000},subscription_addons:{eligible:true,payment:{price_cop:229000,credited_at:'2026-11-26'},current:null,modules:{showcase:{name:'Vitrina web',features:['showcase']}},limit_labels:{showcases:'Vitrinas'},message:'Pago confirmado.'}});return r;};
+ try{await w.QoriAccounts.load(ctx);w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('[data-subscription-addons]'));w.document.querySelector('[data-subscription-addons]').click();await until(()=>w.document.querySelector('[name=limit_showcases]'));
+ const form=w.document.querySelector('dialog form');form.elements.modules.checked=true;form.elements.limit_showcases.value='3';form.elements.reason.value='Ampliación de vitrinas acordada';await form.onsubmit({preventDefault(){},target:form});
+ const saved=calls.find(c=>c.path.endsWith('/subscription-addons'));assert.deepEqual(saved.body,{modules:['showcase'],limits:{showcases:3},expires_at:null,expected_updated_at:'2026-11-26T12:00:00.000Z',reason:'Ampliación de vitrinas acordada'});assert.equal(w.document.querySelector('dialog'),null);
+ }finally{w.close();}
+});
 test('Customer management is reachable, escapes names and sends explicit revision/reason',async()=>{
  const {w,calls,ctx}=setup();try{await w.QoriAccounts.load(ctx);w.document.querySelector('[data-kind=customers]').click();await until(()=>w.document.querySelector('[data-detail]'));assert.equal(w.document.querySelector('img'),null);w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('dialog'));const f=w.document.querySelector('dialog form');f.elements.full_name.value='Ana editada';f.elements.reason.value='Verificación administrativa';f.elements.is_active.checked=false;f.elements.revoke_sessions.checked=true;await f.onsubmit({preventDefault(){},target:f});const changed=calls.find(c=>c.body);assert.deepEqual(changed.body,{full_name:'Ana editada',is_active:false,revoke_sessions:true,expected_revision:2,reason:'Verificación administrativa'});assert.equal(w.document.querySelector('dialog'),null);}finally{w.close();}
 });

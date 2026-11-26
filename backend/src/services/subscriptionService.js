@@ -1206,6 +1206,7 @@ function planFromBusiness(row = {}) {
     const limits=Object.fromEntries(Object.keys(plan.limits||{}).map(key=>[key,null]));
     plan={...plan,name:'Demo Qori · acceso completo',features,limits,monthly_price_cop:0,access_summary:'Empresa compartida de práctica con datos ficticios. Sin valor comercial.'};
   }
+  plan = require('./subscriptionAddons').applyAddons(plan, row);
   const lifecycle = subscriptionLifecycle(row, plan);
   const growthExpiresAt = row.growth_expires_at || row.settings?.access?.growth_expires_at || null;
   const growthStartedAt = row.growth_started_at || row.settings?.access?.growth_started_at || null;

@@ -565,7 +565,7 @@ async function createSubscriptionRenewalCheckout(user, body) {
     if (currentPlan?.code === PLAN_CODES.DESPEGA) throw badRequest("Despega no requiere renovar mensualidad. Recarga tickets desde tu cuenta.");
     if (currentBusiness.rows[0]?.subscription_auto_renew_enabled) throw badRequest("Cancela el cobro automatico vigente antes de cambiar a Despega prepago.");
   }
-  if (!currentPlan || !["subscription", "ticket_base", "growth_temporal", "prepaid"].includes(currentPlan.category)) {
+  if (!currentPlan || (!require('./freeProgramPolicy').isFreeProgram(currentPlan.code) && !["subscription", "ticket_base", "growth_temporal", "prepaid"].includes(currentPlan.category))) {
     throw badRequest("Este negocio no puede activar una mensualidad del portal.");
   }
 
@@ -1417,8 +1417,10 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
   if (signup.type === 'portal_monthly_subscription_auto_renewal' && currentPeriod.rows[0]?.plan_code !== planCode) {
     throw badRequest('El plan del negocio cambió. El cobro de la autorización anterior requiere revisión administrativa.');
   }
+  const previousPlan = listPlans().find(item => item.code === currentPeriod.rows[0]?.plan_code);
+  const firstPaidPlan = !previousPlan?.monthly_price_cop || previousPlan.category !== 'subscription';
   const scheduled = optionsDate(order.metadata?.recurring_debit_date);
-  const periodEnd = scheduled || (plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now);
+  const periodEnd = scheduled || (!firstPaidPlan && plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now);
   const billingCycle = plan.billing_period === "prepaid" ? "prepaid" : normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
   let nextPeriodEnd = addPlanBillingPeriod(periodEnd, plan, billingCycle);
   const advancesPeriod = !scheduled || !currentEnd || nextPeriodEnd > currentEnd;
@@ -1436,6 +1438,9 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       created_by_user_id: order.created_by_user_id,
     });
   }
+  // A first paid plan preserves unused trial/free credits as existing balance.
+  // Normal paid renewals keep the established non-accumulating period policy.
+  if (firstPaidPlan) await client.query('update business_qr_credit_accounts set included_balance=0 where business_id=$1', [order.business_id]);
   const included = advancesPeriod ? await resetIncludedTickets(client, {
     business_id:order.business_id, quantity:Number(plan.limits?.welcome_courtesy_tickets||0),
     period_key:order.id,created_by_user_id:order.created_by_user_id

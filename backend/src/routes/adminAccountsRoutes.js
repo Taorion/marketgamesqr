@@ -14,4 +14,5 @@ router.get('/:kind/:id/deletion-preview',handle(r=>require('../services/adminAcc
 router.delete('/:kind/:id',handle(r=>require('../services/adminAccountDeletionService').remove(r.user,r.params.kind,r.params.id,r.body)));
 router.patch('/customers/:id',handle(r=>service.updateCustomer(r.user,r.params.id,r.body)));
 router.patch('/businesses/:id',handle(r=>service.updateBusiness(r.user,r.params.id,r.body)));
+router.patch('/businesses/:id/subscription-addons',handle(r=>require('../services/adminSubscriptionAddons').update(r.user,r.params.id,r.body)));
 module.exports=router;

@@ -6170,6 +6170,11 @@ function renderSubscriptionBanner() {
     if (subscriptionTiming) subscriptionTiming.textContent = "Sin fecha de renovación cargada.";
     return;
   }
+  const formalize = document.getElementById("subscriptionFormalizeButton");
+  if (formalize) {
+    formalize.hidden = !canManageBusinessBilling();
+    formalize.textContent = plan.code === "DESCUBRE" || plan.free_program ? "Formalizar mi suscripción" : "Elegir o renovar plan";
+  }
   const limits = planLimits();
   const access = state.access || {};
   subscriptionPlanName.textContent = plan.name || plan.code || "Plan";
@@ -6511,7 +6516,7 @@ function renderSubscriptionRenewal() {
   if (!subscriptionRenewalPlanSelect || !subscriptionRenewalButton) return;
   const plan = state.subscription?.plan || {};
   const plans = (state.subscriptionPlans || []).filter((item) => item.category === "subscription" && item.monthly_price_cop && !item.testing_plan && item.public_signup_available !== false);
-  const hasMonthlyPlan = ["subscription", "ticket_base", "growth_temporal"].includes(plan.category);
+  const hasMonthlyPlan = Boolean(plan.code); // Existing free, trial and legacy accounts upgrade in place.
   const autoRenew = plan.auto_renew || {};
   const hasMandate = Boolean(autoRenew.mercado_pago_preapproval_id);
   const openMandate = hasMandate && !["CANCELLED","EXPIRED"].includes(autoRenew.status);
@@ -6546,7 +6551,10 @@ function renderSubscriptionRenewal() {
   const isPlanChange = Boolean(selectedRenewalPlan?.code && selectedRenewalPlan.code !== plan.code);
 
   const prepaidSelection = selectedRenewalPlan?.billing_period === "prepaid";
-  if (subscriptionAutoRenewClarity) subscriptionAutoRenewClarity.hidden = prepaidSelection;
+  const canEnrollAutoRenewal = !prepaidSelection && !isPlanChange && plan.billing_period === "monthly" && hasFutureRenewalDate;
+  if (subscriptionAutoRenewClarity) subscriptionAutoRenewClarity.hidden = !canEnrollAutoRenewal;
+  if (subscriptionAutoRenewButton) subscriptionAutoRenewButton.hidden = !canEnrollAutoRenewal && !openMandate;
+  if (subscriptionAutoRenewStatus) subscriptionAutoRenewStatus.hidden = !canEnrollAutoRenewal && !openMandate;
   if (prepaidSelection) {
     subscriptionRenewalButton.disabled = !canManageBusinessBilling() || subscriptionAutoRenewBusy || !isPlanChange || openMandate;
     subscriptionRenewalButton.textContent = isPlanChange ? "Cambiar a Despega prepago" : "Despega no requiere mensualidad";
@@ -6624,9 +6632,9 @@ function renderSubscriptionRenewal() {
         ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovación."
         : "Inscribir tarjeta solo crea la autorización; el primer cobro queda programado para la siguiente fecha de renovación.";
       const actionGuidance = openMandate ? "Tienes una autorización de cobro. Cancélala antes de renovar manualmente o cambiar de plan para evitar dos cobros." : isPlanChange
-        ? `Cambiarás de ${plan.name || plan.code || "tu plan actual"} a ${selectedRenewalPlan.name}. El cambio se aplicará cuando Mercado Pago apruebe el pago.`
+        ? `Cambiarás de ${plan.name || plan.code || "tu plan actual"} a ${selectedRenewalPlan.name}. El cambio se aplicará cuando Mercado Pago apruebe el pago. Conservas esta cuenta, tus usuarios, datos e historial.`
         : `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo.`;
-      setInlineMessage(subscriptionRenewalMessage, `${actionGuidance} ${autoRenewGuidance}`, "info");
+      setInlineMessage(subscriptionRenewalMessage, `${actionGuidance} ${canEnrollAutoRenewal ? autoRenewGuidance : "Elige tu plan y continúa al pago seguro."}`, "info");
     } else {
       setInlineMessage(subscriptionRenewalMessage, "Activa un plan mensual para usar el portal. Los tickets adicionales se compran dentro de la cuenta cuando la suscripcion este activa.", "info");
     }
@@ -8584,11 +8592,13 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   renderAccountView();
   applyPlanNavigation();
   renderNoCampaignState();
-  setView("account");
+  openAccountSection("billing");
   showFeedback(
-    errorMessage || (state.subscription?.plan?.billing_period === "prepaid"
+    state.subscription?.plan?.code === "DESCUBRE"
+      ? "Terminó tu prueba Descubre. Elige y paga tu plan para continuar con esta misma cuenta. Tus datos y tickets están conservados."
+      : errorMessage || (state.subscription?.plan?.billing_period === "prepaid"
       ? "Agotaste tus tickets de Despega prepago. Recarga desde Cuenta para continuar."
-      : "La mensualidad superó la gracia de 15 días. Renueva para recuperar el portal; tus datos siguen guardados."),
+      : "Tu plan venció. Elige y paga un plan para recuperar el portal; tus datos siguen guardados."),
     "error",
     { title: "Portal bloqueado" }
   );
@@ -64816,6 +64826,7 @@ subscriptionPlansGrid?.addEventListener("click", (event) => {
   subscriptionRenewalForm?.scrollIntoView({ behavior: "smooth", block: "center" });
   subscriptionRenewalPlanSelect.focus({ preventScroll: true });
 });
+document.getElementById("subscriptionFormalizeButton")?.addEventListener("click", () => openAccountSection("billing"));
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
