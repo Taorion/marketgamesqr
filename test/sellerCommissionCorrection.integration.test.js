@@ -1,0 +1,28 @@
+const {test,after}=require('node:test'),assert=require('node:assert/strict'),{randomUUID:id}=require('crypto');
+process.env.DATABASE_URL='postgresql://postgres@127.0.0.1:55441/qori_customer_qa';process.env.DB_SSL='false';process.env.NODE_ENV='test';
+const {query,pool}=require('../backend/src/config/db'),{correctFirstPaidPeriod:correct}=require('../backend/src/services/sellerCommissionCorrection');
+after(()=>pool.end());
+test('explicit first-payment correction replaces legacy amount once and keeps seller, renewal and payout state',async()=>{
+ const admin=await require('./helpers/adminIdentity').admin(query);
+ const seller=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Seller QA','QORI_SELLER') returning *",[id()+'@example.test'])).rows[0];
+ const b=(await query("insert into businesses(name,slug,plan_code,subscription_status,subscription_current_period_ends_at,created_at) values('Legacy trial QA',$1,'STARTER','ACTIVE',now()+interval '30 days','2020-01-01') returning *",[id()])).rows[0];
+ await query('insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$3)',[b.id,seller.id,admin.id]);
+ const o=(await query("insert into qr_credit_purchase_orders(business_id,package_code,package_size,package_title,price_cop,external_reference,metadata) values($1,'STARTER',0,'Crece',229000,$2,$3) returning *",[b.id,id(),{signup:{type:'portal_monthly_subscription',plan_code:'STARTER'}}])).rows[0];
+ await query("update qr_credit_purchase_orders set status='APPROVED',credited_at=now() where id=$1",[o.id]);
+ const c=(await query('select * from qori_seller_commissions where order_id=$1',[o.id])).rows[0];assert.equal(Number(c.amount_cop),22900);
+ const body={business_id:b.id,order_id:o.id,reason:'Aplicar tabla confirmada por el administrador al primer pago.'};
+ await assert.rejects(()=>correct(seller,body,{apply:true}),/superadmin/);
+ const preview=await correct(admin,body);assert.equal(preview.after.amount_cop,114500);assert.equal(Number((await query('select amount_cop from qori_seller_commissions where id=$1',[c.id])).rows[0].amount_cop),22900);
+ const concurrent=await Promise.all([correct(admin,body,{apply:true}),correct(admin,body,{apply:true})]);
+ assert.equal(concurrent.filter(r=>r.changed).length,1);assert.equal(concurrent.filter(r=>r.already_correct).length,1);
+ const rows=(await query('select * from qori_seller_commissions where order_id=$1',[o.id])).rows;assert.equal(rows.length,1);assert.equal(rows[0].id,c.id);assert.equal(rows[0].seller_id,seller.id);assert.equal(rows[0].status,'PENDING');assert.equal(rows[0].amount_cop,'114500.00');assert.equal(rows[0].commission_month,1);assert.equal(rows[0].rate,'0.5000');
+ assert.equal((await query('select subscription_current_period_ends_at from businesses where id=$1',[b.id])).rows[0].subscription_current_period_ends_at.toISOString(),b.subscription_current_period_ends_at.toISOString());
+ assert.equal((await query("select count(*)::int n from qori_commercial_audit where entity_id=$1 and action='SELLER_FIRST_COMMISSION_POLICY_CORRECTED'",[b.id])).rows[0].n,1);
+ const payout=(await query("insert into qori_seller_payouts(seller_id,request_id,gross_cop,withholding_cop,transfer_reference,paid_on,recorded_by) values($1,$2,114500,0,$3,current_date,$4) returning id",[seller.id,id(),'QA-'+id(),admin.id])).rows[0];
+ await query("update qori_seller_commissions set status='PAID',payout_id=$2 where id=$1",[c.id,payout.id]);await assert.rejects(()=>correct(admin,body,{apply:true}),/liquidada/);
+ const nextDay=(await query('select qori_seller_commission_boundary(starts_on,1)::text next_day from qori_seller_commission_programs where business_id=$1',[b.id])).rows[0].next_day;
+ const renewal=(await query("insert into qr_credit_purchase_orders(business_id,package_code,package_size,package_title,price_cop,external_reference,metadata) values($1,'STARTER',0,'Crece',229000,$2,$3) returning id",[b.id,id(),{signup:{type:'portal_monthly_subscription',plan_code:'STARTER'},commission_period:{starts_at:nextDay+'T12:00:00Z'}}])).rows[0];
+ await query("update qr_credit_purchase_orders set status='APPROVED',credited_at=now() where id=$1",[renewal.id]);
+ const second=(await query('select * from qori_seller_commissions where order_id=$1',[renewal.id])).rows;
+ assert.equal(second.length,1);assert.equal(second[0].commission_month,2);assert.equal(Number(second[0].amount_cop),57250);assert.equal(second[0].seller_id,seller.id);
+});
