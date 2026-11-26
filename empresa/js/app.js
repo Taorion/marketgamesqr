@@ -3019,6 +3019,8 @@ let state = {
   contactCenterMounted: false,
   contactCenterTab: "overview",
   leadCrmRows: [],
+  salesCustomerSearchRows: [],
+  salesCustomerSearchSeq: 0,
   leadCrmBulkSelection: [],
   leadCrmPagination: { total: 0, limit: 40, offset: 0, has_more: false },
   leadCrmLoaded: false,
@@ -4439,6 +4441,8 @@ function resetBusinessScopedState(options = {}) {
   state.contactCenterTab = "overview";
   state.leadDirectoryAudience = "customers";
   state.leadCrmRows = [];
+  state.salesCustomerSearchRows = [];
+  state.salesCustomerSearchSeq++;
   state.leadCrmPagination = { total: 0, limit: 40, offset: 0, has_more: false };
   state.leadCrmLoaded = false;
   state.leadCrmLoading = false;
@@ -22098,7 +22102,7 @@ function latestDateValue(first, second) {
 
 function salesCustomerRows() {
   const rows = [
-    ...(state.leadCrmRows || []).map((item) => ({
+    ...[...(state.salesCustomerSearchRows || []), ...(state.leadCrmRows || [])].map((item) => ({
       id: item.id,
       name: cleanCustomerValue(item.name),
       document_id: cleanCustomerValue(item.document_id),
@@ -22115,7 +22119,7 @@ function salesCustomerRows() {
       affiliate_id: item.affiliate_id || null,
       affiliate_name: firstCustomerValue(item.affiliate_name, item.affiliate_code),
       referral_points_awarded: customerMoneyValue(item.referral_points_awarded || item.points_total),
-      source: Number(item.purchase_count || 0) > 0 ? "Cliente" : "Lead capturado",
+      source: item.is_customer || item.has_stamp_card || Number(item.purchase_count || 0) > 0 ? "Cliente" : "Lead capturado",
     })),
     ...(state.contactFeed || []).map((item) => ({
       id: item.id,
@@ -22361,12 +22365,41 @@ function renderSalesCustomerMatchesHint() {
   }
 }
 
-function handleSalesCustomerSearchInput() {
-  renderSalesCustomerOptions();
-  renderSalesCustomerMatchesHint();
+let salesCustomerSearchTimer;
+async function searchSalesCustomers() {
+  const value = String(customerAcquisitionCustomerLookupInput?.value || "").trim();
+  const seq = ++state.salesCustomerSearchSeq;
+  const scope = businessScopeKey();
+  state.salesCustomerSearchRows = [];
+  if (value.length < 2) return true;
+  setSalesCustomerStatus("Buscando clientes", "Consultando la base del negocio…", "neutral", "person_search");
+  try {
+    const data = await api(`/api/business/sales/customers/search?q=${encodeURIComponent(value)}&limit=12`, { headers: authHeaders(), noClientCache: true });
+    if (!isCurrentBusinessScope(scope) || seq !== state.salesCustomerSearchSeq || value !== String(customerAcquisitionCustomerLookupInput?.value || "").trim()) return false;
+    state.salesCustomerSearchRows = (data.customers || []).map(row => ({ ...row, is_customer: true }));
+    renderSalesCustomerOptions();
+    renderSalesCustomerMatchesHint();
+    return true;
+  } catch (error) {
+    if (isCurrentBusinessScope(scope) && seq === state.salesCustomerSearchSeq) {
+      setSalesCustomerStatus("No se pudo consultar", "Vuelve a intentar la búsqueda.", "warning", "person_search");
+      setInlineMessage(customerAcquisitionMessage, error.message || "No se pudo consultar la base de clientes.", "error");
+    }
+    return false;
+  }
 }
 
-function handleSalesCustomerSearchCommit() {
+function handleSalesCustomerSearchInput() {
+  clearTimeout(salesCustomerSearchTimer);
+  state.salesCustomerSearchSeq++;
+  state.salesCustomerSearchRows = [];
+  renderSalesCustomerOptions();
+  salesCustomerSearchTimer = window.setTimeout(searchSalesCustomers, 280);
+}
+
+async function handleSalesCustomerSearchCommit() {
+  clearTimeout(salesCustomerSearchTimer);
+  if (!await searchSalesCustomers()) return;
   const value = customerAcquisitionCustomerLookupInput?.value || "";
   const exact = findSalesCustomer(value);
   const unique = exact || findUniquePartialSalesCustomer(value);
@@ -22392,13 +22425,15 @@ function handleSalesCustomerSelectChange() {
   applySalesCustomer(customer);
 }
 
-function resolveCustomerBeforeSaleSubmit() {
+async function resolveCustomerBeforeSaleSubmit() {
   const lookup = String(customerAcquisitionCustomerLookupInput?.value || "").trim();
   const selectedKey = customerAcquisitionCustomerSelect?.value || "";
   if (selectedKey) {
     return Boolean(applySalesCustomer(findSalesCustomerByKey(selectedKey)));
   }
   if (!lookup) return true;
+  clearTimeout(salesCustomerSearchTimer);
+  if (!await searchSalesCustomers()) return false;
   const exact = findSalesCustomer(lookup);
   if (exact) return Boolean(applySalesCustomer(exact));
   const matches = filteredSalesCustomerRows(lookup);
@@ -26033,7 +26068,7 @@ function affiliatePurchaseIdempotencyKey() {
 async function submitCustomerAcquisitionSale(event) {
   event.preventDefault();
   const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
-  if (!resolveCustomerBeforeSaleSubmit()) return;
+  if (!await resolveCustomerBeforeSaleSubmit()) return;
   if (!hasCustomerIdentityForSale()) {
     setInlineMessage(customerAcquisitionMessage, "Identifica el cliente antes de registrar la venta: selecciona uno existente o escribe nombre, telefono, correo o cedula.", "error");
     customerAcquisitionNameInput?.focus();

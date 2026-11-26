@@ -463,6 +463,7 @@ router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);
 router.get("/campaigns/:id/redemptions", standardBusinessCache, campaignRedemptions);
 router.use("/sales", requireSalesTracker);
+router.get("/sales/customers/search", searchValidatorCustomers);
 router.get("/sales/attributed", attributedSales);
 router.get("/sales/attributed/export.csv", exportAttributedSales);
 router.get("/sales/import-template.csv", downloadSalesImportTemplate);

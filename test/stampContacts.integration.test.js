@@ -26,6 +26,10 @@ test('existing and new zero-stamp cardholders are searchable clients, without fa
    assert.equal(JSON.stringify(result).includes(card.member.public_token),false);assert.equal((await list(b,search,'LEAD')).leads.length,0);
   }
   const lead=(await list(b,card.member.document_key)).leads[0],detail=await crm.getLeadCrmDetail(b.id,lead.id,lead.source_type);
+  const response=await fetch(base+'/api/business/sales/customers/search?q='+card.member.document_key,{headers});
+  assert.equal(response.status,200);
+  const found=(await response.json()).customers;
+  assert.equal(found.length,1);assert.equal(found[0].player_id,lead.id);
   assert.equal(detail.lead.has_stamp_card,true);assert.equal(detail.lead.is_customer,true);assert.equal(detail.summary.purchase_count,0);assert.equal(detail.purchases.length,0);
   assert.equal((await query('select stamps from stamp_cycles where member_id=$1',[card.member.id])).rows[0].stamps,0);
  }
@@ -55,6 +59,7 @@ test('public self-registration invalidates contact cache and is visible via auth
  const registered=await fetch(base+'/api/public/stamp-cards/programs/'+program.id+'/enroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});assert.equal(registered.status,200);
  response=await fetch(url,{headers});assert.equal(response.status,200);const result=await response.json();assert.equal(result.leads.length,1);assert.equal(result.leads[0].is_customer,true);
  assert.equal((await list(other,search)).leads.length,0);assert.equal((await fetch(url)).status,401);
+ assert.equal((await fetch(base+'/api/business/sales/customers/search?q='+search)).status,401);
  const foreign=(await query('insert into players(business_id,name,document_id,email) values($1,$2,$3,$4) returning *',[other.id,input.name,search,input.email])).rows[0];
  const otherResult=(await crm.listLeadCrmRows(other.id,{search})).leads[0];assert.equal(otherResult.id,foreign.id);assert.equal(otherResult.has_stamp_card,false);assert.equal(otherResult.is_customer,false);
  await assert.rejects(()=>crm.getLeadCrmDetail(other.id,result.leads[0].id),/not found/i);
