@@ -8,6 +8,7 @@ const stopCustomerBenefits = require('./services/customerBenefitNotificationServ
 const stopCustomerPayments = require('./services/customerPaymentPushService').start();
 const stopGiftDelivery = require('./services/giftDeliveryService').start();
 const stopSubscriptionRenewals = require('./services/subscriptionAutoRenewalService').start();
+const stopPaymentRecovery = require('./services/subscriptionPaymentRecovery').start();
 const stopSellerCommissions = require('./services/sellerCommissionWorker').startSellerCommissionWorker();
 
 const stopDemonstrations = require('./services/demonstrationWorker').start();
@@ -23,6 +24,7 @@ async function shutdown() {
   await stopDemonstrations();
   stopSummitLive();
   await stopSubscriptionRenewals();
+  await stopPaymentRecovery();
   await stopPlay();
   await stopSellerCommissions();
   await stopAgendaPushWorker();

@@ -15,9 +15,10 @@ async function context(business, db = { query }) {
   const paidActive = business.is_active && !business.archived_at && plan.raw_status === 'ACTIVE'
     && plan.category === 'subscription' && plan.monthly_price_cop > 0 && plan.code !== 'DESCUBRE'
     && (plan.billing_period === 'prepaid' || new Date(plan.current_period_ends_at) > new Date());
-  return { eligible: Boolean(paidActive && payment), payment, current: business.settings?.subscription_addons || null,
+  const pending = !payment ? (await db.query("select id,price_cop,status,metadata->'reconciliation' recovery from qr_credit_purchase_orders where business_id=$1 and package_code=$2 and credited_at is null and status in ('PENDING','IN_PROCESS') and metadata->'signup'->>'type' in ('portal_monthly_subscription','portal_annual_subscription') order by created_at desc,id desc limit 1",[business.id,plan.code])).rows[0] || null : null;
+  return { eligible: Boolean(paidActive && payment), payment, pending_payment: paidActive ? pending : null, current: business.settings?.subscription_addons || null,
     modules, limit_labels: limitLabels,
-    message: paidActive && payment ? 'Pago confirmado. Puedes añadir módulos y ampliar cupos de este plan.' : 'Primero el negocio debe pagar y activar su plan. La prueba gratuita y los pagos pendientes no habilitan ampliaciones.' };
+    message: paidActive && payment ? 'Pago confirmado. Puedes añadir módulos y ampliar cupos de este plan.' : paidActive ? 'El plan está activo, pero Qori aún no ha conciliado el pago. Si ya pagó, verifica la orden con Mercado Pago; no necesita pagar otra vez.' : 'Primero el negocio debe pagar y activar su plan. La prueba gratuita y los pagos pendientes no habilitan ampliaciones.' };
 }
 async function update(user, id, payload) {
   requireSuperadmin(user);

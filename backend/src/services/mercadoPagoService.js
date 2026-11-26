@@ -1418,13 +1418,27 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     throw badRequest('El plan del negocio cambió. El cobro de la autorización anterior requiere revisión administrativa.');
   }
   const previousPlan = listPlans().find(item => item.code === currentPeriod.rows[0]?.plan_code);
-  const firstPaidPlan = !previousPlan?.monthly_price_cop || previousPlan.category !== 'subscription';
+  let firstPaidPlan = !previousPlan?.monthly_price_cop || previousPlan.category !== 'subscription';
+  const recovery = order.metadata?.reconciliation;
+  let preservedEnd = null;
+  if (recovery?.requested && recovery.authorized_by && recovery.preserve_period_end) {
+    preservedEnd = optionsDate(recovery.preserve_period_end);
+    if (!preservedEnd || !currentEnd || preservedEnd.getTime() !== currentEnd.getTime() || currentPeriod.rows[0]?.plan_code !== planCode || preservedEnd <= now) throw badRequest('La renovación cambió desde que se solicitó verificar el pago. Revisa la ficha.');
+    const prior = await client.query("select 1 from qr_credit_purchase_orders where business_id=$1 and id<>$2 and status='APPROVED' and credited_at is not null and metadata->'signup'->>'type' in ('portal_monthly_subscription','portal_annual_subscription','portal_monthly_subscription_auto_renewal') limit 1", [order.business_id,order.id]);
+    firstPaidPlan = !prior.rowCount;
+  }
   const scheduled = optionsDate(order.metadata?.recurring_debit_date);
-  const periodEnd = scheduled || (!firstPaidPlan && plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now);
+  const approvedAt = optionsDate(payment.date_approved);
+  if (preservedEnd && !approvedAt) throw badRequest('Mercado Pago no devolvió la fecha de aprobación; requiere revisión.');
+  const periodEnd = preservedEnd ? approvedAt : scheduled || (!firstPaidPlan && plan.billing_period !== "prepaid" && currentEnd && currentEnd > now ? currentEnd : now);
   const billingCycle = plan.billing_period === "prepaid" ? "prepaid" : normalizeBillingCycle(signup.billing_cycle || (signup.type === "portal_annual_subscription" ? "annual" : "monthly"));
   let nextPeriodEnd = addPlanBillingPeriod(periodEnd, plan, billingCycle);
   const advancesPeriod = !scheduled || !currentEnd || nextPeriodEnd > currentEnd;
   if (scheduled && currentEnd && nextPeriodEnd < currentEnd) nextPeriodEnd = currentEnd;
+  if (preservedEnd) {
+    if (periodEnd >= preservedEnd) throw badRequest('La fecha del pago no corresponde al periodo activado.');
+    nextPeriodEnd = preservedEnd;
+  }
 
   await ensureCreditAccount(client, order.business_id);
   let account = null;
@@ -1498,6 +1512,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     approved_revenue_cop: Number(order.price_cop || 0),
     payment_id: payment.id,
   });
+
+  if (preservedEnd) await client.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'SUBSCRIPTION_PAYMENT_RECOVERED','business',$2,$3)",[recovery.authorized_by,order.business_id,{order_id:order.id,payment_id:String(payment.id),provider:'MERCADO_PAGO',amount_cop:Number(order.price_cop),renewal_preserved:preservedEnd.toISOString(),commission_seller_id:order.commission_seller_id,payment_recorded:true}]);
 
   return {
     order: mapPurchaseOrder(updated.rows[0]),

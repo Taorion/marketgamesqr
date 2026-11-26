@@ -15,4 +15,5 @@ router.delete('/:kind/:id',handle(r=>require('../services/adminAccountDeletionSe
 router.patch('/customers/:id',handle(r=>service.updateCustomer(r.user,r.params.id,r.body)));
 router.patch('/businesses/:id',handle(r=>service.updateBusiness(r.user,r.params.id,r.body)));
 router.patch('/businesses/:id/subscription-addons',handle(r=>require('../services/adminSubscriptionAddons').update(r.user,r.params.id,r.body)));
+router.post('/businesses/:id/payment-recovery',handle(r=>require('../services/subscriptionPaymentRecovery').request(r.user,r.params.id,r.body)));
 module.exports=router;

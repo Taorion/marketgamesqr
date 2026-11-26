@@ -21,6 +21,14 @@ test('paid business additions open from the account and submit exact quantities 
  const saved=calls.find(c=>c.path.endsWith('/subscription-addons'));assert.deepEqual(saved.body,{modules:['showcase'],limits:{showcases:3},expires_at:null,expected_updated_at:'2026-11-26T12:00:00.000Z',reason:'Ampliación de vitrinas acordada'});assert.equal(w.document.querySelector('dialog'),null);
  }finally{w.close();}
 });
+test('active subscription with missing payment can request recovery without altering renewal',async()=>{
+ const {w,calls,ctx}=setup(),original=ctx.api;
+ ctx.api=async(path,opts={})=>{const r=await original(path,opts);if(!opts.body&&path.includes('/businesses/c1'))Object.assign(r.record,{plan_code:'STARTER',subscription_current_period_ends_at:'2026-12-26T00:00:00.000Z',plan:{name:'Crece',features:{},limits:{}},subscription_addons:{eligible:false,pending_payment:{id:'pending-order',price_cop:229000},modules:{},limit_labels:{},message:'Pago pendiente de conciliar.'}});return r;};
+ try{await w.QoriAccounts.load(ctx);w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('[data-subscription-addons]'));w.document.querySelector('[data-subscription-addons]').click();await until(()=>w.document.querySelector('[data-recover-payment]'));
+ w.document.querySelector('[data-recover-payment]').click();await until(()=>calls.some(c=>c.path.endsWith('/payment-recovery')));
+ const sent=calls.find(c=>c.path.endsWith('/payment-recovery'));assert.equal(sent.body.order_id,'pending-order');assert.equal(sent.body.expected_period_end,'2026-12-26T00:00:00.000Z');assert.ok(w.document.querySelector('[data-refresh-payment]'));
+ }finally{w.close();}
+});
 test('Customer management is reachable, escapes names and sends explicit revision/reason',async()=>{
  const {w,calls,ctx}=setup();try{await w.QoriAccounts.load(ctx);w.document.querySelector('[data-kind=customers]').click();await until(()=>w.document.querySelector('[data-detail]'));assert.equal(w.document.querySelector('img'),null);w.document.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('dialog'));const f=w.document.querySelector('dialog form');f.elements.full_name.value='Ana editada';f.elements.reason.value='Verificación administrativa';f.elements.is_active.checked=false;f.elements.revoke_sessions.checked=true;await f.onsubmit({preventDefault(){},target:f});const changed=calls.find(c=>c.body);assert.deepEqual(changed.body,{full_name:'Ana editada',is_active:false,revoke_sessions:true,expected_revision:2,reason:'Verificación administrativa'});assert.equal(w.document.querySelector('dialog'),null);}finally{w.close();}
 });
