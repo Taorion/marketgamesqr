@@ -39,6 +39,13 @@ test('expired and free accounts pay in place; paid additions enforce authorizati
  other=(await query(`insert into businesses(name,slug,plan_code,subscription_status) values('Otra cuenta QA',$1,'PENSE_EN_TI','ACTIVE') returning *`,['other-'+uuid()])).rows[0];
  await t.test('expired trial can read billing, cannot operate and cannot receive paid extras',async()=>{
   assert.equal((await api('/api/business/profile',owner)).status,200);
+  const identity=await api('/api/auth/me',owner);
+  assert.equal(identity.status,200);
+  assert.equal(identity.data.user.subscription.plan.portal_access_allowed,false);
+  for(const path of ['/api/public/subscription-plans','/api/qr/credits/me']) {
+   assert.equal((await api(path,owner)).status,200,path);
+  }
+  assert.equal((await api('/api/payments/qr-credits/offers',owner)).status,400,'ticket top-ups require an active plan');
   assert.equal((await api('/api/business/catalogs',owner)).status,403);
   const detail=await api('/api/admin/accounts/businesses/'+business.id,admin);
   assert.equal(detail.status,200,JSON.stringify(detail));assert.equal(detail.data.record.subscription_addons.eligible,false);

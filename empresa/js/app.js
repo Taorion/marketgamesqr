@@ -6049,7 +6049,12 @@ function currentPlan() {
   return state.subscription?.plan || session?.user?.subscription?.plan || {};
 }
 
+function needsSubscriptionPayment() {
+  return !isAdmin() && currentPlan().portal_access_allowed === false;
+}
+
 function portalDefaultViewForPlan() {
+  if (needsSubscriptionPayment()) return "account";
   if (currentPlan().free_program) return currentPlan().default_view || "account";
   const features = currentPlan().features || {};
   if (currentPlan().code === "DESCUBRE" && currentPlan().portal_access_allowed) return "stamp-cards";
@@ -6345,6 +6350,8 @@ function closeFeatureUpgradeInterstitial() {
 function showPlanGateFromApiError(error = {}) {
   const gate = error.planGate || error.details?.plan_gate;
   if (!gate) return false;
+  // Late responses from a restricted module must never cover the payment form.
+  if (needsSubscriptionPayment() && state.currentView === "account") return true;
   const gateKey = gate.feature || gate.limit_key || "portal_access";
   const title = gate.reason === "limit_reached" || gate.reason === "monthly_limit_reached"
     ? "Capacidad del plan alcanzada"
@@ -7721,7 +7728,13 @@ async function loadAccountWorkspaceData(options = {}) {
 
 function setView(view) {
   const catalogOrdersApi = (path, options = {}) => api('/api/business' + path, { ...options, noClientCache: true, headers: { ...authHeaders(), ...(options.headers || {}) } });
-  window.QoriCatalogOrders?.discover(catalogOrdersApi, session?.user?.id);
+  if (!needsSubscriptionPayment()) window.QoriCatalogOrders?.discover(catalogOrdersApi, session?.user?.id);
+  if (needsSubscriptionPayment()) {
+    view = "account";
+    state.accountScreen = "billing";
+    state.accountHashApplied = true;
+    closeFeatureUpgradeInterstitial();
+  }
   const requestedView = view;
   const previousView = state.currentView;
   if (isBusinessSeller() && view !== "sellers") {
@@ -7908,21 +7921,23 @@ function setView(view) {
     });
   }
   if (view === "account") {
-    Promise.all([loadAccountWorkspaceData({ quiet: true }), loadCommunicationEmailConnection({ force: true }), loadCommunicationWhatsAppConnection({ force: true })]).then(() => {
-      renderBusinessLogoPanel();
-      renderAccountView();
-    }).catch(() => {});
-    if (!state.digitalAssetsLoaded || !state.storageQuotaLoaded || !state.leadCaptureLoaded) {
-      Promise.all([
-        loadDigitalAssets({ quiet: true }),
-        loadStorageQuota({ quiet: true }),
-        loadLeadCaptureActivations({ quiet: true }),
-      ]).then(() => {
-        renderDigitalAssets();
-        renderLeadCaptureAssetOptions();
-        renderFlyerQrAssetOptions();
-        renderLeadCaptureTable();
-      });
+    if (!needsSubscriptionPayment()) {
+      Promise.all([loadAccountWorkspaceData({ quiet: true }), loadCommunicationEmailConnection({ force: true }), loadCommunicationWhatsAppConnection({ force: true })]).then(() => {
+        renderBusinessLogoPanel();
+        renderAccountView();
+      }).catch(() => {});
+      if (!state.digitalAssetsLoaded || !state.storageQuotaLoaded || !state.leadCaptureLoaded) {
+        Promise.all([
+          loadDigitalAssets({ quiet: true }),
+          loadStorageQuota({ quiet: true }),
+          loadLeadCaptureActivations({ quiet: true }),
+        ]).then(() => {
+          renderDigitalAssets();
+          renderLeadCaptureAssetOptions();
+          renderFlyerQrAssetOptions();
+          renderLeadCaptureTable();
+        });
+      }
     }
     renderAccountView();
   }
@@ -8220,6 +8235,10 @@ function renderShell() {
 
 function applyInitialRouteParams() {
   const urlParams = new URLSearchParams(window.location.search);
+  if (needsSubscriptionPayment() && !urlParams.has("payment")) {
+    openAccountSection("billing");
+    return;
+  }
   const trainingContinuePath = requestedTrainingContinuePath();
   if (trainingContinuePath && session?.token) {
     window.location.replace(trainingContinuePath);
@@ -8559,18 +8578,27 @@ function requireCampaignAssociation(input, messageElement, actionLabel, options 
 
 async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   stopActivityPolling();
-  const [subscriptionPlansData, businessUsersData, profileData, packageData, creditData] = await Promise.all([
+  closeFeatureUpgradeInterstitial();
+  const scopeKey = businessScopeKey();
+  const [subscriptionPlansData, profileData, packageData, creditData] = await Promise.all([
     apiSafe("/api/public/subscription-plans", {}, { plans: [], prepaid_reference: [] }),
-    apiSafe("/api/business/users", { headers: authHeaders() }, { users: [] }),
-    apiSafe("/api/business/profile", { headers: authHeaders() }, {}),
-    apiSafe("/api/payments/qr-credits/offers", { headers: authHeaders() }, { packages: [] }),
+    apiSafe("/api/business/profile", { headers: authHeaders(), noClientCache: true, planGate: false }, {}),
+    currentPlan().access_status === "TICKETS_EXHAUSTED"
+      ? apiSafe("/api/payments/qr-credits/offers", { headers: authHeaders(), planGate: false }, { packages: [] })
+      : Promise.resolve({ packages: [] }),
     apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: null }),
   ]);
+  if (!isCurrentBusinessScope(scopeKey)) return;
   state.subscription = profileData.subscription || state.subscription || session.user?.subscription;
+  if (state.subscription?.plan?.portal_access_allowed === true) {
+    saveSession({ ...session, user: { ...session.user, subscription: state.subscription } });
+    return loadWorkspace();
+  }
   state.subscriptionPlans = subscriptionPlansData.plans || [];
   state.prepaidReference = subscriptionPlansData.prepaid_reference || [];
   state.pricing = subscriptionPlansData.pricing || state.pricing;
-  state.businessUsers = businessUsersData.users || [];
+  state.accountWorkspaceLoaded = true;
+  state.loadedBusinessId = session.user.business_id;
   state.dashboard = null;
   state.commandCenter = null;
   state.summary = null;
@@ -8592,6 +8620,7 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
   renderAccountView();
   applyPlanNavigation();
   renderNoCampaignState();
+  closeFeatureUpgradeInterstitial();
   openAccountSection("billing");
   showFeedback(
     state.subscription?.plan?.code === "DESCUBRE"
@@ -8599,8 +8628,8 @@ async function loadLockedSubscriptionWorkspace(errorMessage = "") {
       : errorMessage || (state.subscription?.plan?.billing_period === "prepaid"
       ? "Agotaste tus tickets de Despega prepago. Recarga desde Cuenta para continuar."
       : "Tu plan venció. Elige y paga un plan para recuperar el portal; tus datos siguen guardados."),
-    "error",
-    { title: "Portal bloqueado" }
+    "info",
+    { title: "Elige tu plan para continuar" }
   );
 }
 
@@ -8624,6 +8653,12 @@ async function loadWorkspace() {
     return;
   }
   document.body.dataset.sellerSelfOnly = "false";
+
+  if (session?.user?.business_id && needsSubscriptionPayment()) {
+    try { await loadLockedSubscriptionWorkspace(); }
+    finally { refreshButton.disabled = false; hideBusyOverlay(); }
+    return;
+  }
 
   showFeedback(
     lightTestMode ? "Modo prueba ligero activo. Evitando cargas pesadas de Supabase." : "Actualizando dashboard, tickets, campañas e historial.",
@@ -8723,6 +8758,10 @@ async function loadWorkspace() {
     state.summary = campaignData.summary || null;
     mergeBusinessProfile(businessProfileData.business || null);
     state.subscription = businessProfileData.subscription || dashboardData?.subscription || session.user?.subscription || null;
+    if (needsSubscriptionPayment()) {
+      await loadLockedSubscriptionWorkspace();
+      return;
+    }
     state.campaignGroups = campaignData.groups || null;
     state.campaigns = campaignData.campaigns || [];
     state.qrCreditAccount = accessData.access?.ticketAccount || creditData.credit_account || businessProfileData.credit_account || null;
@@ -9176,7 +9215,7 @@ function commandEmpty(title = "Aún no hay datos suficientes.", action = "Activa
 }
 
 async function loadCommandCenterData({ quiet = false } = {}) {
-  if (!session?.user?.business_id) return;
+  if (!session?.user?.business_id || needsSubscriptionPayment()) return;
   if (state.commandCenterLoading) return;
   state.commandCenterLoading = true;
   state.commandCenterError = "";
@@ -64840,7 +64879,7 @@ featureUpgradeSecondaryButton?.addEventListener("click", closeFeatureUpgradeInte
 featureUpgradePrimaryLink?.addEventListener("click", (event) => {
   event.preventDefault();
   closeFeatureUpgradeInterstitial();
-  setView("account");
+  openAccountSection("billing");
   window.setTimeout(() => {
     document.getElementById("accountPortalPlansCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 80);
