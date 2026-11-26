@@ -9,6 +9,19 @@ async function fixture(){const b=(await query("insert into businesses(name,slug,
  const p=await stamps.saveProgram(b.id,u.id,rules),p2=await stamps.saveProgram(b.id,u.id,{...rules,name:'Un premio especial',stamps_required:8});
  const c=await catalog.createCatalog(b.id,u,{title:'Mis programas',status:'ACTIVE',whatsapp_number:'00000000',metadata:{redemption_mode:'STAMP_PROGRAMS',stamp_program_ids:[p.id,p2.id]}});return {b,u,p,p2,c};}
 const auth=f=>'Bearer '+jwt.sign({sub:f.u.id,session_version:require('../backend/src/config/env').env.appSessionVersion},process.env.JWT_SECRET);
+test('editing adds programs to the same showcase and removal preserves enrolled cards and their cycles',async()=>{
+ const f=await fixture();
+ const card=await stamps.enroll(f.b.id,f.u.id,{program_id:f.p.id,name:'Cliente existente',document_id:'QA-'+id()});
+ const before=(await query('select * from stamp_cycles where member_id=$1',[card.member.id])).rows;
+ await catalog.updateCatalog(f.b.id,f.c.id,{metadata:{redemption_mode:'STAMP_PROGRAMS',stamp_program_ids:[f.p.id]}});
+ await catalog.updateCatalog(f.b.id,f.c.id,{metadata:{redemption_mode:'STAMP_PROGRAMS',stamp_program_ids:[f.p.id,f.p2.id]}});
+ assert.deepEqual((await svc.stampPrograms(f.c.slug)).programs.map(p=>p.id),[f.p.id,f.p2.id]);
+ assert.deepEqual((await catalog.catalogDetail(f.b.id,f.c.id)).catalog.metadata.stamp_program_ids,[f.p.id,f.p2.id]);
+ await catalog.updateCatalog(f.b.id,f.c.id,{metadata:{redemption_mode:'STAMP_PROGRAMS',stamp_program_ids:[f.p2.id]}});
+ assert.deepEqual((await svc.stampPrograms(f.c.slug)).programs.map(p=>p.id),[f.p2.id]);
+ assert.deepEqual((await query('select * from stamp_cycles where member_id=$1',[card.member.id])).rows,before);
+ assert.equal((await query('select 1 from stamp_members where id=$1',[card.member.id])).rowCount,1);
+});
 test('directory only exposes selected active same-business programs with registration links and safe rules',async()=>{const f=await fixture(),foreign=await fixture();const r=await svc.stampPrograms(f.c.slug);assert.equal(r.programs.length,2);assert.deepEqual(r.programs.map(p=>p.id),[f.p.id,f.p2.id]);assert.ok(!JSON.stringify(r).includes(foreign.p.id));assert.equal(r.programs[0].reward_cost,undefined);assert.equal(r.programs[0].ticket_cost,undefined);assert.equal(r.programs[0].allow_manual,undefined);assert.match(r.programs[0].enrollment_url,/\/sellos\/inscripcion.html\?programa=/);
  await query("update stamp_programs set status='PAUSED' where id=$1",[f.p.id]);assert.equal((await svc.stampPrograms(f.c.slug)).programs.length,1);await query("update stamp_programs set status='ARCHIVED',deleted_at=now() where id=$1",[f.p2.id]);assert.equal((await svc.stampPrograms(f.c.slug)).programs.length,0);});
 test('cannot publish foreign, malformed, repeated, deleted or empty program selections',async()=>{const f=await fixture(),other=await fixture();for(const ids of [[other.p.id],['bad'],[f.p.id,f.p.id],[]])await assert.rejects(()=>catalog.updateCatalog(f.b.id,f.c.id,{metadata:{redemption_mode:'STAMP_PROGRAMS',stamp_program_ids:ids}}));await query("update stamp_programs set status='ARCHIVED',deleted_at=now() where id=$1",[f.p.id]);await assert.rejects(()=>catalog.updateCatalog(f.b.id,f.c.id,{metadata:{redemption_mode:'STAMP_PROGRAMS',stamp_program_ids:[f.p.id]}}));assert.equal((await catalog.catalogDetail(f.b.id,f.c.id)).catalog.metadata.stamp_program_ids.length,2);});
