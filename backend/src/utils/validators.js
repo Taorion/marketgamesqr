@@ -189,6 +189,7 @@ const interactiveRewardModes = [
 ];
 
 const interactiveActivationTypes = [
+  "QORI_CHASE",
   "QORI_SUMMIT",
   "TRIVIA_QUIZ",
   "OPEN_QUESTION",

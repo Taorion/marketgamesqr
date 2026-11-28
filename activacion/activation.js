@@ -34,6 +34,7 @@ let summitSessionVersion = 0;
 const summitPendingRequests = new Set();
 
 const minigameTypes = new Set([
+  "QORI_CHASE",
   "QORI_SUMMIT",
   "SPACE_SHOOTER",
   "BREAKOUT",
@@ -609,9 +610,18 @@ async function startGameSession({ resume = true } = {}) {
     button.textContent = "Preparando...";
   }
   try {
+    if (resume && currentActivation.activation_type === 'QORI_CHASE') {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('qori-chase:' + currentActivation.public_slug) || 'null');
+        if (saved) {
+          const restored = await summitSessionApi('/api/public/activations/' + encodeURIComponent(currentActivation.public_slug) + '/chase', { method: 'POST', body: JSON.stringify({ ...saved, action: 'resume' }) });
+          if (restored.room && restored.room.status !== 'closed') { participant = { id: saved.participant_id }; gameSessionToken = saved.game_session_token; participantForm.classList.add('hidden'); renderMinigame(); return; }
+        }
+      } catch (error) { if (![403,404].includes(error.status)) throw error; }
+    }
     if (resume && summit && await resumeSummitSession()) return;
     if (summit && version !== summitSessionVersion) return;
-    const data = await (summit ? summitSessionApi : api)(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
+    const data = await (summit || currentActivation.activation_type === 'QORI_CHASE' ? summitSessionApi : api)(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
       method: "POST",
       body: JSON.stringify(participantPayload()),
     });
@@ -1330,6 +1340,19 @@ function renderThermometer() {
 }
 
 function renderMinigame() {
+  if (currentActivation.activation_type === 'QORI_CHASE') {
+    cleanupGameState(); experienceStage.classList.remove('hidden');
+    experienceTitle.textContent = 'Policías y Ladrones';
+    experienceCopy.textContent = 'Una persecución por equipos en el Barrio del Farol. De 2 a 8 personas.';
+    const session = { participant_id: participant.id, game_session_token: gameSessionToken };
+    try { sessionStorage.setItem('qori-chase:' + currentActivation.public_slug, JSON.stringify(session)); } catch (_) {}
+    const mounted = QoriChase.mount(experienceBody, {
+      request: (body, { signal } = {}) => api('/api/public/activations/' + encodeURIComponent(currentActivation.public_slug) + '/chase', { method: 'POST', signal, body: JSON.stringify({ ...body, ...session }) }),
+      onResult: data => renderResult(data),
+      onExit: () => { try { sessionStorage.removeItem('qori-chase:' + currentActivation.public_slug); } catch (_) {} const url = new URL(location.href); url.searchParams.delete('room'); location.href = url.href; },
+    });
+    gameState = { cleanupFns: [() => mounted.destroy()] }; return;
+  }
   if (currentActivation.activation_type === "QORI_SUMMIT") {
     cleanupGameState();
     experienceStage.classList.remove("hidden");

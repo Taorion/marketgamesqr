@@ -19,6 +19,7 @@ const DIGITAL_ASSET_TYPES = new Set([
 ]);
 
 const RETAINED_ACTIVATION_TYPES = new Set([
+  "QORI_CHASE",
   "QORI_SUMMIT",
   "TRIVIA_QUIZ",
   "OPEN_QUESTION",
@@ -41,6 +42,7 @@ const RETAINED_ACTIVATION_TYPES = new Set([
 ]);
 
 const ALL_ACTIVATION_CATALOG = [
+  { type: "QORI_CHASE", label: "Policías y Ladrones", category: "minigame", group: "Juegos multijugador", reward_modes: ["fixed"] },
   { type: "QORI_SUMMIT", label: "Cumbre Qori", category: "minigame", group: "Minijuegos con score", reward_modes: ["fixed"] },
   { type: "TRIVIA_QUIZ", label: "Trivia", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_score", "fixed"] },
   { type: "OPEN_QUESTION", label: "Pregunta abierta", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "manual_approval"] },
@@ -747,6 +749,10 @@ async function requiredGameId(client, businessId, campaign = null) {
 }
 
 async function createInteractiveActivation(businessId, user, body) {
+  if (body.activation_type === 'QORI_CHASE') {
+    body.category = 'minigame'; body.reward_mode = 'fixed'; body.score_rewards = [];
+    body.game_config = { ...require('../../../activacion/policias-core').normalize(body.game_config), game_type: 'QORI_CHASE', min_duration_ms: 0, max_score: 1 };
+  }
   if (body.activation_type === summitGame.TYPE) {
     if (!String(body.reward_config?.reward_label || body.benefit?.benefit_label || "").trim()) throw badRequest("Define el premio fijo de la cima.");
     body.game_config ||= {};
@@ -959,6 +965,10 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     [activationId, businessId]
   );
   if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
+  if ((body.activation_type || currentResult.rows[0].activation_type) === 'QORI_CHASE') {
+    body.category = 'minigame'; body.reward_mode = 'fixed'; body.score_rewards = [];
+    if (body.game_config) body.game_config = { ...require('../../../activacion/policias-core').normalize(body.game_config), game_type: 'QORI_CHASE', min_duration_ms: 0, max_score: 1 };
+  }
   if ((body.activation_type || currentResult.rows[0].activation_type) === summitGame.TYPE) {
     body.activation_type = summitGame.TYPE;
     summitGame.prepare(body);
@@ -1368,7 +1378,7 @@ async function startInteractiveParticipant(slug, body, {client:transactionClient
   });
 }
 
-async function completeInteractiveParticipant(slug, body, {client:transactionClient,allowIdentityRecovery=true,summitRace}={}) {
+async function completeInteractiveParticipant(slug, body, {client:transactionClient,allowIdentityRecovery=true,summitRace,chaseResult}={}) {
   const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
   return transaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
@@ -1387,6 +1397,13 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
       ? await lockParticipant(client, activation, body.participant_id)
       : await createParticipantInsideCompletion(client, activation, body);
 
+    if (activation.activation_type === 'QORI_CHASE') {
+      if (!chaseResult || !participant.game_session_token || participant.game_session_token !== body.game_session_token || participant.completed_at) throw badRequest('El resultado se confirma únicamente dentro de la sala.');
+      const proven = (await client.query('select state from qori_chase_rounds where id=$1 and room_id=$2', [chaseResult.roundId, chaseResult.roomId])).rows[0]?.state;
+      const member = proven?.players.find(p => p.id === participant.id);
+      if (!member || proven.status !== 'finished' || proven.round !== 1 || (proven.winner === member.team) !== chaseResult.won) throw badRequest('Resultado de sala inválido.');
+      body.score = chaseResult.won ? 1 : 0;
+    }
     if (activation.activation_type === summitGame.TYPE) {
       const membership = (await client.query('select room_id from qori_summit_members where participant_id=$1', [participant.id])).rows[0];
       if (membership && membership.room_id !== summitRace?.roomId) throw badRequest('El premio multijugador se confirma dentro de la sala.');
@@ -1396,7 +1413,7 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
       ? summitGame.verify(activation, participant, body, Date.now(), summitRace)
       : null;
     if (summitResult) { body.score = summitResult.floor; body.duration_ms = summitResult.duration_ms; }
-    else validateGameSession(activation, participant, body);
+    else if (!chaseResult) validateGameSession(activation, participant, body);
 
     const answers = body.answers || {};
     const diagnosticActivation = isDiagnosticActivation(activation);
@@ -1417,6 +1434,7 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
       ? rouletteChoiceOutcome(activation.reward_config?.choices, body.selected_choice)
       : null;
     const rewardPayload = await resolveRewardPayload(client, activation, {
+      chase_won: chaseResult?.won === true,
       summit_won: summitResult?.won === true,
       answers,
       score,
@@ -1430,6 +1448,7 @@ async function completeInteractiveParticipant(slug, body, {client:transactionCli
     const status = pendingReview ? "pending_review" : rewardPayload ? "rewarded" : "completed";
     const metadata = activationFormMetadata(activation, body, {
       anti_abuse: antiAbuseSummary(activation, participant, body, score),
+      ...(chaseResult ? { chase_result: chaseResult } : {}),
       ...(summitResult ? { summit_result: summitResult } : {}),
       ...(summitRace ? { summit_room_id: summitRace.roomId, summit_mode: 'multiplayer' } : {}),
     });
@@ -2344,6 +2363,8 @@ function resolveProfile(activation, answers) {
 }
 
 async function resolveRewardPayload(client, activation, context) {
+  if (activation.activation_type === 'QORI_CHASE') return context.chase_won === true
+    ? fixedRewardPayload(activation.reward_config, 'fixed', { chase_team_won: true }) : null;
   if (activation.activation_type === summitGame.TYPE) return context.summit_won === true
     ? fixedRewardPayload(activation.reward_config, "fixed", { summit_reached: true }) : null;
   if (activation.reward_mode === "manual_approval") return null;

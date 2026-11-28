@@ -20225,7 +20225,7 @@ const GAMING_ACTIVATION_CATEGORY_TYPES = {
   recommended: ["TRIVIA", "SCRATCH_DIGITAL", "ROULETTE_SPIN", "SPIN_DISCOVER", "PRODUCT_VOTE", "PRIVATE_INVITATION"],
   capture: ["OPEN_QUESTION", "PRODUCT_VOTE", "TRIVIA"],
   reveal: ["SPIN_DISCOVER", "THERMOMETER", "SEALED_LETTER", "PRIVATE_INVITATION", "SCRATCH_DIGITAL", "ROULETTE_SPIN"],
-  games: ["QORI_SUMMIT", "SPACE_SHOOTER", "BREAKOUT", "SNAKE", "MEMORY_PAIRS", "WHACK_A_MOLE", "DODGE_RUNNER", "ROULETTE_SPIN", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
+  games: ["QORI_CHASE", "QORI_SUMMIT", "SPACE_SHOOTER", "BREAKOUT", "SNAKE", "MEMORY_PAIRS", "WHACK_A_MOLE", "DODGE_RUNNER", "ROULETTE_SPIN", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
 };
 
 function ensureGamingCenterUxStyles() {
@@ -30271,6 +30271,7 @@ function updateTriviaQuestionVisibility() {
 
 function activationTypeLabel(type) {
   return {
+    QORI_CHASE: "Policías y Ladrones",
     QORI_SUMMIT: "Cumbre Qori",
     TRIVIA: "Trivia",
     TRIVIA_QUIZ: "Trivia",
@@ -30335,6 +30336,7 @@ function interactiveTypeForLegacyType(type) {
 
 function interactiveCategoryForType(type) {
   return {
+    QORI_CHASE: "minigame",
     QORI_SUMMIT: "minigame",
     TRIVIA: "commercial",
     OPEN_QUESTION: "commercial",
@@ -31102,10 +31104,16 @@ function updatePrivateInvitationScheduleFields() {
 }
 
 function isMinigameActivation(type) {
-  return ["QORI_SUMMIT", "SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "ROULETTE_SPIN", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"].includes(type);
+  return ["QORI_CHASE", "QORI_SUMMIT", "SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "ROULETTE_SPIN", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"].includes(type);
 }
 
 const MINIGAME_SPECIFIC_CONFIG = {
+  QORI_CHASE: {
+    title: 'Policías y Ladrones · Barrio del Farol',
+    summary: 'Salas de 2 a 8 personas. Policías con gorra; ladrones con antifaz. Cada persona conserva su color.',
+    help: 'Captura y rescate por contacto. Ganan los policías si todos están presos a la vez; si queda uno libre al terminar, gana todo el equipo de ladrones. El beneficio configurado corresponde a los ganadores de la primera ronda, sujeto a disponibilidad. Las revanchas no generan beneficios adicionales.',
+    fields: [{ key: 'duration_seconds', label: 'Duración de persecución (segundos)', type: 'number', min: 45, max: 300, value: 180 }],
+  },
   QORI_SUMMIT: {
     title: "Cumbre Qori · premio fijo en la cima",
     summary: "Ascenso retro individual o carrera familiar de 2 a 8 personas desde el mismo QR. El premio del bloque Beneficio aparece en la cima.",
@@ -31290,6 +31298,7 @@ const MINIGAME_SPECIFIC_CONFIG = {
 
 function minigameInstructionForType(type) {
   return {
+    QORI_CHASE: "Persigue, escapa y rescata por contacto. Todo el equipo gana junto.",
     QORI_SUMMIT: "Salta entre plataformas, usa el martillo y llega al cofre de la cima para desbloquear el premio indicado.",
     SPACE_SHOOTER: "Arrastra el dedo a izquierda o derecha. La nave no salta al touch, se mueve lateralmente, recibe dano y dispara con cadencia controlada.",
     BREAKOUT: "Rompe tantos bloques como puedas antes de que termine el tiempo.",
@@ -31420,7 +31429,7 @@ function renderMinigameSpecificConfig(type) {
 }
 
 function syncMinigameSharedFieldLabels(type) {
-  [minigameDurationInput, minigameMinScoreInput, minigameMaxScoreInput, minigamePointsInput, minigamePenaltyInput, minigameLivesInput].forEach(input => input?.closest("label")?.classList.toggle("hidden", type === "QORI_SUMMIT"));
+  [minigameDurationInput, minigameMinScoreInput, minigameMaxScoreInput, minigamePointsInput, minigamePenaltyInput, minigameLivesInput].forEach(input => input?.closest("label")?.classList.toggle("hidden", ["QORI_SUMMIT", "QORI_CHASE"].includes(type)));
   const whackMode = type === "WHACK_A_MOLE";
   const basketMode = type === "DODGE_RUNNER";
   const setLabel = (input, label) => {
@@ -31430,7 +31439,7 @@ function syncMinigameSharedFieldLabels(type) {
   setLabel(minigamePointsInput, whackMode ? "Puntos por topo" : basketMode ? "Puntos por fruta fresca" : "Puntos por objetivo");
   setLabel(minigamePenaltyInput, whackMode ? "Penalización por hueco vacío" : basketMode ? "Puntos descontados por fruta dañada" : "Penalizacion");
   setLabel(minigameLivesInput, whackMode ? "Vidas ante trampas" : basketMode ? "Vidas ante frutas dañadas" : "Vidas del juego");
-  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode || basketMode || type === "QORI_SUMMIT");
+  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode || basketMode || ["QORI_SUMMIT", "QORI_CHASE"].includes(type));
 }
 
 function minigameFieldValue(key) {
@@ -32021,6 +32030,11 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     };
   }
 
+  if (type === 'QORI_CHASE') {
+    return { ...base, category: 'minigame', reward_mode: 'fixed', score_rewards: [],
+      game_config: { ...collectMinigameSpecificConfig(type), game_type: type, min_duration_ms: 0, max_score: 1 },
+      interaction_config: { minigame: type, commercial_goal: 'team_chase' } };
+  }
   if (type === "QORI_SUMMIT") {
     return { ...base, category: "minigame", reward_mode: "fixed", score_rewards: [],
       game_config: { ...collectMinigameSpecificConfig(type), game_type: type, min_duration_ms: 0, max_score: 16 },
@@ -32353,7 +32367,7 @@ function validateTriviaLauncherForm() {
   if (isMinigameActivation(type)) {
     const specificConfig = validateMinigameSpecificConfig(type);
     if (!specificConfig) return null;
-    if (type === "QORI_SUMMIT") return specificConfig;
+    if (["QORI_SUMMIT", "QORI_CHASE"].includes(type)) return specificConfig;
     const durationSeconds = Number(minigameDurationInput?.value || 30);
     const minScore = Number(minigameMinScoreInput?.value || 100);
     const maxScore = Number(minigameMaxScoreInput?.value || 2500);

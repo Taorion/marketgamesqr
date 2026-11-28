@@ -10,6 +10,7 @@ const serviceSource = fs.readFileSync(path.join(root, "backend", "src", "service
 const { ACTIVATION_CATALOG, listActivationCatalog } = require("../backend/src/services/interactiveActivationService");
 
 const retainedApiTypes = [
+  "QORI_CHASE",
   "QORI_SUMMIT",
   "TRIVIA_QUIZ",
   "OPEN_QUESTION",
@@ -32,6 +33,7 @@ const retainedApiTypes = [
 ].sort();
 
 const retainedPortalTypes = [
+  "QORI_CHASE",
   "QORI_SUMMIT",
   "TRIVIA",
   "OPEN_QUESTION",
@@ -53,12 +55,12 @@ const retainedPortalTypes = [
   "DODGE_RUNNER",
 ].sort();
 
-test("el catálogo API publica las 19 activaciones, incluida Cumbre Qori", () => {
+test("el catálogo API publica las 20 activaciones, incluido Policías y Ladrones", () => {
   assert.deepEqual(ACTIVATION_CATALOG.map((item) => item.type).sort(), retainedApiTypes);
   assert.deepEqual(listActivationCatalog().items.map((item) => item.type).sort(), retainedApiTypes);
 });
 
-test("el selector del portal muestra las mismas 19 activaciones", () => {
+test("el selector del portal muestra las mismas 20 activaciones", () => {
   const picker = html.match(/<div class="full activation-type-picker"[\s\S]*?<input id="activationTypeInput"/)?.[0] || "";
   const types = Array.from(picker.matchAll(/data-activation-type="([A-Z_]+)"/g), (match) => match[1]).sort();
   assert.deepEqual(types, retainedPortalTypes);

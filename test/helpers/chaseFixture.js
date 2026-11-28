@@ -1,0 +1,11 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+function guard(){const u=new URL(process.env.DATABASE_URL);if(u.hostname!=='127.0.0.1'||u.port!=='55447'||!['/qori_chase_qa','/qori_chase_browser_qa'].includes(u.pathname))throw Error('Chase fixtures require their isolated local QA database.');}
+async function schema(query){guard();
+  await query(`create table if not exists interactive_activations(id uuid primary key,company_id uuid,public_slug text unique,activation_type text,status text,starts_at timestamptz,ends_at timestamptz,game_config jsonb,reward_mode text default 'fixed',reward_config jsonb);
+    create table if not exists interactive_activation_participants(id uuid primary key,activation_id uuid references interactive_activations(id),game_session_token text,status text default 'started',completed_at timestamptz,game_session_started_at timestamptz default now(),game_session_completed_at timestamptz,metadata jsonb default '{}');
+    create table if not exists customer_activation_participations(customer_id uuid,participant_id uuid,activation_id uuid,result jsonb)`);
+  await query(fs.readFileSync(path.join(__dirname,'../../database/migrations/20261128144900_qori_chase_rooms.sql'),'utf8').replaceAll('create table ','create table if not exists ').replaceAll('create index ','create index if not exists '));
+}
+async function activation(query,slug='barrio'){guard();const id=crypto.randomUUID();await query("insert into interactive_activations(id,company_id,public_slug,activation_type,status,game_config,reward_config) values($1,$2,$3,'QORI_CHASE','active',$4,'{}') on conflict(public_slug) do update set status='active' returning id",[id,crypto.randomUUID(),slug,{duration_seconds:180}]);return (await query('select id from interactive_activations where public_slug=$1',[slug])).rows[0].id;}
+async function player(query,a,alias='Luna'){guard();const p={participant_id:crypto.randomUUID(),game_session_token:crypto.randomUUID(),alias};await query('insert into interactive_activation_participants(id,activation_id,game_session_token) values($1,$2,$3)',[p.participant_id,a,p.game_session_token]);return p;}
+module.exports={guard,schema,activation,player};
