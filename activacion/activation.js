@@ -419,7 +419,8 @@ function isPremium(activation) {
 function renderActivation(activation) {
   currentActivation = activation;
   document.getElementById('summitSessionControls').hidden = activation.activation_type !== 'QORI_SUMMIT' || !activation.active;
-  card.parentElement.classList.toggle('has-summit-session', activation.activation_type === 'QORI_SUMMIT' && activation.active);
+  document.getElementById('chaseSessionControls').hidden = activation.activation_type !== 'QORI_CHASE' || !activation.active;
+  card.parentElement.classList.toggle('has-summit-session', ['QORI_SUMMIT', 'QORI_CHASE'].includes(activation.activation_type) && activation.active);
   const business = activation.business || {};
   const businessLabel = business.name || "Qori RMS";
   const logoUrl = String(business.logo_url || "").trim();
@@ -511,6 +512,9 @@ async function loadActivation() {
     if (currentActivation.activation_type === 'QORI_SUMMIT' && activationCollectsParticipantData()) {
       await resumeSummitSession().catch(error => setStatus(error.message, 'error'));
     }
+    if (currentActivation.activation_type === 'QORI_CHASE' && activationCollectsParticipantData()) {
+      await resumeChaseSession().catch(error => setStatus(error.message, 'error'));
+    }
   } catch (error) {
     activationTitle.textContent = "Activacion no disponible";
     activationDescription.textContent = "Revisa el link o solicita uno nuevo al negocio.";
@@ -600,8 +604,30 @@ async function resumeSummitSession() {
   participantForm.classList.add('hidden'); renderMinigame(); return true;
 }
 
+async function resumeChaseSession() {
+  const key = 'qori-chase:' + currentActivation.public_slug;
+  let saved;
+  try { saved = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (_) {}
+  if (!saved?.participant_id || !saved?.game_session_token) return false;
+  try {
+    const restored = await summitSessionApi('/api/public/activations/' + encodeURIComponent(currentActivation.public_slug) + '/chase', {
+      method: 'POST', body: JSON.stringify({ ...saved, action: 'resume' }),
+    });
+    if (!restored.room && !restored.can_play) return false;
+    participant = { id: saved.participant_id }; gameSessionToken = saved.game_session_token;
+    participantForm.classList.add('hidden'); ticketResult.classList.add('hidden');
+    renderMinigame(); return true;
+  } catch (error) {
+    if ([400,403,404].includes(error.status)) { try { sessionStorage.removeItem(key); } catch (_) {} return false; }
+    throw error;
+  }
+}
+
 async function startGameSession({ resume = true } = {}) {
   const summit = currentActivation.activation_type === 'QORI_SUMMIT', version = summitSessionVersion;
+  const chaseRetry = currentActivation.activation_type === 'QORI_CHASE' ? document.getElementById('chaseRetrySession') : null;
+  if (chaseRetry?.disabled) return;
+  if (chaseRetry) chaseRetry.disabled = true;
   let sessionError;
   if (summit) setSummitSessionBusy(true, 'Preparando tu sesión…');
   const button = participantForm.querySelector("button[type='submit']");
@@ -610,15 +636,7 @@ async function startGameSession({ resume = true } = {}) {
     button.textContent = "Preparando...";
   }
   try {
-    if (resume && currentActivation.activation_type === 'QORI_CHASE') {
-      try {
-        const saved = JSON.parse(sessionStorage.getItem('qori-chase:' + currentActivation.public_slug) || 'null');
-        if (saved) {
-          const restored = await summitSessionApi('/api/public/activations/' + encodeURIComponent(currentActivation.public_slug) + '/chase', { method: 'POST', body: JSON.stringify({ ...saved, action: 'resume' }) });
-          if (restored.room && restored.room.status !== 'closed') { participant = { id: saved.participant_id }; gameSessionToken = saved.game_session_token; participantForm.classList.add('hidden'); renderMinigame(); return; }
-        }
-      } catch (error) { if (![403,404].includes(error.status)) throw error; }
-    }
+    if (resume && currentActivation.activation_type === 'QORI_CHASE' && await resumeChaseSession()) return true;
     if (resume && summit && await resumeSummitSession()) return;
     if (summit && version !== summitSessionVersion) return;
     const data = await (summit || currentActivation.activation_type === 'QORI_CHASE' ? summitSessionApi : api)(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
@@ -648,6 +666,7 @@ async function startGameSession({ resume = true } = {}) {
     sessionError = error.message;
     setStatus(error.message, "error");
   } finally {
+    if (chaseRetry) chaseRetry.disabled = false;
     if (summit && version !== summitSessionVersion) return;
     if (summit) setSummitSessionBusy(false, sessionError);
     if (button) {
@@ -1342,6 +1361,7 @@ function renderThermometer() {
 function renderMinigame() {
   if (currentActivation.activation_type === 'QORI_CHASE') {
     cleanupGameState(); experienceStage.classList.remove('hidden');
+    const recovery = document.getElementById('chaseSessionControls'); if (recovery) recovery.hidden = true;
     experienceTitle.textContent = 'Policías y Ladrones';
     experienceCopy.textContent = 'Una persecución por equipos en el Barrio del Farol. De 2 a 8 personas.';
     const session = { participant_id: participant.id, game_session_token: gameSessionToken };
@@ -1349,7 +1369,11 @@ function renderMinigame() {
     const mounted = QoriChase.mount(experienceBody, {
       request: (body, { signal } = {}) => api('/api/public/activations/' + encodeURIComponent(currentActivation.public_slug) + '/chase', { method: 'POST', signal, body: JSON.stringify({ ...body, ...session }) }),
       onResult: data => renderResult(data),
-      onExit: () => { try { sessionStorage.removeItem('qori-chase:' + currentActivation.public_slug); } catch (_) {} const url = new URL(location.href); url.searchParams.delete('room'); location.href = url.href; },
+      onExit: () => {
+        const url = new URL(location.href); url.searchParams.delete('room'); history.replaceState(null, '', url.href);
+        ticketResult.classList.add('hidden'); setProgress(0, 1);
+        setStatus('Elige Crear sala o introduce un código para unirte. Tu resultado anterior se conserva; no se generan beneficios adicionales.', 'info');
+      },
     });
     gameState = { cleanupFns: [() => mounted.destroy()] }; return;
   }
@@ -4361,4 +4385,8 @@ async function downloadDataUrl(filename, dataUrl) {
 
 participantForm.addEventListener("submit", handleParticipantSubmit);
 document.getElementById('summitNewSession').addEventListener('click', restartSummitSession);
+document.getElementById('chaseRetrySession').addEventListener('click', () => {
+  if (activationCollectsParticipantData()) resumeChaseSession().catch(error => setStatus(error.message, 'error'));
+  else startGameSession();
+});
 loadActivation();

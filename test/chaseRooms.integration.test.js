@@ -53,3 +53,44 @@ test('canonical completion boundary is idempotent and private to participant, ev
  const results=await Promise.all([service.claim('barrio',p,{complete}),service.claim('barrio',p,{complete})]);assert.equal(calls,1);assert.equal(results[0].credit_account,undefined);assert.equal(JSON.stringify(await call(q,'state')).includes('/private'),false);
  await call(p,'restart',{round_id:(await call(p,'state')).room.round_id});await service.claim('barrio',p,{complete});assert.equal(calls,1);
 });
+
+test('reopening an expired lobby detaches membership and allows a new room with the same session',async()=>{
+ const {players:[p,q],room}=await pair();await mutate(room.id,s=>{s.expires=Date.now()-100;});
+ const resumed=await call(p,'resume');assert.equal(resumed.room,null);assert.equal(resumed.can_play,true);
+ const newer=(await call(p,'create')).room;assert.notEqual(newer.id,room.id);
+ assert.equal((await call(q,'resume')).room,null);
+ assert.equal((await call(q,'join',{code:newer.code})).room.id,newer.id);
+ assert.equal((await call(p,'start')).room.status,'countdown');
+});
+
+test('leaving a running room releases its membership, ignores stale round for exit and rejects the old socket',async()=>{
+ const {players:[p,q],room}=await pair();await call(p,'start');
+ await call(q,'leave',{round_id:crypto.randomUUID()});
+ assert.equal((await call(q,'resume')).room,null);
+ await assert.rejects(service.streamAction({sub:q.participant_id,room:room.id,activation:a},{type:'heartbeat'}),/terminada/);
+ const newer=(await call(q,'create')).room;assert.notEqual(newer.id,room.id);
+ await call(q,'leave',{room_id:room.id});assert.equal((await call(q,'resume')).room.id,newer.id);
+ const old=(await call(p,'state')).room;assert.equal(old.players.find(x=>x.id===q.participant_id).abandoned,true);
+ await call(p,'leave');assert.equal((await query('select status from qori_chase_rooms where id=$1',[room.id])).rows[0].status,'closed');
+ await call(q,'leave');await call(q,'leave');assert.equal((await query('select count(*)::int n from qori_chase_members')).rows[0].n,0);
+});
+
+test('finished and rewarded participants can change rooms without replacing the first immutable result',async()=>{
+ const {players:[p,q],room}=await pair();await call(p,'start');await mutate(room.id,s=>C.finish(s,'thief','time',Date.now()));await service.tick(room.id);
+ await query("update interactive_activation_participants set status='rewarded',completed_at=now() where id=$1",[p.participant_id]);
+ const first=(await query('select round_id from qori_chase_results where participant_id=$1',[p.participant_id])).rows[0].round_id;
+ await call(p,'leave');await call(q,'leave');const newer=(await call(p,'create')).room;
+ await call(q,'join',{code:newer.code});await call(p,'start');await mutate(newer.id,s=>C.finish(s,'police','all_captured',Date.now()));await service.tick(newer.id);
+ assert.equal((await query('select round_id from qori_chase_results where participant_id=$1',[p.participant_id])).rows[0].round_id,first);
+ const saved=(await query('select state from qori_chase_rounds where id=$1',[first])).rows[0].state;assert.equal(saved.players.length,2);assert.equal(saved.winner,'thief');
+ await query("update interactive_activation_participants set status='disqualified' where id=$1",[p.participant_id]);await call(p,'leave');await assert.rejects(call(p,'create'),/no puede/);
+});
+
+test('a returning abandoned host can prepare and start a rematch after everybody disconnected',async()=>{
+ const {players:[p,q],room}=await pair();await call(p,'start');
+ await mutate(room.id,s=>{s.players.forEach(x=>{x.abandoned=true;x.seen=Date.now()-60000;});C.finish(s,'police','all_captured',Date.now());});await service.tick(room.id);
+ const restored=(await call(p,'resume')).room;const lobby=(await call(p,'restart',{round_id:restored.round_id})).room;
+ assert.equal(lobby.players.length,1);assert.equal(lobby.players[0].id,p.participant_id);assert.equal(lobby.players[0].abandoned,false);
+ assert.equal((await call(q,'resume')).room,null);await call(q,'join',{code:room.code});
+ const next=(await call(p,'start',{round_id:restored.round_id})).room;assert.equal(next.players.length,2);assert.notEqual(next.round_id,restored.round_id);
+});

@@ -20,6 +20,14 @@ test('real canonical completion awards the whole winning team once, including pr
  assert.equal((await query('select count(*)::int n from interactive_activation_rewards where activation_id=$1',[a.id])).rows[0].n,2);
  await call(players[0],'restart',{round_id:row.state.round_id});await call(players[0],'start',{round_id:row.state.round_id});await service.claim(a.public_slug,players[0]);await service.claim(a.public_slug,players[2]);
  assert.equal((await query('select qr_balance from business_qr_credit_accounts where business_id=$1',[b.id])).rows[0].qr_balance,3);
+ // Reopening after exit must not create a new commercial participation or another prize.
+ for(const p of players)await call(p,'leave');
+ const reopened=(await call(players[0],'create')).room;assert.notEqual(reopened.id,room.id);
+ for(const p of players.slice(1))await call(p,'join',{code:reopened.code});await call(players[0],'start');
+ const again=(await query('select state from qori_chase_rooms where id=$1',[reopened.id])).rows[0];C.finish(again.state,'police','all_captured',Date.now());await query('update qori_chase_rooms set state=$2 where id=$1',[reopened.id,again.state]);await service.tick(reopened.id);
+ const oldResults=await Promise.all(players.map(p=>service.claim(a.public_slug,p)));
+ assert.equal(oldResults[0].qr_code.id,result[0].qr_code.id);assert.equal(oldResults[1].rewarded,false);
+ assert.equal((await query('select qr_balance from business_qr_credit_accounts where business_id=$1',[b.id])).rows[0].qr_balance,3);
  const permissions=(await query("select relname,relrowsecurity,has_table_privilege('anon',oid,'select') anon_read from pg_class where relname in ('qori_chase_rooms','qori_chase_members','qori_chase_rounds')")).rows;assert.ok(permissions.every(r=>r.relrowsecurity&&!r.anon_read));
 });
 after(()=>pool.end());

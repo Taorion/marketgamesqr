@@ -5,7 +5,7 @@ const {ticket}=require('../services/chaseLiveService');
 const schema=z.object({action:z.enum(['create','join','resume','state','ready','start','restart','input','leave','claim']),
   participant_id:z.string().uuid(),game_session_token:z.string().min(8).max(180),
   code:z.string().trim().toUpperCase().regex(/^[A-Z2-9]{6}$/).optional(),alias:z.string().trim().min(1).max(16).optional(),
-  ready:z.boolean().optional(),round_id:z.string().uuid().optional(),seq:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
+  ready:z.boolean().optional(),room_id:z.string().uuid().optional(),round_id:z.string().uuid().optional(),seq:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
   x:z.number().min(-1).max(1).optional(),y:z.number().min(-1).max(1).optional()});
 async function action(req,res,next){try{
   const body=validate(schema,req.body);

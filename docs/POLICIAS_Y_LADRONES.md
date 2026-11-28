@@ -69,10 +69,14 @@ Tampoco se ha evaluado diversión/equilibrio con personas ni carga sostenida de 
 
 ### Reproducir QA local
 
+Corrección de reapertura (28 de noviembre): la sesión se recupera también cuando ya no hay sala o esta venció, sin registrar otra participación. Al salir se libera la membresía incluso durante la persecución; el abandono queda registrado en la ronda anterior. La interfaz vuelve a Crear sala / Unirme sin recargar ni borrar el token. Los resultados y beneficios originales permanecen inmutables al cambiar de sala. Si falla la recuperación, Volver a entrar permite reintentar. Las solicitudes tienen tiempo límite y las respuestas atrasadas no pueden reabrir una sala abandonada. La revancha admite a los participantes que regresaron tras una desconexión.
+
+Se comprobó en Chrome local que recargar recupera la misma sala y personaje con conexión en vivo. `test/chaseSession.test.js`, las regresiones de salas y las de interfaz cubren específicamente reapertura, expiración, salida, nueva sala y reintento; la prueba comercial comprueba que cambiar de sala no consume otro crédito.
+
 Usar PostgreSQL local en `127.0.0.1:55447`. Crear `qori_chase_qa` y `qori_chase_browser_qa`; para `qori_chase_full_qa`, usar el esquema completo de Qori. Los fixtures rechazan cualquier URL remota. Desde este checkout:
 
 ```powershell
-node --test test/chaseRules.test.js test/chaseRooms.integration.test.js test/chaseUI.test.js test/chaseAward.integration.test.js
+node --test test/chaseRules.test.js test/chaseRooms.integration.test.js test/chaseUI.test.js test/chaseSession.test.js test/chaseAward.integration.test.js
 node scripts/chase-qa-server.cjs
 ```
 
