@@ -1363,7 +1363,7 @@ function renderMinigame() {
     cleanupGameState(); experienceStage.classList.remove('hidden');
     const recovery = document.getElementById('chaseSessionControls'); if (recovery) recovery.hidden = true;
     experienceTitle.textContent = 'Policías y Ladrones';
-    experienceCopy.textContent = 'Guardias y rufianes entre callejones medievales y faroles victorianos. De 2 a 8 personas.';
+    experienceCopy.textContent = 'Guardias y rufianes en 20 mundos de fantasía. El anfitrión elige el escenario. De 2 a 8 personas.';
     const session = { participant_id: participant.id, game_session_token: gameSessionToken };
     try { sessionStorage.setItem('qori-chase:' + currentActivation.public_slug, JSON.stringify(session)); } catch (_) {}
     const mounted = QoriChase.mount(experienceBody, {

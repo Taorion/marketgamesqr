@@ -25,3 +25,8 @@
 @media(max-width:760px){.chase-heading{padding:18px}.chase-heading h2{font-size:30px}.chase-hud{gap:8px}.chase-hud [data-team]{font-size:9px;padding:4px 6px}.chase-roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.chase-player{gap:3px;padding-right:6px}.chase canvas.chase-avatar{width:40px;height:48px;min-width:40px;flex-basis:40px}.chase-player b{font-size:11px}.chase-player small{font-size:8px}.chase-kicker{letter-spacing:1.6px}.chase-results h3{font-size:27px}}
 @media(prefers-reduced-motion:reduce){.chase button{transition:none}}
 .chase button{font-family:inherit;font-size:12px;font-weight:700;line-height:1.3}
+.chase-world-picker{border:1px solid var(--world-accent,#d8bc83);border-radius:7px;padding:12px;margin-bottom:20px;background:#101c2955;box-shadow:inset 3px 0 var(--world-accent,#d8bc83)}
+.chase-world-picker label{color:var(--world-accent,#d8bc83);font-weight:700;font-size:11px;margin:0}
+.chase-world-picker select{display:block;width:100%;min-width:0;max-width:100%;min-height:44px;padding:8px 5px;background:#26323a;color:#ffedc8;border:1px solid #899481;border-radius:4px;font:12px/1.5 system-ui,sans-serif;cursor:pointer}
+.chase-world-picker select:focus-visible{outline:2px solid var(--world-accent);outline-offset:2px}.chase-world-picker select:disabled{opacity:.8;cursor:default}
+.chase-world-picker p{font-size:11px;line-height:1.5;margin:10px 0 6px}.chase-world-picker small{display:block;font-size:10px;line-height:1.5;color:#aebbb2}

@@ -21,6 +21,15 @@ test('keyboard and touch send normalized intentions only; blur stops movement; c
 test('late snapshots cannot rewind current state; prisoner sees rescue guidance and final team result',async()=>{const f=fixture();try{await f.flush();f.$('[data-create]').click();await f.flush();const s=f.state('running');s.server_now+=1000;s.players[0].captured=true;f.push(s);assert.match(f.$('[data-instruction]').textContent,/Estás capturado/);const older=f.state('waiting');older.server_now=s.server_now-1;f.push(older);assert.match(f.$('[data-instruction]').textContent,/Estás capturado/);s.status='finished';s.winner='thief';s.reason='time';s.server_now++;f.push(s);assert.equal(f.$('[data-results]').hidden,false);assert.match(f.$('[data-winner]').textContent,/todos los ladrones/);assert.match(f.$('[data-reason]').textContent,/compañeros presos/);}finally{f.instance.destroy();f.dom.window.close();}});
 test('failure and no-result resume leave room creation reachable; destroy aborts pending request',async()=>{const f=fixture();await f.flush();assert.equal(f.$('[data-entry]').hidden,false);f.instance.destroy();assert.equal(f.w.document.querySelector('main').innerHTML,'');f.dom.window.close();});
 
+test('scenario picker previews twenty worlds, sends host choice and locks for guests and active rounds',async()=>{
+ const f=fixture();try{await f.flush();const select=f.$('[data-world]');assert.equal(select.options.length,20);
+ select.value='volcan';select.dispatchEvent(new f.w.Event('change'));assert.match(f.$('[data-world-description]').textContent,/lava/);f.$('[data-create]').click();await f.flush();assert.equal(f.requests.at(-1).scenario_id,'volcan');
+ select.value='hielo';select.dispatchEvent(new f.w.Event('change'));await f.flush();assert.equal(f.requests.at(-1).action,'scenario');assert.equal(f.requests.at(-1).room_id,'room');
+ const guest=f.state();guest.host_id='other';guest.scenario_id='bosque';guest.server_now+=1000;f.push(guest);assert.equal(select.disabled,true);assert.equal(select.value,'bosque');
+ const running={...guest,status:'running',host_id:'me',server_now:guest.server_now+1};f.push(running);assert.equal(select.disabled,true);
+ }finally{f.instance.destroy();f.dom.window.close();}
+});
+
 test('returning player sees room creation first and only requests the previous benefit explicitly',async()=>{
  const f=fixture(async body=>body.action==='resume'?{room:null,can_play:true,has_result:true}:undefined);
  try{await f.flush();assert.equal(f.$('[data-entry]').hidden,false);assert.equal(f.$('[data-saved-benefit]').hidden,false);

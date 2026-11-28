@@ -71,6 +71,43 @@ Los guardias llevan casco metálico, hombreras, insignia y capa corta; los rufia
 
 Revisión del 28 de noviembre: **101 pruebas aprobadas**, incluyendo render, ocho identidades, animaciones, movimiento reducido, cámara móvil, reglas, salas y regreso desde Customer. Se revisaron visualmente el acceso y el lobby en Chrome local, se creó una sala con conexión en vivo y se salió de ella. Se inspeccionaron estos renders del juego con ocho participantes: [escenario y prisión](qa/policias-art-v5/barrio-y-prision.png), [guardias y rufianes](qa/policias-art-v5/personajes.png), [cámara móvil](qa/policias-art-v5/camara-movil.png). Los PNG son renders del mismo código con estados de prueba, no capturas de una partida online. No se midieron FPS ni gestos en un teléfono físico en esta revisión.
 
+## Veinte escenarios elegibles
+
+Antes de crear una sala, el selector muestra una vista previa del mundo. Dentro del lobby, solo el anfitrión puede cambiarlo; los demás reciben la misma selección por el estado de sala. Elegir otro escenario reinicia la preparación y coloca a los participantes en sus puntos de aparición. Durante la cuenta regresiva y la persecución, el servidor rechaza cambios. Tras «Preparar revancha» se conserva el escenario y se puede elegir otro antes de iniciar.
+
+| Escenario | Ambientación |
+|---|---|
+| Burgo del Farol | Barrio Tudor medieval con faroles victorianos |
+| Caldera del Dragón | Cráteres y obstáculos de lava |
+| Bosque de las Luciérnagas | Arboledas, raíces y senderos |
+| Puerto de Escarcha | Glaciares, nieve y aurora |
+| Castillo de la Corona | Torres, murallas y patios |
+| Calle de la Bruma | Ladrillo y barrio inglés victoriano |
+| Muelles del Corsario | Almacenes y horizonte portuario |
+| Oasis de los Astrónomos | Arenisca y santuarios del desierto |
+| Pantano de los Susurros | Sauces, raíces y refugios |
+| Jardín de las Ánimas | Mausoleos y piedra violeta |
+| Ciudad sobre las Nubes | Torres celestes y nubes |
+| Gruta de Amatista | Cristales y geodas |
+| Distrito del Relojero | Engranajes y torres de reloj |
+| Bazar de las Mil Lunas | Puestos y calles de mercado |
+| Archivo de los Arcanos | Estanterías monumentales y pasillos |
+| Ruinas del Primer Reino | Columnas y muros antiguos |
+| Aldea del Otoño Eterno | Árboles cobrizos y hojas |
+| Canales de Medianoche | Fachadas sobre un horizonte de canales |
+| Jardines de la Reina | Invernaderos, setos y patios |
+| Santuario de la Luna | Piedra lunar y cielo nocturno |
+
+Cada mapa tiene su propia disposición física, paleta y decorado. Las colisiones, capturas, rescates, celdas y apariciones usan `mapFor(state.scenario_id)` tanto en servidor como en cliente. Lava, hielo y otros elementos conservan las reglas de persecución: no añaden daño ni poderes. El catálogo está centralizado en `policias-core.js`; el renderizador reutiliza superficies estáticas mientras no cambie el mundo. Se mantiene un único escenario en caché por cliente.
+
+La selección se guarda en el JSON existente de la sala, sin migración adicional. Las salas anteriores sin `scenario_id` conservan el Burgo del Farol. El permiso de anfitrión, la pertenencia a la sala y los identificadores de sala/ronda se validan en backend; los eventos de una revancha anterior no pueden cambiar el escenario actual.
+
+Validación local del 28 de noviembre: **125 pruebas aprobadas, cero fallos y cero omisiones**. Incluye accesibilidad de todas las zonas transitables de los 20 mapas y de la prisión, obstáculos sin superposición, colisiones, captura/rescate/recaptura y victoria; selección autorizada, aislamiento entre salas, persistencia en revancha y rechazo de cambios durante la partida; dos clientes HTTP/WebSocket independientes, controles y selector en DOM, premios, reapertura, Customer y regresiones de Cumbre. Los 20 mundos se renderizaron también a 390 px y se verificó que dibujar no modifica la simulación ni crea superficies en cada fotograma.
+
+Se observó el selector y su vista previa en Chrome local. [Lámina de los 20 escenarios](qa/policias-worlds/20-escenarios.png), [volcán](qa/policias-worlds/volcan.png), [bosque](qa/policias-worlds/bosque.png), [hielo](qa/policias-worlds/hielo.png), [castillo](qa/policias-worlds/castillo.png) y [biblioteca](qa/policias-worlds/biblioteca.png) son renders del código real con estados de prueba, no capturas de partidas online. Quedan pendientes una evaluación de equilibrio con personas en todos los mapas, gestos en móvil físico y medición de FPS en dispositivos.
+
+Para repetir la revisión: `node --test test/chaseWorlds.test.js test/chaseWorldsArt.test.js test/chaseRooms.integration.test.js test/chaseUI.test.js`. Para exportar la lámina: `node scripts/chase-worlds-proof.cjs`, usando la dependencia opcional de canvas descrita arriba.
+
 ## Migración y despliegue
 
 `database/migrations/20261128144900_qori_chase_rooms.sql` tiene copia idéntica en `supabase/migrations`. Aplicar antes de ejecutar el backend nuevo, con el mecanismo normal `npm run db:migrate`, o la migración específica y su registro en `schema_migrations`. Verificar las cuatro tablas, RLS, la versión exacta en `/api/version`, `/api/health`, el selector de Empresa y los cuatro assets `policias-*`/`policias.css`.

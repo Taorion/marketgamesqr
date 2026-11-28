@@ -7,6 +7,7 @@
       <header class="chase-heading"><div><span class="chase-kicker">QORI ORIGINAL · MULTIJUGADOR</span><h2>Policías <em>&</em> Ladrones</h2><p>Guardias y rufianes · El Burgo del Farol.</p></div><button data-exit class="chase-quiet">Salir de la sala</button></header>
       <div class="chase-hud"><strong data-clock>03:00</strong><span data-team>Elige tu apodo</span><span data-count>2–8 participantes</span><span data-connection>Conectando…</span></div>
       <div class="chase-layout"><aside class="chase-sidebar">
+        <section class="chase-world-picker" aria-label="Escenario de la sala"><label>20 mundos para perseguir<select data-world aria-label="Elegir escenario">${C.WORLDS.map(w=>`<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></label><p data-world-description></p><small data-world-note>Elige y mira el escenario antes de crear tu sala.</small></section>
         <div data-entry><h3>Reúne a tu compañía</h3><label>Tu apodo<input data-alias maxlength="16" autocomplete="nickname" placeholder="Cómo te llamamos"></label><button data-create>Crear sala</button><div class="chase-divider">o entra con un código</div><label>Código de sala<input data-code maxlength="6" placeholder="ABC234" autocomplete="off" autocapitalize="characters"></label><button data-join class="chase-secondary">Unirme</button></div>
         <div data-lobby hidden><span class="chase-kicker">COMPAÑÍA DEL BURGO</span><strong data-roomcode class="chase-code"></strong><button data-share class="chase-secondary">Copiar enlace de invitación</button><div data-roster class="chase-roster"></div><div class="chase-lobby-actions"><button data-ready class="chase-secondary">Estoy listo</button><button data-start>Iniciar partida</button></div><p data-lobby-note></p></div>
         <button data-saved-benefit class="chase-secondary" hidden>Ver mi resultado / beneficio anterior</button>
@@ -51,7 +52,7 @@
     function accept(next){
       if(dead||!next)return;
       if(state?.id===next.id&&next.server_now<state.server_now)return;
-      if(next.round_id!==round){round=next.round_id;seq=0;previous=null;lastEvent=next.event_seq||0;}
+      if(next.round_id!==round||next.scenario_id!==state?.scenario_id){round=next.round_id;seq=0;previous=null;lastEvent=next.event_seq||0;}
       else previous=state;
       state=next;received=performance.now();
       if(own())$('[data-alias]').value=own().name;
@@ -60,9 +61,15 @@
       paintUI();
     }
     function roster(players){return players.map(p=>`<div class="chase-player ${p.id===state.own_id?'is-you':''}" style="--player:${esc(p.color)}"><canvas class="chase-avatar" data-portrait="${esc(p.id)}" aria-hidden="true"></canvas><div><b>${esc(p.name)}${p.id===state.own_id?' · tú':''}</b><small>${p.team==='police'?'Guardia · policía':'Rufián · ladrón'}${p.abandoned?' · Abandonó':p.captured?' · Capturado':state.status==='waiting'?(p.ready?' · Listo':' · En sala'):' · Libre'}</small></div><i style="background:${p.connected?p.color:'#677382'}" title="${p.connected?'Conectado':'Reconectando'}"></i></div>`).join('');}
-    let rosterKey='',hasResult=false;
+    let rosterKey='',hasResult=false,previewId='burgo';
     function paintUI(){
       const has=!!state; $('[data-entry]').hidden=has;$('[data-lobby]').hidden=!has;
+      const selected=C.world(state?.scenario_id||previewId);$('[data-world]').value=selected.id;
+      $('[data-world]').disabled=mutating||has&&(state.status!=='waiting'||state.host_id!==state.own_id);
+      $('[data-world-description]').textContent=selected.description;
+      $('[data-world-note]').textContent=has?(state.status!=='waiting'?'Escenario fijado durante esta ronda.':state.host_id===state.own_id?'Tu elección se comparte con toda la sala.':'El anfitrión elige el escenario.'):'Elige y mira el escenario antes de crear tu sala.';
+      el.style.setProperty('--world-accent',selected.accent);
+      $('.chase-heading p').textContent='Guardias y rufianes · '+selected.name;
       if(state?.status==='finished')hasResult=true;
       $('[data-saved-benefit]').hidden=!hasResult||has&&state.status!=='waiting';
       $('[data-exit]').hidden=!has;
@@ -87,14 +94,15 @@
     }
     async function action(name,extra={}){
       if(mutating||dead)return;mutating=true;unlock();message('');
-      try{const data=await abortable({action:name,room_id:name==='leave'?state?.id:undefined,round_id:state?.round_id||undefined,...extra});if(dead)return;
+      try{const data=await abortable({action:name,room_id:['leave','scenario'].includes(name)?state?.id:undefined,round_id:state?.round_id||undefined,...extra});if(dead)return;
         if(name==='resume'&&data.has_result)hasResult=true;
         if(name==='claim'){await options.onResult?.(data);message(data.message);}
         else if(name==='leave'){clearRoom(true);options.onExit?.();message('Ya puedes crear una sala o unirte con otro código.');}
         else{if(data.room)accept(data.room);else if(name==='resume')clearRoom();connect(data.live);}
-      }catch(error){if(!dead)message(error.name==='AbortError'?'La conexión tardó demasiado. Puedes reintentar.':error.message);}finally{mutating=false;}
+      }catch(error){if(!dead)message(error.name==='AbortError'?'La conexión tardó demasiado. Puedes reintentar.':error.message);}finally{mutating=false;if(!dead)paintUI();}
     }
-    $('[data-create]').onclick=()=>action('create',{alias:$('[data-alias]').value});
+    $('[data-create]').onclick=()=>action('create',{alias:$('[data-alias]').value,scenario_id:previewId});
+    $('[data-world]').onchange=()=>{const id=$('[data-world]').value;if(state){action('scenario',{scenario_id:id});}else{previewId=id;paintUI();}};
     $('[data-join]').onclick=()=>action('join',{alias:$('[data-alias]').value,code:$('[data-code]').value.trim().toUpperCase()});
     $('[data-start]').onclick=()=>action('start');$('[data-ready]').onclick=()=>action('ready',{ready:!own()?.ready});
     $('[data-restart]').onclick=()=>action('restart');$('[data-benefit]').onclick=()=>action('claim');
@@ -136,7 +144,7 @@
         if(state.status==='countdown'&&now<state.starts){const n=Math.ceil((state.starts-now)/1000);$('[data-overlay]').hidden=false;$('[data-overlay]').textContent=n;if(n!==lastCountdown){lastCountdown=n;sound('countdown');}}
         else if(state.status!=='closed')$('[data-overlay]').hidden=true;
       }
-      let render=state;
+      let render=state||{scenario_id:previewId,players:[]};
       if(state){const t=Math.min(1,(performance.now()-received)/100);render={...state,server_now:now,players:state.players.map(p=>{const before=previous?.players.find(q=>q.id===p.id);if(!before||p.captured!==before.captured||Math.hypot(p.x-before.x,p.y-before.y)>2)return p;return {...p,x:before.x+(p.x-before.x)*t,y:before.y+(p.y-before.y)*t};})};}
       view.draw(render,state?.own_id,time,overview);raf=requestAnimationFrame(frame);
     }

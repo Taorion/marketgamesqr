@@ -6,6 +6,21 @@ test.before(async()=>f.schema(query));test.beforeEach(async()=>{f.guard();await 
 const player=(alias)=>f.player(query,a,alias),call=(p,action,extra={})=>service.act('barrio',{...p,action,...extra});
 async function pair(n=2){const players=[await player('Luna')];let room=(await call(players[0],'create')).room;for(let i=1;i<n;i++){players.push(await player('Sol '+i));room=(await call(players[i],'join',{code:room.code})).room;}return {players,room};}
 async function mutate(id,fn){const row=(await query('select state from qori_chase_rooms where id=$1',[id])).rows[0];fn(row.state);await query('update qori_chase_rooms set state=$2 where id=$1',[id,row.state]);}
+
+test('host scenario choice persists across reconnect/rematch, isolates rooms and rejects active or stale changes',async()=>{
+ const {players:[p,q],room}=await pair(),other=await pair();
+ await assert.rejects(call(q,'scenario',{room_id:room.id,scenario_id:'hielo'}),/anfitrión/);
+ await assert.rejects(call(p,'scenario',{room_id:room.id,scenario_id:'inventado'}),/Escenario/);
+ await assert.rejects(call(p,'scenario',{room_id:other.room.id,scenario_id:'bosque'}),/sala cambió/);
+ await call(q,'ready',{ready:true});
+ for(const w of C.WORLDS){const s=(await call(p,'scenario',{room_id:room.id,scenario_id:w.id})).room;assert.equal(s.scenario_id,w.id);assert.equal(s.players[1].ready,false);assert.equal((await call(q,'resume')).room.scenario_id,w.id);}
+ assert.equal((await call(other.players[0],'resume')).room.scenario_id,'burgo');
+ const s=(await call(p,'start')).room;assert.equal(s.scenario_id,'luna');
+ await assert.rejects(call(p,'scenario',{room_id:room.id,round_id:s.round_id,scenario_id:'volcan'}),/anfitrión/);
+ await mutate(room.id,s=>C.finish(s,'thief','time',Date.now()));const rematch=(await call(p,'restart',{round_id:s.round_id})).room;assert.equal(rematch.scenario_id,'luna');
+ const changed=(await call(p,'scenario',{room_id:room.id,round_id:s.round_id,scenario_id:'volcan'})).room;assert.equal(changed.scenario_id,'volcan');
+ await call(p,'start',{round_id:s.round_id});await assert.rejects(call(p,'scenario',{room_id:room.id,round_id:s.round_id,scenario_id:'hielo'}),/ronda cambió/);
+});
 test('concurrent joins enforce eight slots, unique colors, no duplicate rooms and backend start minimum',async()=>{
  const host=await player(),created=await Promise.allSettled([call(host,'create'),call(host,'create')]);assert.ok(created.some(r=>r.status==='fulfilled'));
  const room=(await call(host,'resume')).room;assert.equal((await query('select count(*)::int n from qori_chase_rooms')).rows[0].n,1);await assert.rejects(call(host,'start'),/2 y 8/);
@@ -41,9 +56,11 @@ test('two independent HTTP + WebSocket clients share authoritative movement and 
   const created=await post(p,'create'),joined=await post(q,'join',{code:created.room.code});
   function socket(live){return new Promise((resolve,reject)=>{const ws=new WebSocket(origin.replace('http','ws')+live.path,{origin});sockets.push(ws);ws.on('open',()=>ws.send(JSON.stringify({type:'auth',token:live.token})));ws.on('error',reject);ws.once('message',()=>resolve(ws));});}
   const w1=await socket(created.live),w2=await socket(joined.live);const latest=new Map();for(const [i,ws]of [w1,w2].entries())ws.on('message',raw=>{latest.set(i,JSON.parse(raw).room);});
+  const invalid=await fetch(origin+'/api/public/activations/barrio/chase',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...p,action:'scenario',room_id:created.room.id,scenario_id:'forged'})});assert.equal(invalid.status,400);
+  const chosen=await post(p,'scenario',{room_id:created.room.id,scenario_id:'hielo'});assert.equal(chosen.room.scenario_id,'hielo');
   const start=await post(p,'start');await mutate(start.room.id,s=>{s.starts=Date.now()-20;s.updated=Date.now()-20;s.status='running';});
   const initial=(await post(p,'state')).room.players.find(x=>x.id===p.participant_id);w1.send(JSON.stringify({type:'input',round_id:start.room.round_id,seq:0,x:0,y:-1}));
-  await new Promise(r=>setTimeout(r,350));assert.ok(latest.get(1).players.find(x=>x.id===p.participant_id).y<initial.y);assert.equal(latest.get(0).round_id,latest.get(1).round_id);
+  await new Promise(r=>setTimeout(r,350));assert.ok(latest.get(1).players.find(x=>x.id===p.participant_id).y<initial.y);assert.equal(latest.get(0).round_id,latest.get(1).round_id);assert.equal(latest.get(1).scenario_id,'hielo');
   const closed=new Promise(r=>w1.once('close',code=>r(code)));await socket(created.live);assert.equal(await closed,4001);
  }finally{for(const ws of sockets)ws.terminate();stop();await new Promise(r=>server.close(r));}
 });
