@@ -53,7 +53,7 @@
       r(-2,-60-bob,4,4,'#cfa85d');r(-1,-62-bob,2,3,'#ffe2a0');
       r(-12,-31-bob,7,4,'#9daea6');r(6,-31-bob,7,4,'#667e82');r(-11,-31-bob,5,1,'#ddd5af');
       if(!back){poly(c,[{x:3,y:-28-bob},{x:8,y:-28-bob},{x:8,y:-23-bob},{x:5,y:-21-bob},{x:3,y:-23-bob}],'#e8c879',INK);r(5,-27-bob,1,4,'#6b5b5c');}
-    }else{
+    }else if(p.team==='thief'){
       // Crooked felt hood and scarf evoke a street rogue; the mask stays readable.
       poly(c,[{x:-10,y:-46-bob},{x:-7,y:-53-bob},{x:3,y:-57-bob},{x:11,y:-53-bob},{x:8,y:-48-bob}],shade,INK);
       r(-6,-51-bob,12,2,base);r(-9,-47-bob,19,2,'#5d4543');r(4,-53-bob,4,1,light);

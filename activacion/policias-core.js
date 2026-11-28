@@ -20,9 +20,9 @@
       {x:24.7,y:16,w:.3,h:5,hz:34,kind:'bars'},
       {x:20,y:16,w:1.2,h:.3,hz:34,kind:'bars'}, {x:23.8,y:16,w:1.2,h:.3,hz:34,kind:'bars'}],
     prison: {x:20,y:16,w:5,h:5},
-    cells: [{x:21.2,y:18},{x:23.5,y:18},{x:21.2,y:19.8},{x:23.5,y:19.8}],
-    police: [{x:2,y:3},{x:2,y:5},{x:2,y:7},{x:2,y:9}],
-    thieves: [{x:23,y:8},{x:24,y:10},{x:23,y:12},{x:24,y:14}]
+    cells: [{x:21.2,y:18},{x:23.5,y:18},{x:21.2,y:19.8},{x:23.5,y:19.8},{x:22.35,y:17.2},{x:22.35,y:18.5},{x:22.35,y:20}],
+    police: [{x:2,y:3},{x:2,y:5},{x:2,y:7},{x:2,y:9},{x:1,y:11},{x:1,y:13},{x:1,y:15}],
+    thieves: [{x:23,y:8},{x:24,y:10},{x:23,y:12},{x:24,y:14},{x:24.2,y:6},{x:24.2,y:8},{x:24.2,y:12}]
   };
   // A room stores only a catalog ID. Geometry is shared verbatim by server and renderer.
   const WORLDS = [
@@ -110,8 +110,16 @@
   // Screen directions -> world directions, with equal diagonal and axial speed.
   function screenInput(x,y) { const a=x+y,b=y-x,n=Math.max(1,Math.hypot(a,b)); return {x:a/n,y:b/n}; }
   function balance(players) { players.forEach((p,i)=>{p.team=i%2===0?'thief':'police';}); }
+  const capacity=s=>Number.isInteger(s.player_limit)&&s.player_limit>=2&&s.player_limit<=8?s.player_limit:8;
+  function canChoose(s,p,team){return ['police','thief'].includes(team)&&s.players.filter(q=>q.id!==p.id&&q.team===team).length<capacity(s)-1;}
+  function forceTeams(s){
+    if(!s.team_selection)return;
+    for(const team of ['police','thief'])if(s.players.filter(p=>p.team===team).length===capacity(s)-1)
+      for(const p of s.players.filter(p=>!p.team)){p.team=team==='police'?'thief':'police';p.team_forced=true;}
+  }
+  function teamsReady(s){return s.players.length===capacity(s)&&s.players.every(p=>['police','thief'].includes(p.team))&&['police','thief'].every(t=>s.players.some(p=>p.team===t));}
   function lobby(now) {return {version:VERSION,scenario_id:'burgo',status:'waiting',round_id:null,round:0,players:[],events:[],event_seq:0,updated:now,expires:now+CONFIG.lobby_ms};}
-  function place(s){const map=mapFor(s.scenario_id);let pi=0,ti=0;for(const p of s.players)Object.assign(p,p.team==='police'?map.police[pi++]:map.thieves[ti++]);}
+  function place(s){const map=mapFor(s.scenario_id);let pi=0,ti=0,ui=0;for(const p of s.players)Object.assign(p,p.team==='police'?map.police[pi++]:p.team==='thief'?map.thieves[ti++]:{x:25.5,y:2+ui++*1.5});}
   function event(s,type,p,actor,now) {s.events.push({id:++s.event_seq,type,player:p?.id,actor:actor?.id,x:p?.x,y:p?.y,at:now,round_id:s.round_id});s.events=s.events.slice(-24);}
   function start(s,now,roundId,config) {
     s.config=normalize(config);s.round++;s.round_id=roundId;s.status='countdown';s.starts=now+s.config.countdown_ms;
@@ -173,5 +181,5 @@
     if(!Number.isSafeInteger(body.seq)||body.seq<=p.seq||!Number.isFinite(body.x)||!Number.isFinite(body.y)||Math.abs(body.x)>1||Math.abs(body.y)>1)return false;
     p.seq=body.seq;p.input={x:body.x,y:body.y,until:now+CONFIG.input_lease_ms};return true;
   }
-  return {VERSION,COLORS,CONFIG,MAP,WORLDS,world,mapFor,place,normalize,blocked,clearLine,touching,move,screenInput,balance,lobby,start,finish,capture,contacts,advance,input};
+  return {VERSION,COLORS,CONFIG,MAP,WORLDS,world,mapFor,place,capacity,canChoose,forceTeams,teamsReady,normalize,blocked,clearLine,touching,move,screenInput,balance,lobby,start,finish,capture,contacts,advance,input};
 });

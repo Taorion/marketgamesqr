@@ -2,7 +2,8 @@ const {z}=require('zod');
 const {validate}=require('../utils/validators');
 const service=require('../services/chaseService');
 const {ticket}=require('../services/chaseLiveService');
-const schema=z.object({action:z.enum(['create','join','resume','state','ready','start','restart','input','leave','claim','scenario']),
+const schema=z.object({action:z.enum(['create','join','resume','state','ready','start','restart','input','leave','claim','scenario','capacity','team']),
+  player_limit:z.number().int().min(2).max(8).optional(),team:z.enum(['police','thief']).optional(),
   scenario_id:z.enum(require('../../../activacion/policias-core').WORLDS.map(w=>w.id)).optional(),
   participant_id:z.string().uuid(),game_session_token:z.string().min(8).max(180),
   code:z.string().trim().toUpperCase().regex(/^[A-Z2-9]{6}$/).optional(),alias:z.string().trim().min(1).max(16).optional(),

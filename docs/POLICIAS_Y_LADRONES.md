@@ -6,8 +6,8 @@ Activación propia `QORI_CHASE`, incorporada a Empresa → Activaciones → Jueg
 
 1. En Empresa, crear una activación **Policías y Ladrones**. Configurar el beneficio, disponibilidad y captura de datos como en las demás activaciones. La duración inicial es **180 segundos**, configurable entre 45 y 300.
 2. Compartir su enlace o QR. Cada persona abre la misma activación desde su propia sesión/dispositivo.
-3. Elegir apodo. Una persona crea sala y comparte su código de seis caracteres o enlace de invitación; las demás se unen. Admite **2–8** jugadores. Cada participante tiene un color; casco significa guardia (policía) y antifaz significa rufián (ladrón).
-4. El anfitrión inicia con al menos dos conectados. Igual que en Cumbre, el indicador «Listo» es informativo. Los equipos se equilibran automáticamente; el jugador impar es ladrón. Hay tres segundos de preparación.
+3. El anfitrión elige primero la cantidad de jugadores (**2–8**) y el escenario. Escribe su apodo, crea sala y comparte su código de seis caracteres o enlace de invitación; las demás personas se unen. Cada participante tiene un color; casco significa guarda (policía) y antifaz significa rufián (ladrón).
+4. Cada persona elige «Ser guarda» o «Ser ladrón» mientras haya cupo. Cada equipo admite hasta N−1 personas, reservando siempre un lugar al otro. Si dos de una sala de tres eligen ladrón, el restante recibe guarda automáticamente. El anfitrión inicia al completar la cantidad elegida, con todos conectados y con equipo; puede ajustar los cupos en el lobby. Igual que en Cumbre, el indicador «Listo» es informativo. Hay tres segundos de preparación.
 5. Mover con WASD/flechas o joystick táctil. La flecha y el aro identifican al jugador propio. En móvil, la cámara sigue al personaje; «Ver mapa completo» permite observar todo el barrio.
 6. Captura y rescate son automáticos al tocar los cuerpos: el casco y las etiquetas no aumentan su alcance. El ladrón capturado aparece inmóvil en una plaza de la prisión. Otro ladrón libre puede entrar por la abertura y tocarlo para liberarlo. Puede volver a ser capturado.
 7. Ganan los policías cuando todos los ladrones están presos simultáneamente. Gana **todo** el equipo de ladrones si queda uno libre al agotarse el tiempo, incluidos sus compañeros presos.
@@ -109,6 +109,16 @@ Se observó el selector y su vista previa en Chrome local. [Lámina de los 20 es
 Para repetir la revisión: `node --test test/chaseWorlds.test.js test/chaseWorldsArt.test.js test/chaseRooms.integration.test.js test/chaseUI.test.js`. Para exportar la lámina: `node scripts/chase-worlds-proof.cjs`, usando la dependencia opcional de canvas descrita arriba.
 
 ## Migración y despliegue
+
+### Selección de equipos y cantidad de jugadores
+
+Las salas creadas desde el cliente actual guardan `player_limit` y `team_selection` en su estado JSON. Los participantes entran sin equipo y pueden elegirlo en el lobby. Cuando un equipo alcanza N−1, el servidor asigna automáticamente el otro a cualquier participante todavía sin equipo, incluido quien entre después. No se redistribuyen elecciones al incorporar o retirar jugadores. Los botones muestran el equipo seleccionado, los cupos agotados y la razón de una asignación automática.
+
+Las acciones `capacity` (solo anfitrión) y `team` (solo la propia identidad autenticada) exigen sala actual, ronda vigente y lobby abierto. Se serializan con el bloqueo de fila existente: dos elecciones simultáneas no ocupan el mismo último cupo. Reducir la cantidad no expulsa personas ni borra elecciones: se rechaza si hay más participantes o si deja todo un equipo sin cupo. Salir libera el puesto; reconectar y preparar revancha conservan identidad, color, equipo y cantidad. Tras retirar desconectados de la revancha, el anfitrión puede reducir la cantidad o esperar reemplazos.
+
+Hay siete apariciones distintas por equipo y siete posiciones de prisión en cada uno de los 20 mapas. Se admiten combinaciones 1/7 y 7/1, sin limitarse al reparto equilibrado. Los cuerpos de los presos siguen sin bloquear los rescates. Las salas y clientes anteriores sin una cantidad explícita mantienen el reparto automático anterior; elegir cantidad o equipo desde el nuevo lobby los incorpora a la selección manual. No se altera una partida en curso ni se requiere migración.
+
+Verificación: **131 pruebas aprobadas, cero fallos y cero omisiones**, incluyendo tamaños 2–8, ambos equipos mayoritarios, elección concurrente por ocho sesiones, cupos, permisos, entradas, salidas, reconexión, revancha, eventos atrasados, bloqueo durante juego, posiciones y captura de siete ladrones en los 20 mapas. La prueba HTTP/WebSocket usa dos clientes independientes y comprueba cantidad, asignación forzada y movimiento sincronizado; las pruebas DOM comprueban los controles. La revisión visual interactiva de esta actualización quedó pendiente: Computer Use se detuvo al no poder identificar con certeza la URL actual de Chrome. No se presenta la prueba DOM como una comprobación visual en móvil.
 
 `database/migrations/20261128144900_qori_chase_rooms.sql` tiene copia idéntica en `supabase/migrations`. Aplicar antes de ejecutar el backend nuevo, con el mecanismo normal `npm run db:migrate`, o la migración específica y su registro en `schema_migrations`. Verificar las cuatro tablas, RLS, la versión exacta en `/api/version`, `/api/health`, el selector de Empresa y los cuatro assets `policias-*`/`policias.css`.
 

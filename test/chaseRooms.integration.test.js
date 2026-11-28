@@ -7,6 +7,57 @@ const player=(alias)=>f.player(query,a,alias),call=(p,action,extra={})=>service.
 async function pair(n=2){const players=[await player('Luna')];let room=(await call(players[0],'create')).room;for(let i=1;i<n;i++){players.push(await player('Sol '+i));room=(await call(players[i],'join',{code:room.code})).room;}return {players,room};}
 async function mutate(id,fn){const row=(await query('select state from qori_chase_rooms where id=$1',[id])).rows[0];fn(row.state);await query('update qori_chase_rooms set state=$2 where id=$1',[id,row.state]);}
 
+test('three seats: first two thieves force the last guard; teams persist through reconnect and rematch',async()=>{
+ const p=await player('Uno'),q=await player('Dos'),r=await player('Tres');
+ const room=(await call(p,'create',{player_limit:3})).room,extra={room_id:room.id};
+ assert.equal(room.players[0].team,null);await assert.rejects(call(p,'start'),/2 y 8/);
+ await call(p,'team',{...extra,team:'thief'});await call(q,'join',{code:room.code});await call(q,'team',{...extra,team:'thief'});
+ await assert.rejects(call(p,'start'),/Completa los 3/);
+ const full=(await call(r,'join',{code:room.code})).room,forced=full.players.find(x=>x.id===r.participant_id);
+ assert.equal(forced.team,'police');assert.equal(forced.team_forced,true);
+ await assert.rejects(call(r,'team',{...extra,team:'thief'}),/no tiene cupo/);
+ await assert.rejects(call(await player(),'join',{code:room.code}),/3 jugadores/);
+ const identity=full.players.map(x=>[x.id,x.team,x.color]);assert.deepEqual((await call(r,'resume')).room.players.map(x=>[x.id,x.team,x.color]),identity);
+ const started=(await call(p,'start')).room;assert.deepEqual(started.players.map(x=>[x.id,x.team,x.color]),identity);
+ for(const action of ['team','capacity'])await assert.rejects(call(p,action,{...extra,round_id:started.round_id,team:'police',player_limit:4}),/antes de iniciar/);
+ await mutate(room.id,s=>C.finish(s,'thief','time',Date.now()));await service.tick(room.id);
+ const rematch=(await call(p,'restart',{round_id:started.round_id})).room;
+ assert.equal(rematch.player_limit,3);assert.deepEqual(rematch.players.map(x=>[x.id,x.team,x.color]),identity);
+ const next=(await call(p,'start',{round_id:started.round_id})).room;
+ await assert.rejects(call(p,'team',{...extra,round_id:started.round_id,team:'police'}),/ronda cambió/);assert.notEqual(next.round_id,started.round_id);
+});
+
+test('concurrent choices reserve one opposite team, capacity is host-only and departures free seats',async()=>{
+ const people=await Promise.all(Array.from({length:8},(_,i)=>player('P'+i)));
+ const room=(await call(people[0],'create',{player_limit:8})).room,extra={room_id:room.id};
+ await Promise.all(people.slice(1).map(p=>call(p,'join',{code:room.code})));
+ const picks=await Promise.allSettled(people.map(p=>call(p,'team',{...extra,team:'police'})));
+ assert.equal(picks.filter(x=>x.status==='fulfilled').length,7);assert.match(picks.find(x=>x.status==='rejected').reason.message,/no tiene cupo/);
+ const full=(await call(people[0],'state')).room;assert.equal(full.players.filter(p=>p.team==='police').length,7);assert.equal(full.players.filter(p=>p.team==='thief').length,1);
+ await assert.rejects(call(people[1],'capacity',{...extra,player_limit:8}),/anfitrión/);
+ await assert.rejects(call(people[0],'capacity',{...extra,player_limit:7}),/menos cupos/);
+ const guard=full.players.find(p=>p.team==='police'&&p.id!==people[0].participant_id),leaving=people.find(p=>p.participant_id===guard.id);
+ await call(leaving,'leave');const smaller=(await call(people[0],'capacity',{...extra,player_limit:7})).room;assert.equal(smaller.players.filter(p=>p.team==='police').length,6);
+ const thief=people.find(p=>p.participant_id===full.players.find(q=>q.team==='thief').id);
+ await assert.rejects(call(thief,'team',{...extra,team:'police'}),/no tiene cupo/);
+ await call(people[0],'capacity',{...extra,player_limit:8});await call(thief,'team',{...extra,team:'police'});
+ const joined=(await call(leaving,'join',{code:room.code})).room;assert.equal(joined.players.find(p=>p.id===leaving.participant_id).team,'thief');
+ const other=await pair();await assert.rejects(call(people[0],'team',{room_id:other.room.id,team:'thief'}),/sala cambió/);assert.equal((await call(other.players[0],'state')).room.team_selection,undefined);
+ const start=(await call(people[0],'start')).room;assert.equal(start.players.filter(p=>p.team==='police').length,7);
+});
+
+test('team selection validates values, incomplete selection and missing opposite team after departures',async()=>{
+ const p=await player(),q=await player(),r=await player();
+ for(const n of [1,9,2.5,'3'])await assert.rejects(call(p,'create',{player_limit:n}),/2 y 8/);
+ const room=(await call(p,'create',{player_limit:3})).room,extra={room_id:room.id};
+ await call(q,'join',{code:room.code});await call(r,'join',{code:room.code});await assert.rejects(call(p,'start'),/elige equipos/);
+ await assert.rejects(call(p,'team',{...extra,team:'admin'}),/guarda o ladrón/);
+ await assert.rejects(call(p,'team',extra),/no tiene cupo/);
+ await call(p,'team',{...extra,team:'thief'});await call(q,'team',{...extra,team:'thief'});await call(r,'leave');
+ await assert.rejects(call(p,'capacity',{...extra,player_limit:2}),/un cupo/);
+ await call(q,'team',{...extra,team:'police'});await call(p,'capacity',{...extra,player_limit:2});assert.equal((await call(p,'start')).room.status,'countdown');
+});
+
 test('host scenario choice persists across reconnect/rematch, isolates rooms and rejects active or stale changes',async()=>{
  const {players:[p,q],room}=await pair(),other=await pair();
  await assert.rejects(call(q,'scenario',{room_id:room.id,scenario_id:'hielo'}),/anfitrión/);
@@ -53,14 +104,18 @@ test('two independent HTTP + WebSocket clients share authoritative movement and 
  try{
   const p=await player('Uno'),q=await player('Dos');
   const post=async(p,action,extra={})=>{const r=await fetch(origin+'/api/public/activations/barrio/chase',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...p,action,...extra})});assert.equal(r.status,200);return r.json();};
-  const created=await post(p,'create'),joined=await post(q,'join',{code:created.room.code});
+  const created=await post(p,'create',{player_limit:2}),joined=await post(q,'join',{code:created.room.code});
   function socket(live){return new Promise((resolve,reject)=>{const ws=new WebSocket(origin.replace('http','ws')+live.path,{origin});sockets.push(ws);ws.on('open',()=>ws.send(JSON.stringify({type:'auth',token:live.token})));ws.on('error',reject);ws.once('message',()=>resolve(ws));});}
   const w1=await socket(created.live),w2=await socket(joined.live);const latest=new Map();for(const [i,ws]of [w1,w2].entries())ws.on('message',raw=>{latest.set(i,JSON.parse(raw).room);});
   const invalid=await fetch(origin+'/api/public/activations/barrio/chase',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...p,action:'scenario',room_id:created.room.id,scenario_id:'forged'})});assert.equal(invalid.status,400);
   const chosen=await post(p,'scenario',{room_id:created.room.id,scenario_id:'hielo'});assert.equal(chosen.room.scenario_id,'hielo');
+  for(const extra of [{player_limit:9},{player_limit:2.5},{team:'forged'}]){
+    const r=await fetch(origin+'/api/public/activations/barrio/chase',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...p,action:'team',room_id:created.room.id,...extra})});assert.equal(r.status,400);
+  }
+  const selected=await post(p,'team',{room_id:created.room.id,team:'thief'});assert.equal(selected.room.players.find(x=>x.id===q.participant_id).team,'police');
   const start=await post(p,'start');await mutate(start.room.id,s=>{s.starts=Date.now()-20;s.updated=Date.now()-20;s.status='running';});
   const initial=(await post(p,'state')).room.players.find(x=>x.id===p.participant_id);w1.send(JSON.stringify({type:'input',round_id:start.room.round_id,seq:0,x:0,y:-1}));
-  await new Promise(r=>setTimeout(r,350));assert.ok(latest.get(1).players.find(x=>x.id===p.participant_id).y<initial.y);assert.equal(latest.get(0).round_id,latest.get(1).round_id);assert.equal(latest.get(1).scenario_id,'hielo');
+  await new Promise(r=>setTimeout(r,350));assert.ok(latest.get(1).players.find(x=>x.id===p.participant_id).y<initial.y);assert.equal(latest.get(0).round_id,latest.get(1).round_id);assert.equal(latest.get(1).scenario_id,'hielo');assert.equal(latest.get(1).player_limit,2);assert.equal(latest.get(1).players.find(x=>x.id===q.participant_id).team,'police');
   const closed=new Promise(r=>w1.once('close',code=>r(code)));await socket(created.live);assert.equal(await closed,4001);
  }finally{for(const ws of sockets)ws.terminate();stop();await new Promise(r=>server.close(r));}
 });

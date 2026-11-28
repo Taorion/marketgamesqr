@@ -7,9 +7,10 @@
       <header class="chase-heading"><div><span class="chase-kicker">QORI ORIGINAL · MULTIJUGADOR</span><h2>Policías <em>&</em> Ladrones</h2><p>Guardias y rufianes · El Burgo del Farol.</p></div><button data-exit class="chase-quiet">Salir de la sala</button></header>
       <div class="chase-hud"><strong data-clock>03:00</strong><span data-team>Elige tu apodo</span><span data-count>2–8 participantes</span><span data-connection>Conectando…</span></div>
       <div class="chase-layout"><aside class="chase-sidebar">
+        <section class="chase-world-picker"><label>1 · Cantidad de jugadores<select data-capacity aria-label="Cantidad de jugadores">${Array.from({length:7},(_,i)=>`<option value="${i+2}">${i+2} jugadores</option>`).join('')}</select></label><small>El anfitrión elige de 2 a 8. Debe haber al menos un guarda y un ladrón.</small></section>
         <section class="chase-world-picker" aria-label="Escenario de la sala"><label>20 mundos para perseguir<select data-world aria-label="Elegir escenario">${C.WORLDS.map(w=>`<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></label><p data-world-description></p><small data-world-note>Elige y mira el escenario antes de crear tu sala.</small></section>
         <div data-entry><h3>Reúne a tu compañía</h3><label>Tu apodo<input data-alias maxlength="16" autocomplete="nickname" placeholder="Cómo te llamamos"></label><button data-create>Crear sala</button><div class="chase-divider">o entra con un código</div><label>Código de sala<input data-code maxlength="6" placeholder="ABC234" autocomplete="off" autocapitalize="characters"></label><button data-join class="chase-secondary">Unirme</button></div>
-        <div data-lobby hidden><span class="chase-kicker">COMPAÑÍA DEL BURGO</span><strong data-roomcode class="chase-code"></strong><button data-share class="chase-secondary">Copiar enlace de invitación</button><div data-roster class="chase-roster"></div><div class="chase-lobby-actions"><button data-ready class="chase-secondary">Estoy listo</button><button data-start>Iniciar partida</button></div><p data-lobby-note></p></div>
+        <div data-lobby hidden><span class="chase-kicker">COMPAÑÍA DEL BURGO</span><strong data-roomcode class="chase-code"></strong><button data-share class="chase-secondary">Copiar enlace de invitación</button><section data-team-picker class="chase-team-picker" aria-label="Elige tu equipo"><h3>2 · Elige tu equipo</h3><div><button data-choose-police class="chase-secondary" aria-pressed="false">Ser guarda</button><button data-choose-thief class="chase-secondary" aria-pressed="false">Ser ladrón</button></div><small data-team-slots></small><p data-team-note aria-live="polite"></p></section><div data-roster class="chase-roster"></div><div class="chase-lobby-actions"><button data-ready class="chase-secondary">Estoy listo</button><button data-start>Iniciar partida</button></div><p data-lobby-note></p></div>
         <button data-saved-benefit class="chase-secondary" hidden>Ver mi resultado / beneficio anterior</button>
         <details class="chase-rules" open><summary>Cómo jugar</summary><p>Los policías capturan al tocar. Si todos los ladrones terminan en prisión, ganan los policías. Si queda uno libre cuando termina el tiempo, ganan los ladrones.</p><p><b>Rescata:</b> entra por la puerta de la prisión y toca a un compañero preso. Solo él queda libre. El reloj continúa.</p><p><b>Muévete:</b> WASD o flechas. En celular, arrastra el joystick. Tu flecha te identifica.</p></details>
       </aside><div class="chase-play"><div class="chase-viewport"><canvas tabindex="0" aria-label="Barrio isométrico. Usa WASD, flechas o joystick para moverte."></canvas><div data-overlay class="chase-overlay" hidden></div><button data-map class="chase-map chase-quiet">Ver mapa completo</button><div data-joystick class="chase-joystick" role="group" aria-label="Joystick: arrastra para moverte"><span></span><b>MOVER</b></div></div><div class="chase-bottom"><span data-instruction>Tu color identifica a tu personaje. El casco y el antifaz identifican al equipo.</span><label>Sonido<input data-volume type="range" min="0" max="100" value="35" aria-label="Volumen del juego"></label></div></div></div>
@@ -60,10 +61,12 @@
       for(const event of next.events||[]){if(event.id>lastEvent){sound(event.type);if(event.type==='capture'||event.type==='rescue'){const p=next.players.find(q=>q.id===event.player);message(p?.name+(event.type==='capture'?' fue capturado.':' está libre de nuevo.'));}}lastEvent=Math.max(lastEvent,event.id);}
       paintUI();
     }
-    function roster(players){return players.map(p=>`<div class="chase-player ${p.id===state.own_id?'is-you':''}" style="--player:${esc(p.color)}"><canvas class="chase-avatar" data-portrait="${esc(p.id)}" aria-hidden="true"></canvas><div><b>${esc(p.name)}${p.id===state.own_id?' · tú':''}</b><small>${p.team==='police'?'Guardia · policía':'Rufián · ladrón'}${p.abandoned?' · Abandonó':p.captured?' · Capturado':state.status==='waiting'?(p.ready?' · Listo':' · En sala'):' · Libre'}</small></div><i style="background:${p.connected?p.color:'#677382'}" title="${p.connected?'Conectado':'Reconectando'}"></i></div>`).join('');}
-    let rosterKey='',hasResult=false,previewId='burgo';
+    function roster(players){return players.map(p=>`<div class="chase-player ${p.id===state.own_id?'is-you':''}" style="--player:${esc(p.color)}"><canvas class="chase-avatar" data-portrait="${esc(p.id)}" aria-hidden="true"></canvas><div><b>${esc(p.name)}${p.id===state.own_id?' · tú':''}</b><small>${p.team==='police'?'Guarda · policía':p.team==='thief'?'Rufián · ladrón':'Por elegir equipo'}${p.abandoned?' · Abandonó':p.captured?' · Capturado':state.status==='waiting'?(p.ready?' · Listo':' · En sala'):' · Libre'}</small></div><i style="background:${p.connected?p.color:'#677382'}" title="${p.connected?'Conectado':'Reconectando'}"></i></div>`).join('');}
+    let rosterKey='',hasResult=false,previewId='burgo',previewCapacity=2;
     function paintUI(){
       const has=!!state; $('[data-entry]').hidden=has;$('[data-lobby]').hidden=!has;
+      $('[data-capacity]').value=has?C.capacity(state):previewCapacity;
+      $('[data-capacity]').disabled=mutating||has&&(state.status!=='waiting'||state.host_id!==state.own_id);
       const selected=C.world(state?.scenario_id||previewId);$('[data-world]').value=selected.id;
       $('[data-world]').disabled=mutating||has&&(state.status!=='waiting'||state.host_id!==state.own_id);
       $('[data-world-description]').textContent=selected.description;
@@ -77,14 +80,18 @@
       const p=own(),waiting=state.status==='waiting',finished=state.status==='finished',closed=state.status==='closed';
       el.classList.toggle('is-playing',['countdown','running'].includes(state.status));
       $('[data-roomcode]').textContent=state.code;
-      $('[data-team]').textContent=p?(p.team==='police'?'CASCO · Guardia':'ANTIFAZ · Rufián'):'Observando';
+      $('[data-team]').textContent=p?(p.team==='police'?'CASCO · Guarda':p.team==='thief'?'ANTIFAZ · Rufián':'Elige tu equipo'):'Observando';
       $('[data-team]').style.color=p?.color||'';
-      const thieves=state.players.filter(q=>q.team==='thief');$('[data-count]').textContent=waiting?state.players.length+'/8 en sala':`${thieves.filter(q=>!q.captured).length} libres · ${thieves.filter(q=>q.captured).length} presos`;
+      const thieves=state.players.filter(q=>q.team==='thief');$('[data-count]').textContent=waiting?state.players.length+'/'+C.capacity(state)+' en sala':`${thieves.filter(q=>!q.captured).length} libres · ${thieves.filter(q=>q.captured).length} presos`;
+      $('[data-team-picker]').hidden=!waiting;
+      for(const team of ['police','thief']){const b=$('[data-choose-'+team+']');b.disabled=mutating||!waiting||!p||!C.canChoose(state,p,team);b.setAttribute('aria-pressed',String(p?.team===team));b.textContent=(p?.team===team?'✓ ':'')+(team==='police'?'Ser guarda':'Ser ladrón')+(b.disabled&&waiting&&!mutating?' · Sin cupo':'');}
+      $('[data-team-slots]').textContent=state.players.filter(q=>q.team==='police').length+' guardas · '+thieves.length+' ladrones · '+state.players.filter(q=>!q.team).length+' por elegir';
+      $('[data-team-note]').textContent=p?.team_forced?'Se te asignó '+(p.team==='police'?'guarda':'ladrón')+' para asegurar ambos equipos. Puedes cambiar si se libera un cupo.':'Elige mientras haya cupo. Cada equipo admite hasta '+(C.capacity(state)-1)+' jugadores; se reserva un lugar para el otro.';
       const key=JSON.stringify(state.players.map(({x,y,dx,dy,moving,input_sequence,...p})=>p))+state.status;
       if(key!==rosterKey){rosterKey=key;$('[data-roster]').innerHTML=roster(state.players);if(finished)$('[data-final-roster]').innerHTML=roster(state.players);container.querySelectorAll('[data-portrait]').forEach(canvas=>{const p=state.players.find(p=>p.id===canvas.dataset.portrait);if(p)root.QoriChaseView.portrait?.(canvas,p);});}
-      $('.chase-lobby-actions').hidden=!waiting;$('[data-start]').hidden=state.host_id!==state.own_id;$('[data-start]').disabled=state.players.length<2;
+      $('.chase-lobby-actions').hidden=!waiting;$('[data-start]').hidden=state.host_id!==state.own_id;$('[data-start]').disabled=state.team_selection?!C.teamsReady(state)||state.players.some(q=>!q.connected):state.players.length<2;
       $('[data-ready]').textContent=p?.ready?'Listo ✓':'Estoy listo';
-      $('[data-lobby-note]').textContent=waiting?(state.host_id===state.own_id?'Eres anfitrión. Puedes iniciar con 2 a 8 conectados; las señales de listo son informativas.':'El anfitrión iniciará la partida. Puedes marcarte listo.'):'Cada color es una persona. El equipo gana junto.';
+      $('[data-lobby-note]').textContent=waiting?(state.team_selection?'Para iniciar: '+C.capacity(state)+' jugadores conectados, todos con equipo y al menos uno de cada. El anfitrión puede ajustar la cantidad; las señales de listo son informativas.':state.host_id===state.own_id?'Eres anfitrión. Puedes iniciar con 2 a 8 conectados; las señales de listo son informativas.':'El anfitrión iniciará la partida. Puedes marcarte listo.'):'Cada color es una persona. El equipo gana junto.';
       $('[data-results]').hidden=!finished;
       $('[data-instruction]').textContent=p?.captured?'Estás capturado. Un ladrón libre puede tocarte para rescatarte. Sigue observando.':p?.team==='police'?'Captura a todos por contacto. Puedes vigilar la entrada de la prisión.':'Escapa y rescata a tus compañeros tocándolos dentro de la prisión.';
       if(finished){$('[data-winner]').textContent=state.winner==='police'?'¡Ganan los policías!':'¡Ganan todos los ladrones!';$('[data-reason]').textContent=state.reason==='all_captured'?'Todos los ladrones quedaron presos al mismo tiempo.':state.reason==='police_left'?'El equipo policial abandonó la persecución.':'Terminó el tiempo y quedó al menos un ladrón libre. También ganan sus compañeros presos.';$('[data-restart]').disabled=state.host_id!==state.own_id&&state.players.some(q=>q.id===state.host_id&&q.connected);}
@@ -94,14 +101,16 @@
     }
     async function action(name,extra={}){
       if(mutating||dead)return;mutating=true;unlock();message('');
-      try{const data=await abortable({action:name,room_id:['leave','scenario'].includes(name)?state?.id:undefined,round_id:state?.round_id||undefined,...extra});if(dead)return;
+      try{const data=await abortable({action:name,room_id:['leave','scenario','capacity','team'].includes(name)?state?.id:undefined,round_id:state?.round_id||undefined,...extra});if(dead)return;
         if(name==='resume'&&data.has_result)hasResult=true;
         if(name==='claim'){await options.onResult?.(data);message(data.message);}
         else if(name==='leave'){clearRoom(true);options.onExit?.();message('Ya puedes crear una sala o unirte con otro código.');}
         else{if(data.room)accept(data.room);else if(name==='resume')clearRoom();connect(data.live);}
       }catch(error){if(!dead)message(error.name==='AbortError'?'La conexión tardó demasiado. Puedes reintentar.':error.message);}finally{mutating=false;if(!dead)paintUI();}
     }
-    $('[data-create]').onclick=()=>action('create',{alias:$('[data-alias]').value,scenario_id:previewId});
+    $('[data-create]').onclick=()=>action('create',{alias:$('[data-alias]').value,scenario_id:previewId,player_limit:previewCapacity});
+    $('[data-capacity]').onchange=()=>{const n=Number($('[data-capacity]').value);if(state)action('capacity',{player_limit:n});else{previewCapacity=n;paintUI();}};
+    for(const team of ['police','thief'])$('[data-choose-'+team+']').onclick=()=>action('team',{team});
     $('[data-world]').onchange=()=>{const id=$('[data-world]').value;if(state){action('scenario',{scenario_id:id});}else{previewId=id;paintUI();}};
     $('[data-join]').onclick=()=>action('join',{alias:$('[data-alias]').value,code:$('[data-code]').value.trim().toUpperCase()});
     $('[data-start]').onclick=()=>action('start');$('[data-ready]').onclick=()=>action('ready',{ready:!own()?.ready});

@@ -45,12 +45,14 @@ async function leaveRoom(client,row,participantId,now){
   await save(client,row);
   await client.query('delete from qori_chase_members where participant_id=$1 and room_id=$2',[participantId,row.id]);
   const members=(await client.query('select participant_id from qori_chase_members where room_id=$1',[row.id])).rows;
-  if(s.status==='waiting'){s.players=s.players.filter(p=>p.id!==participantId);core.balance(s.players);core.place(s);}
+  if(s.status==='waiting'){s.players=s.players.filter(p=>p.id!==participantId);if(!s.team_selection)core.balance(s.players);core.forceTeams(s);core.place(s);}
   if(!members.length)s.status='closed';
   else if(row.host_id===participantId){row.host_id=members[0].participant_id;await client.query('update qori_chase_rooms set host_id=$2 where id=$1',[row.id,row.host_id]);}
   await save(client,row);
 }
 async function act(slug,body,{customerId,transaction=withTransaction}={}){
+  if(body.player_limit!==undefined&&(!Number.isInteger(body.player_limit)||body.player_limit<2||body.player_limit>8))throw badRequest('Elige entre 2 y 8 jugadores.');
+  if(body.team!==undefined&&!['police','thief'].includes(body.team))throw badRequest('Elige guarda o ladrón.');
   if(body.scenario_id!==undefined&&!core.WORLDS.some(w=>w.id===body.scenario_id))throw badRequest('Escenario no disponible.');
   return transaction(async client=>{
     await client.query("set local statement_timeout='8s'");
@@ -82,6 +84,7 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
       assertOpen(a);
       if((await client.query('select 1 from qori_chase_members where participant_id=$1',[p.id])).rowCount)throw badRequest('Ya tienes una sala. Vuelve a conectar.');
       const state=core.lobby(now);state.config=core.normalize(a.game_config);state.scenario_id=body.scenario_id||'burgo';
+      if(body.player_limit!==undefined){state.player_limit=body.player_limit;state.team_selection=true;}
       for(let attempt=0;attempt<5&&!row;attempt++)row=(await client.query('insert into qori_chase_rooms(activation_id,code,host_id,signature,state) values($1,$2,$3,$4,$5) on conflict(activation_id,code) do nothing returning *',[a.id,code(),p.id,signature(a),state])).rows[0];
       if(!row)throw badRequest('No se pudo crear la sala. Intenta de nuevo.');
     }else{
@@ -91,7 +94,7 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
       if(body.action==='join'&&row.code!==body.code)throw badRequest('Sal de tu sala actual antes de unirte a otra.');
     }
     const s=row.state;
-    if(s.round>0&&['ready','start','restart','scenario'].includes(body.action)&&body.round_id!==s.round_id)throw badRequest('La ronda cambió. Actualiza la sala e intenta de nuevo.');
+    if(s.round>0&&['ready','start','restart','scenario','capacity','team'].includes(body.action)&&body.round_id!==s.round_id)throw badRequest('La ronda cambió. Actualiza la sala e intenta de nuevo.');
     core.advance(s,now);
     if(s.status!=='finished'&&row.signature!==signature(a))s.status='closed';
     let own=s.players.find(q=>q.id===p.id);
@@ -99,11 +102,11 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
       if(!['create','join'].includes(body.action))throw forbidden('No perteneces a esta sala.');
       assertOpen(a);
       if(s.status!=='waiting')throw badRequest('La sala ya comenzó o está cerrada.');
-      if(s.players.length>=8)throw badRequest('La sala ya tiene 8 jugadores.');
+      if(s.players.length>=core.capacity(s))throw badRequest('La sala ya tiene '+core.capacity(s)+' jugadores.');
       const alias=String(body.alias||'').trim();if(!alias||alias.length>16)throw badRequest('Escribe un apodo de 1 a 16 caracteres.');
       const inserted=await client.query('insert into qori_chase_members(room_id,participant_id) values($1,$2) on conflict(participant_id) do nothing returning participant_id',[row.id,p.id]);
       if(!inserted.rowCount)throw badRequest('Ya perteneces a otra sala.');
-      own={id:p.id,name:alias,color:core.COLORS.find(c=>!s.players.some(q=>q.color===c)),ready:false,seen:now,captured:false};s.players.push(own);core.balance(s.players);core.place(s);
+      own={id:p.id,name:alias,color:core.COLORS.find(c=>!s.players.some(q=>q.color===c)),ready:false,seen:now,captured:false,team:null};s.players.push(own);if(!s.team_selection)core.balance(s.players);core.forceTeams(s);core.place(s);
     }
     // Advance before heartbeat: reconnecting cannot erase an abandonment already due.
     own.seen=now;
@@ -114,6 +117,22 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
     }
     if(body.action==='ready'){
       if(s.status!=='waiting')throw badRequest('La sala no está esperando jugadores.');own.ready=body.ready===true;
+    }
+    if(['capacity','team'].includes(body.action)){
+      assertOpen(a);
+      if(body.room_id!==row.id)throw badRequest('La sala cambió. Vuelve a elegir.');
+      if(s.status!=='waiting')throw badRequest('Solo puedes elegir jugadores y equipo antes de iniciar.');
+      if(body.action==='capacity'){
+        if(row.host_id!==p.id)throw forbidden('Solo el anfitrión puede elegir la cantidad de jugadores.');
+        if(body.player_limit===undefined)throw badRequest('Elige entre 2 y 8 jugadores.');
+        if(body.player_limit<s.players.length)throw badRequest('No puedes elegir menos cupos que jugadores en sala.');
+        if(['police','thief'].some(t=>s.players.filter(q=>q.team===t).length>=body.player_limit))throw badRequest('Debe quedar al menos un cupo para cada equipo. Cambien de equipo antes de reducir la sala.');
+        s.player_limit=body.player_limit;s.team_selection=true;
+      }else{
+        if(!core.canChoose(s,own,body.team))throw badRequest('Ese equipo no tiene cupo: debe haber al menos un guarda y un ladrón.');
+        s.player_limit=core.capacity(s);s.team_selection=true;own.team=body.team;own.team_forced=false;
+      }
+      core.forceTeams(s);core.place(s);for(const q of s.players)q.ready=false;
     }
     if(body.action==='scenario'){
       assertOpen(a);
@@ -126,7 +145,8 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
       assertOpen(a);
       if(row.host_id!==p.id||s.status!=='waiting')throw forbidden('Solo el anfitrión puede iniciar la sala en espera.');
       if(s.players.length<2||s.players.length>8||s.players.some(q=>now-q.seen>=core.CONFIG.disconnected_ms))throw badRequest('Se necesitan entre 2 y 8 jugadores conectados.');
-      core.balance(s.players);core.start(s,now,crypto.randomUUID(),a.game_config);
+      if(s.team_selection&&!core.teamsReady(s))throw badRequest('Completa los '+core.capacity(s)+' jugadores y elige equipos: al menos un guarda y un ladrón.');
+      if(!s.team_selection)core.balance(s.players);core.start(s,now,crypto.randomUUID(),a.game_config);
     }
     if(body.action==='restart'){
       assertOpen(a);
@@ -142,7 +162,7 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
       await client.query('delete from qori_chase_members where room_id=$1 and not(participant_id=any($2::uuid[]))',[row.id,s.players.map(q=>q.id)]);
       Object.assign(s,{status:'waiting',winner:null,reason:null,events:[],expires:now+core.CONFIG.lobby_ms});
       for(const q of s.players)Object.assign(q,{ready:false,captured:false,abandoned:false,input:null});
-      core.balance(s.players);
+      if(!s.team_selection)core.balance(s.players);core.forceTeams(s);
       core.place(s);
       await client.query('update qori_chase_rooms set host_id=$2 where id=$1',[row.id,p.id]);
     }
