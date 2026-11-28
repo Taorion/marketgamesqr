@@ -201,6 +201,7 @@ async function publicStart(req, res, next) {
       if(!a)throw require('../utils/http').notFound();
       await client.query('select pg_advisory_xact_lock(hashtext($1))',['customer-play:'+req.customer.id+':'+a.id]);
       const prior=(await client.query('select result,participant_id from customer_activation_participations where customer_id=$1 and activation_id=$2',[req.customer.id,a.id])).rows[0];
+      if(prior){const session=await require('../services/chaseService').customerSession(client,a.id,req.customer.id);if(session)return session;}
       if(prior){if(prior.result)return prior.result;const p=(await client.query('select * from interactive_activation_participants where id=$1',[prior.participant_id])).rows[0];return {participant:p,game_session_token:p.game_session_token};}
       const nonce=require('crypto').randomUUID();
       const r=await startInteractiveParticipant(req.params.slug,{...body,metadata:{...body.metadata,customer_provenance:nonce}},{client});

@@ -644,7 +644,7 @@ async function startGameSession({ resume = true } = {}) {
       body: JSON.stringify(participantPayload()),
     });
     if (summit && version !== summitSessionVersion) return;
-    if (data.rewarded) {
+    if (data.rewarded && !(currentActivation.activation_type === 'QORI_CHASE' && data.participant?.id && data.game_session_token)) {
       participantForm.classList.add("hidden");
       setStatus(data.message || "QR recuperado.", "success");
       if (summit) setSummitSessionBusy(false);
@@ -1368,7 +1368,16 @@ function renderMinigame() {
     try { sessionStorage.setItem('qori-chase:' + currentActivation.public_slug, JSON.stringify(session)); } catch (_) {}
     const mounted = QoriChase.mount(experienceBody, {
       request: (body, { signal } = {}) => api('/api/public/activations/' + encodeURIComponent(currentActivation.public_slug) + '/chase', { method: 'POST', signal, body: JSON.stringify({ ...body, ...session }) }),
-      onResult: data => renderResult(data),
+      onResult: async data => {
+        await renderResult(data);
+        const back = document.createElement('button');
+        back.type = 'button'; back.className = 'btn btn-primary'; back.textContent = 'Volver al juego';
+        back.addEventListener('click', () => {
+          ticketResult.classList.add('hidden');
+          experienceStage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        ticketResult.prepend(back);
+      },
       onExit: () => {
         const url = new URL(location.href); url.searchParams.delete('room'); history.replaceState(null, '', url.href);
         ticketResult.classList.add('hidden'); setProgress(0, 1);

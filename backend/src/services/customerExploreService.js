@@ -185,6 +185,7 @@ async function participateResource(account,row,publicationId,body,complete){
   await db.query('select pg_advisory_xact_lock(hashtext($1))',[`customer-play:${account.id}:${row.resource_id}`]);
   const own=(await db.query('select * from customer_activation_participations where customer_id=$1 and activation_id=$2',[account.id,row.resource_id])).rows[0];
   if(body.participant_id&&body.participant_id!==own?.participant_id)throw forbidden('La participación no pertenece a tu cuenta.');
+  if(own&&!complete){const session=await require('./chaseService').customerSession(db,row.resource_id,account.id);if(session)return session;}
   if(own?.result){const reward=own.result.qr_code?.id;if(reward){const q=(await db.query('select status,expires_at from qr_codes where id=$1',[reward])).rows[0];if(!q||q.status!=='ACTIVE'||(q.expires_at&&new Date(q.expires_at)<=new Date()))throw badRequest('Consulta el estado actual de este beneficio en Mis tarjetas.');}return own.result;}
   if(own&&!complete){const p=(await db.query('select * from interactive_activation_participants where id=$1',[own.participant_id])).rows[0];return {participant:p,game_session_token:p.game_session_token};}
   const nonce=crypto.randomUUID();

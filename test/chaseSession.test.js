@@ -28,3 +28,16 @@ test('stalled session recovery times out and leaves the retry control enabled wi
  assert.equal(f.w.document.querySelector('#chaseRetrySession').disabled,false);assert.ok(f.w.sessionStorage.getItem(f.key));assert.equal(f.mounts.length,0);
  }finally{f.close();}
 });
+
+test('new tab enters the game with the Customer-owned session, even alongside an old reward',async()=>{
+ const f=setup();try{
+  f.w.sessionStorage.clear();f.w.api=async()=>({participant:{id:'returning'},game_session_token:'owned-token',rewarded:true});
+  assert.equal(await f.w.startGameSession(),true);assert.equal(f.mounts.length,1);
+  assert.equal(f.w.participant.id,'returning');assert.equal(f.w.ticketResult.classList.contains('hidden'),true);
+  assert.equal(JSON.parse(f.w.sessionStorage.getItem(f.key)).game_session_token,'owned-token');
+  f.w.renderResult=async()=>{f.w.ticketResult.classList.remove('hidden');};
+  let returned=false;f.w.experienceStage.scrollIntoView=()=>{returned=true;};
+  await f.mounts[0].onResult({rewarded:true});const back=f.w.ticketResult.querySelector('button');
+  assert.equal(back.textContent,'Volver al juego');back.click();assert.equal(returned,true);assert.equal(f.w.ticketResult.classList.contains('hidden'),true);
+ }finally{f.close();}
+});

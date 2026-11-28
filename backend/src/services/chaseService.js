@@ -7,6 +7,19 @@ const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const code = () => Array.from({length:6},()=>alphabet[crypto.randomInt(alphabet.length)]).join('');
 const signature = a => crypto.createHash('sha256').update(JSON.stringify([core.VERSION,core.normalize(a.game_config),a.reward_mode,a.reward_config])).digest('hex');
 function assertOpen(a){if(a.status!=='active'||a.starts_at&&new Date(a.starts_at)>new Date()||a.ends_at&&new Date(a.ends_at)<=new Date())throw badRequest('Esta activación no está disponible.');}
+// Only authenticated ownership can recover a token when this browser has no saved session.
+// Commercial completion remains immutable; entering the game never claims another reward.
+async function customerSession(client,activationId,customerId){
+  const row=(await client.query(`select p.id,p.status participant_status,p.game_session_token,a.status,a.starts_at,a.ends_at
+    from customer_activation_participations cp
+    join interactive_activation_participants p on p.id=cp.participant_id and p.activation_id=cp.activation_id
+    join interactive_activations a on a.id=cp.activation_id
+    where cp.customer_id=$1 and cp.activation_id=$2 and a.activation_type=$3`,[customerId,activationId,TYPE])).rows[0];
+  if(!row)return null;
+  assertOpen(row);
+  if(row.participant_status==='disqualified'||!row.game_session_token)throw forbidden('Esta participación no puede volver al juego.');
+  return {participant:{id:row.id,status:row.participant_status},game_session_token:row.game_session_token};
+}
 function snapshot(row,id,now=Date.now()){
   const s=row.state;
   return {...s,id:row.id,code:row.code,host_id:row.host_id,server_now:now,
@@ -59,7 +72,8 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
         if(previous.state.status==='closed'){await leaveRoom(client,previous,p.id,now);prior=null;}
       }
     }
-    if(['resume','leave'].includes(body.action)&&!prior)return {room:null,can_play:true};
+    const entry=body.action==='resume'?{has_result:!!(await client.query('select 1 from qori_chase_results where participant_id=$1',[p.id])).rowCount}:{};
+    if(['resume','leave'].includes(body.action)&&!prior)return {room:null,can_play:true,...entry};
     // A completed participant may keep playing, with the original result/reward locked.
     if(['create','join'].includes(body.action)&&p.status!=='started'&&
       (!['completed','rewarded'].includes(p.status)||!(await client.query('select 1 from qori_chase_results where participant_id=$1',[p.id])).rowCount))throw badRequest('Esta participación no puede iniciar otra sala.');
@@ -125,7 +139,7 @@ async function act(slug,body,{customerId,transaction=withTransaction}={}){
     }
     if(body.action==='input')core.input(s,own,body,now);
     await save(client,row);
-    return {room:snapshot(row,p.id,now)};
+    return {room:snapshot(row,p.id,now),...entry};
   });
 }
 // A signed WebSocket ticket binds both the participant and activation. No client poses.
@@ -181,4 +195,4 @@ async function settle(){
     try{await claim(p.public_slug,p);}catch(_){/* The participant can retry from the result screen after the organizer fixes availability. */}
   }
 }
-module.exports={TYPE,signature,act,tick,sweep,settle,streamAction,snapshot,claim};
+module.exports={TYPE,signature,act,tick,sweep,settle,streamAction,snapshot,claim,customerSession};

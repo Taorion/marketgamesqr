@@ -83,10 +83,14 @@ Corrección de reapertura (28 de noviembre): la sesión se recupera también cua
 
 Se comprobó en Chrome local que recargar recupera la misma sala y personaje con conexión en vivo. `test/chaseSession.test.js`, las regresiones de salas y las de interfaz cubren específicamente reapertura, expiración, salida, nueva sala y reintento; la prueba comercial comprueba que cambiar de sala no consume otro crédito.
 
+Corrección de entrada desde Customer (28 de noviembre): abrir el enlace directo, una publicación o una invitación recupera la sesión propia de Policías y Ladrones antes de devolver el resultado comercial anterior. Funciona también sin sessionStorage, por ejemplo en otra pestaña. La recuperación exige una cuenta autenticada vinculada a esa participación; nombre, correo o documento no recuperan credenciales de invitados. El resultado anterior se consulta voluntariamente desde el lobby y dispone de «Volver al juego». Un ticket vencido no impide volver a jugar; las reglas de redención y la concesión única del beneficio no cambian.
+
+Se ejecutaron **101 pruebas sin fallos ni omisiones** tras esta corrección. `test/chaseCustomerEntry.integration.test.js` usa el servidor HTTP y PostgreSQL local con cookies Customer, cubre las tres entradas, premio vencido, creación de una nueva sala, aislamiento de cuentas, invitados, créditos y conservación del comportamiento de otras activaciones. `chaseSession.test.js` y `chaseUI.test.js` verifican la entrada sin almacenamiento, la consulta explícita del beneficio y el botón de regreso en DOM simulado. Esta corrección no añade una nueva comprobación visual en navegador real.
+
 Usar PostgreSQL local en `127.0.0.1:55447`. Crear `qori_chase_qa` y `qori_chase_browser_qa`; para `qori_chase_full_qa`, usar el esquema completo de Qori. Los fixtures rechazan cualquier URL remota. Desde este checkout:
 
 ```powershell
-node --test test/chaseRules.test.js test/chaseRooms.integration.test.js test/chaseUI.test.js test/chaseSession.test.js test/chaseAward.integration.test.js
+node --test test/chaseRules.test.js test/chaseRooms.integration.test.js test/chaseUI.test.js test/chaseSession.test.js test/chaseAward.integration.test.js test/chaseCustomerEntry.integration.test.js
 node scripts/chase-qa-server.cjs
 ```
 

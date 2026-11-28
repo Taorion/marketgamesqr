@@ -9,6 +9,7 @@
       <div class="chase-layout"><aside class="chase-sidebar">
         <div data-entry><h3>Reúne a tu equipo</h3><label>Tu apodo<input data-alias maxlength="16" autocomplete="nickname" placeholder="Cómo te llamamos"></label><button data-create>Crear sala</button><div class="chase-divider">o entra con un código</div><label>Código de sala<input data-code maxlength="6" placeholder="ABC234" autocomplete="off" autocapitalize="characters"></label><button data-join class="chase-secondary">Unirme</button></div>
         <div data-lobby hidden><span class="chase-kicker">SALA DEL BARRIO</span><strong data-roomcode class="chase-code"></strong><button data-share class="chase-secondary">Copiar enlace de invitación</button><div data-roster class="chase-roster"></div><div class="chase-lobby-actions"><button data-ready class="chase-secondary">Estoy listo</button><button data-start>Iniciar partida</button></div><p data-lobby-note></p></div>
+        <button data-saved-benefit class="chase-secondary" hidden>Ver mi resultado / beneficio anterior</button>
         <details class="chase-rules" open><summary>Cómo jugar</summary><p>Los policías capturan al tocar. Si todos los ladrones terminan en prisión, ganan los policías. Si queda uno libre cuando termina el tiempo, ganan los ladrones.</p><p><b>Rescata:</b> entra por la puerta de la prisión y toca a un compañero preso. Solo él queda libre. El reloj continúa.</p><p><b>Muévete:</b> WASD o flechas. En celular, arrastra el joystick. Tu flecha te identifica.</p></details>
       </aside><div class="chase-play"><div class="chase-viewport"><canvas tabindex="0" aria-label="Barrio isométrico. Usa WASD, flechas o joystick para moverte."></canvas><div data-overlay class="chase-overlay" hidden></div><button data-map class="chase-map chase-quiet">Ver mapa completo</button><div data-joystick class="chase-joystick" role="group" aria-label="Joystick: arrastra para moverte"><span></span><b>MOVER</b></div></div><div class="chase-bottom"><span data-instruction>Tu color identifica a tu personaje. La gorra y el antifaz identifican al equipo.</span><label>Sonido<input data-volume type="range" min="0" max="100" value="35" aria-label="Volumen del juego"></label></div></div></div>
       <section data-results class="chase-results" hidden><span class="chase-kicker">RONDA COMPLETA</span><h3 data-winner></h3><p data-reason></p><div data-final-roster class="chase-final-roster"></div><div class="chase-result-actions"><button data-restart>Preparar revancha</button><button data-new-room class="chase-secondary">Cambiar de sala</button><button data-benefit class="chase-secondary">Ver mi resultado / beneficio</button></div><small>La revancha conserva tu identidad. Los beneficios corresponden a tu primera ronda; no se duplican al cambiar de sala ni al volver a jugar.</small></section>
@@ -59,9 +60,11 @@
       paintUI();
     }
     function roster(players){return players.map(p=>`<div class="chase-player ${p.id===state.own_id?'is-you':''}" style="--player:${esc(p.color)}"><canvas class="chase-avatar" data-portrait="${esc(p.id)}" aria-hidden="true"></canvas><div><b>${esc(p.name)}${p.id===state.own_id?' · tú':''}</b><small>${p.team==='police'?'Policía · gorra':'Ladrón · antifaz'}${p.abandoned?' · Abandonó':p.captured?' · Capturado':state.status==='waiting'?(p.ready?' · Listo':' · En sala'):' · Libre'}</small></div><i style="background:${p.connected?p.color:'#677382'}" title="${p.connected?'Conectado':'Reconectando'}"></i></div>`).join('');}
-    let rosterKey='';
+    let rosterKey='',hasResult=false;
     function paintUI(){
       const has=!!state; $('[data-entry]').hidden=has;$('[data-lobby]').hidden=!has;
+      if(state?.status==='finished')hasResult=true;
+      $('[data-saved-benefit]').hidden=!hasResult||has&&state.status!=='waiting';
       $('[data-exit]').hidden=!has;
       if(!has){el.classList.remove('is-playing');$('[data-results]').hidden=true;$('[data-overlay]').hidden=true;$('[data-clock]').textContent='03:00';$('[data-team]').textContent='Elige tu apodo';$('[data-team]').style.color='';$('[data-count]').textContent='2–8 participantes';$('[data-instruction]').textContent='Crea una sala o entra con un código. Tu resultado anterior se conserva.';return;}
       const p=own(),waiting=state.status==='waiting',finished=state.status==='finished',closed=state.status==='closed';
@@ -85,6 +88,7 @@
     async function action(name,extra={}){
       if(mutating||dead)return;mutating=true;unlock();message('');
       try{const data=await abortable({action:name,room_id:name==='leave'?state?.id:undefined,round_id:state?.round_id||undefined,...extra});if(dead)return;
+        if(name==='resume'&&data.has_result)hasResult=true;
         if(name==='claim'){await options.onResult?.(data);message(data.message);}
         else if(name==='leave'){clearRoom(true);options.onExit?.();message('Ya puedes crear una sala o unirte con otro código.');}
         else{if(data.room)accept(data.room);else if(name==='resume')clearRoom();connect(data.live);}
@@ -94,6 +98,7 @@
     $('[data-join]').onclick=()=>action('join',{alias:$('[data-alias]').value,code:$('[data-code]').value.trim().toUpperCase()});
     $('[data-start]').onclick=()=>action('start');$('[data-ready]').onclick=()=>action('ready',{ready:!own()?.ready});
     $('[data-restart]').onclick=()=>action('restart');$('[data-benefit]').onclick=()=>action('claim');
+    $('[data-saved-benefit]').onclick=()=>action('claim');
     $('[data-new-room]').onclick=()=>action('leave');
     $('[data-exit]').onclick=()=>state?action('leave'):options.onExit?.();
     $('[data-map]').onclick=()=>{overview=!overview;$('[data-map]').textContent=overview?'Seguir mi personaje':'Ver mapa completo';};
