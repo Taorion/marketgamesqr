@@ -1363,7 +1363,7 @@ function renderMinigame() {
     cleanupGameState(); experienceStage.classList.remove('hidden');
     const recovery = document.getElementById('chaseSessionControls'); if (recovery) recovery.hidden = true;
     experienceTitle.textContent = 'Policías y Ladrones';
-    experienceCopy.textContent = 'Una persecución por equipos en el Barrio del Farol. De 2 a 8 personas.';
+    experienceCopy.textContent = 'Guardias y rufianes entre callejones medievales y faroles victorianos. De 2 a 8 personas.';
     const session = { participant_id: participant.id, game_session_token: gameSessionToken };
     try { sessionStorage.setItem('qori-chase:' + currentActivation.public_slug, JSON.stringify(session)); } catch (_) {}
     const mounted = QoriChase.mount(experienceBody, {

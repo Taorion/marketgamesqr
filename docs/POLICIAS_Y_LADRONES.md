@@ -6,10 +6,10 @@ Activación propia `QORI_CHASE`, incorporada a Empresa → Activaciones → Jueg
 
 1. En Empresa, crear una activación **Policías y Ladrones**. Configurar el beneficio, disponibilidad y captura de datos como en las demás activaciones. La duración inicial es **180 segundos**, configurable entre 45 y 300.
 2. Compartir su enlace o QR. Cada persona abre la misma activación desde su propia sesión/dispositivo.
-3. Elegir apodo. Una persona crea sala y comparte su código de seis caracteres o enlace de invitación; las demás se unen. Admite **2–8** jugadores. Cada participante tiene un color; gorra significa policía y antifaz significa ladrón.
+3. Elegir apodo. Una persona crea sala y comparte su código de seis caracteres o enlace de invitación; las demás se unen. Admite **2–8** jugadores. Cada participante tiene un color; casco significa guardia (policía) y antifaz significa rufián (ladrón).
 4. El anfitrión inicia con al menos dos conectados. Igual que en Cumbre, el indicador «Listo» es informativo. Los equipos se equilibran automáticamente; el jugador impar es ladrón. Hay tres segundos de preparación.
 5. Mover con WASD/flechas o joystick táctil. La flecha y el aro identifican al jugador propio. En móvil, la cámara sigue al personaje; «Ver mapa completo» permite observar todo el barrio.
-6. Captura y rescate son automáticos al tocar los cuerpos: la gorra y las etiquetas no aumentan su alcance. El ladrón capturado aparece inmóvil en una plaza de la prisión. Otro ladrón libre puede entrar por la abertura y tocarlo para liberarlo. Puede volver a ser capturado.
+6. Captura y rescate son automáticos al tocar los cuerpos: el casco y las etiquetas no aumentan su alcance. El ladrón capturado aparece inmóvil en una plaza de la prisión. Otro ladrón libre puede entrar por la abertura y tocarlo para liberarlo. Puede volver a ser capturado.
 7. Ganan los policías cuando todos los ladrones están presos simultáneamente. Gana **todo** el equipo de ladrones si queda uno libre al agotarse el tiempo, incluidos sus compañeros presos.
 8. «Preparar revancha» vuelve al lobby de la misma sala. «Iniciar partida» inicia una ronda nueva. Se conservan apodos y colores; se reinician posiciones, capturas y reloj. «Salir de la sala» vuelve a la activación.
 
@@ -62,6 +62,14 @@ Las superficies estáticas se precalculan una vez y se reutilizan en cada fotogr
 Se inspeccionó el escenario en Chrome local y se generaron vistas del **mismo renderizador con estados de prueba**: [barrio y prisión](qa/policias-art-v3/barrio-y-prision.png), [ocho personajes](qa/policias-art-v3/personajes.png) y [encuadre móvil](qa/policias-art-v3/camara-movil.png). Estos PNG son renders de revisión, no capturas de una partida online. La revisión interactiva móvil y una medición de FPS en dispositivos físicos siguen pendientes.
 
 `test/chaseArt.test.js` comprueba escenas, ocho colores, diferencias entre equipos, cámara móvil, animación, movimiento reducido y que dibujar no modifica el estado autoritativo ni crea superficies nuevas en cada fotograma. Para ejecutar estas pruebas y exportar imágenes, instalar opcionalmente `@napi-rs/canvas@1.2.1` en `tmp/chase-art-tools` y ejecutar `node --test test/chaseArt.test.js` y `node scripts/chase-art-proof.cjs`. Esta herramienta es solo de QA; sus tiempos de render no representan FPS del navegador.
+
+## Arte v5: El Burgo del Farol
+
+La ambientación mezcla un burgo medieval fantástico con una calle inglesa victoriana: fachadas de entramado Tudor sobre ladrillo, tejados altos de pizarra, chimeneas gemelas, ventanas con vidrieras emplomadas, taberna El Grifo, Botica Lunar, carruaje estacionado, almenas y faroles de gas. El horizonte tiene agujas, chimeneas y luna; pequeñas polillas luminosas animan las jardineras. La interfaz usa latón envejecido, verde botella y sombras ciruela.
+
+Los guardias llevan casco metálico, hombreras, insignia y capa corta; los rufianes, gorro de fieltro, bufanda, antifaz y botas. Ambos conservan la tela de su color personal. Los nombres se elevan para dejar espacio a los cascos. La simulación, los obstáculos físicos y las reglas de captura/rescate permanecen en el contrato anterior.
+
+Revisión del 28 de noviembre: **101 pruebas aprobadas**, incluyendo render, ocho identidades, animaciones, movimiento reducido, cámara móvil, reglas, salas y regreso desde Customer. Se revisaron visualmente el acceso y el lobby en Chrome local, se creó una sala con conexión en vivo y se salió de ella. Se inspeccionaron estos renders del juego con ocho participantes: [escenario y prisión](qa/policias-art-v5/barrio-y-prision.png), [guardias y rufianes](qa/policias-art-v5/personajes.png), [cámara móvil](qa/policias-art-v5/camara-movil.png). Los PNG son renders del mismo código con estados de prueba, no capturas de una partida online. No se midieron FPS ni gestos en un teléfono físico en esta revisión.
 
 ## Migración y despliegue
 
