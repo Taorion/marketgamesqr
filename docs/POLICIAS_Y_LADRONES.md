@@ -53,6 +53,16 @@ Todas las tablas tienen RLS y acceso directo revocado a `anon`, `authenticated` 
 
 Los sonidos de cuenta regresiva, captura, rescate y final son secuencias Web Audio originales. El volumen se conserva localmente, empieza después de un gesto y se libera al salir. No hay armas, inventarios, poderes ni economía añadida.
 
+### Renovación gráfica v3
+
+El barrio incorpora tejados inclinados de tejas individuales, ventanas y contraventanas dibujadas en perspectiva, balcones, toldos, zócalos de piedra, faroles, adoquines pequeños, un medallón en la plaza, árboles, bancas de madera, cajas y un vehículo con más detalle. Se mantiene exactamente el mapa físico y sus rutas. Los personajes tienen ocho poses de carrera, orientación según el movimiento, respiración, postura en prisión y retratos coherentes en lobby y resultados. Cada persona conserva su color y cada equipo su accesorio.
+
+Las superficies estáticas se precalculan una vez y se reutilizan en cada fotograma; la transparencia consulta la silueta real del objeto. Los nombres se separan al coincidir, la cámara móvil se acerca y sigue al personaje suavemente y se respeta la preferencia de movimiento reducido. El juego sigue dibujándose con Canvas nativo del navegador, sin nuevas dependencias de producción.
+
+Se inspeccionó el escenario en Chrome local y se generaron vistas del **mismo renderizador con estados de prueba**: [barrio y prisión](qa/policias-art-v3/barrio-y-prision.png), [ocho personajes](qa/policias-art-v3/personajes.png) y [encuadre móvil](qa/policias-art-v3/camara-movil.png). Estos PNG son renders de revisión, no capturas de una partida online. La revisión interactiva móvil y una medición de FPS en dispositivos físicos siguen pendientes.
+
+`test/chaseArt.test.js` comprueba escenas, ocho colores, diferencias entre equipos, cámara móvil, animación, movimiento reducido y que dibujar no modifica el estado autoritativo ni crea superficies nuevas en cada fotograma. Para ejecutar estas pruebas y exportar imágenes, instalar opcionalmente `@napi-rs/canvas@1.2.1` en `tmp/chase-art-tools` y ejecutar `node --test test/chaseArt.test.js` y `node scripts/chase-art-proof.cjs`. Esta herramienta es solo de QA; sus tiempos de render no representan FPS del navegador.
+
 ## Migración y despliegue
 
 `database/migrations/20261128144900_qori_chase_rooms.sql` tiene copia idéntica en `supabase/migrations`. Aplicar antes de ejecutar el backend nuevo, con el mecanismo normal `npm run db:migrate`, o la migración específica y su registro en `schema_migrations`. Verificar las cuatro tablas, RLS, la versión exacta en `/api/version`, `/api/health`, el selector de Empresa y los cuatro assets `policias-*`/`policias.css`.

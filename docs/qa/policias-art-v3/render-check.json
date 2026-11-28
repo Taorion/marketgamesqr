@@ -1,0 +1,12 @@
+{
+  "renderer": "native Skia Canvas; not browser FPS",
+  "frames": 60,
+  "p50_ms": 8.19,
+  "p95_ms": 19.81,
+  "fixture_players": 8,
+  "files": [
+    "barrio-y-prision.png",
+    "personajes.png",
+    "camara-movil.png"
+  ]
+}

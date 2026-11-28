@@ -58,7 +58,7 @@
       for(const event of next.events||[]){if(event.id>lastEvent){sound(event.type);if(event.type==='capture'||event.type==='rescue'){const p=next.players.find(q=>q.id===event.player);message(p?.name+(event.type==='capture'?' fue capturado.':' está libre de nuevo.'));}}lastEvent=Math.max(lastEvent,event.id);}
       paintUI();
     }
-    function roster(players){return players.map(p=>`<div class="chase-player ${p.id===state.own_id?'is-you':''}"><span class="chase-avatar ${p.team}" style="--player:${esc(p.color)}" aria-hidden="true"></span><div><b>${esc(p.name)}${p.id===state.own_id?' · tú':''}</b><small>${p.team==='police'?'Policía · gorra':'Ladrón · antifaz'}${p.abandoned?' · Abandonó':p.captured?' · Capturado':state.status==='waiting'?(p.ready?' · Listo':' · En sala'):' · Libre'}</small></div><i style="background:${p.connected?p.color:'#677382'}" title="${p.connected?'Conectado':'Reconectando'}"></i></div>`).join('');}
+    function roster(players){return players.map(p=>`<div class="chase-player ${p.id===state.own_id?'is-you':''}" style="--player:${esc(p.color)}"><canvas class="chase-avatar" data-portrait="${esc(p.id)}" aria-hidden="true"></canvas><div><b>${esc(p.name)}${p.id===state.own_id?' · tú':''}</b><small>${p.team==='police'?'Policía · gorra':'Ladrón · antifaz'}${p.abandoned?' · Abandonó':p.captured?' · Capturado':state.status==='waiting'?(p.ready?' · Listo':' · En sala'):' · Libre'}</small></div><i style="background:${p.connected?p.color:'#677382'}" title="${p.connected?'Conectado':'Reconectando'}"></i></div>`).join('');}
     let rosterKey='';
     function paintUI(){
       const has=!!state; $('[data-entry]').hidden=has;$('[data-lobby]').hidden=!has;
@@ -71,7 +71,7 @@
       $('[data-team]').style.color=p?.color||'';
       const thieves=state.players.filter(q=>q.team==='thief');$('[data-count]').textContent=waiting?state.players.length+'/8 en sala':`${thieves.filter(q=>!q.captured).length} libres · ${thieves.filter(q=>q.captured).length} presos`;
       const key=JSON.stringify(state.players.map(({x,y,dx,dy,moving,input_sequence,...p})=>p))+state.status;
-      if(key!==rosterKey){rosterKey=key;$('[data-roster]').innerHTML=roster(state.players);if(finished)$('[data-final-roster]').innerHTML=roster(state.players);}
+      if(key!==rosterKey){rosterKey=key;$('[data-roster]').innerHTML=roster(state.players);if(finished)$('[data-final-roster]').innerHTML=roster(state.players);container.querySelectorAll('[data-portrait]').forEach(canvas=>{const p=state.players.find(p=>p.id===canvas.dataset.portrait);if(p)root.QoriChaseView.portrait?.(canvas,p);});}
       $('.chase-lobby-actions').hidden=!waiting;$('[data-start]').hidden=state.host_id!==state.own_id;$('[data-start]').disabled=state.players.length<2;
       $('[data-ready]').textContent=p?.ready?'Listo ✓':'Estoy listo';
       $('[data-lobby-note]').textContent=waiting?(state.host_id===state.own_id?'Eres anfitrión. Puedes iniciar con 2 a 8 conectados; las señales de listo son informativas.':'El anfitrión iniciará la partida. Puedes marcarte listo.'):'Cada color es una persona. El equipo gana junto.';
